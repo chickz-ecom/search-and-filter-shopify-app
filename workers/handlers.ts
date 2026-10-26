@@ -8,6 +8,7 @@ import {
   type SyncJobData,
 } from "../app/lib/queue/queue.server";
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
+import { syncCollection } from "../app/lib/sync/collections.server";
 import { runFullSync } from "../app/lib/sync/full-sync.server";
 import { runIncrementalJob } from "../app/lib/sync/incremental-job.server";
 import { deleteProducts, inventoryItemsToProducts } from "../app/lib/sync/incremental.server";
@@ -61,6 +62,25 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
       );
       await enqueueIncremental(data.shopId, productIds);
       return { productIds };
+    }
+    case "collection": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      // Thay đổi cùng collection được tuần tự hoá để vị trí không bị ghi đè lẫn nhau.
+      const release = await acquireLock(
+        redis(),
+        rkey("lock", "col", data.shopId, data.collectionId),
+        10 * 60_000,
+      );
+      if (!release) {
+        await getSyncQueue().add("collection", data, { delay: 5_000 });
+        return { rescheduled: true };
+      }
+      try {
+        return await syncCollection(data.shopId, data, workerDeps(domain));
+      } finally {
+        await release();
+      }
     }
     default:
       return { skipped: `unhandled:${data.type}` };

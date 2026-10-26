@@ -128,8 +128,11 @@ export function buildContentSchema(name: string): CollectionSchema {
     fields: [
       { name: "type", type: "string", facet: true },
       { name: "title", type: "string" },
-      stored("handle"),
+      // handle lọc được: search-api tra collection theo handle (SDK collection('summer')).
+      { name: "handle", type: "string", facet: true },
       stored("url"),
+      // CollectionSortOrder của Shopify → sort mặc định trang collection (mục 4.4).
+      stored("sort_order"),
       { name: "body_text", type: "string" },
       stored("image"),
       { name: "products_count", type: "int32", optional: true },

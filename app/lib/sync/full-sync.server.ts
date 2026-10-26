@@ -299,9 +299,10 @@ export async function buildContentIndex(
   const old = await engine.getAlias(alias);
   if (old === name) return;
   await engine.createCollection(buildContentSchema(name));
-  const docs: ContentDoc[] = collections.map((c) => ({
+  const docs: (ContentDoc & { sort_order: string })[] = collections.map((c) => ({
     id: `collection-${c.id}`,
     type: "collection",
+    sort_order: c.sortOrder,
     title: c.title,
     handle: c.handle,
     url: `/collections/${c.handle}`,

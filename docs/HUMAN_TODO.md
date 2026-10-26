@@ -34,3 +34,7 @@
 - [ ] D4. Thử webhook thật: `shopify app webhook trigger --topic products/update --address <tunnel>/webhooks/products --api-version 2026-10`
       (và `shop/redact`, `customers/redact`, `customers/data_request` → `/webhooks/compliance`). Kiểm tra 200 và job vào queue;
       gửi HMAC sai phải nhận 401.
+- [ ] D5. (Task 1.8) Kiểm chứng Events trên dev store: tạo smart collection "tag = sale"; bỏ tag `sale` khỏi một sản phẩm.
+      Xem log route `/api/events/collections` có nhận `collection.products` (fields_changed.removed) hay không → ghi kết quả vào Nhật ký.
+      Dù không bắn, index vẫn phải cập nhật trong ≤ 1 phút nhờ `products/update` (incremental lấy lại product.collections).
+      Thử thêm: đổi kiểu sắp xếp collection (Sort: Manual → Price) → event `collection.sortOrder` → pos_* bị xoá.
