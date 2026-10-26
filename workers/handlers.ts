@@ -10,6 +10,7 @@ import {
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { getEngine } from "../app/lib/search";
 import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
+import { refreshShop } from "../app/lib/shop/markets.server";
 import {
   applyBestSellingRanks,
   fetchBestSellingOrder,
@@ -130,12 +131,22 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
       const order = await fetchBestSellingOrder(transport);
       return applyBestSellingRanks(getEngine(), data.shopId, order);
     }
+    case "shop-refresh": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      const r = await refreshShop(data.shopId, data.what, workerDeps(domain));
+      if (r.needsFullSync) await queueFullSync(data.shopId, "shop-settings-changed");
+      return r;
+    }
     case "uninstall":
       return uninstallShop(data.shopId, { db: prisma, redis: redis() });
     case "redact":
       return redactShop(data.shopDomain, { db: prisma, engine: getEngine(), redis: redis() });
-    default:
-      return { skipped: `unhandled:${data.type}` };
+    default: {
+      // Mọi loại job đã có handler; TypeScript báo lỗi nếu thêm loại mới mà quên xử lý.
+      const unhandled: never = data;
+      return { skipped: `unhandled:${(unhandled as { type: string }).type}` };
+    }
   }
 }
 
