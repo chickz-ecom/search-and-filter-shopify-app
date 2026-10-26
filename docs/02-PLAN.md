@@ -477,7 +477,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [ ] 0.4 `shopify.app.toml`:
   - Scopes: `read_products, read_inventory, read_product_listings, read_publications, read_translations, read_locales, read_markets, unauthenticated_read_product_listings, write_app_proxy, write_pixels, read_customer_events`
   - Khai webhook (gồm compliance), `[events]`, `api_version = "2026-10"`.
-- [ ] 0.5 `docs/adr/` cho D1–D16.
+- [x] 0.5 `docs/adr/` cho D1–D16.
 
 ### Phase 1 — Index và Sync (1–2 tuần)
 - [ ] 1.1 GraphQL executor biết throttle.
@@ -620,3 +620,5 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 0.1 xong: template React Router clone từ GitHub, nâng @shopify/shopify-app-react-router@4.0.0, polaris-types@2.0.0, pin react-router@7.18.4; Node 22.23.4 qua nvm (.nvmrc). DoD cài vào dev store → HUMAN_TODO A1–A3.
 - 2026-10-26: 0.2 xong: Prisma → PostgreSQL với đầy đủ model mục 4.1 (+ AnalyticsUsageDaily cho filter/sort usage); docker-compose chỉ Typesense 30.1, postgres/redis sau profile standalone; dev dùng lại postgres_db/docker-redis-1.
 - 2026-10-26: 0.3 xong: Prettier, Vitest 5 (node + happy-dom), Playwright (chromium + Pixel 7, trang fixture tĩnh), CI GitHub Actions (typecheck, lint, format, test, bundle budget, e2e, build; job riêng shopify app config validate cần token → HUMAN_TODO B1).
+- 2026-10-26: Chốt câu hỏi mở mục 13 bằng mặc định: (1) Typesense self-host docker cho dev, cấu hình deploy cho cả Typesense Cloud và self-host; (2) UI admin en + vi, search tối ưu tiếng Anh trước, locale cấu hình được (`SEARCH_DEFAULT_LOCALE`); (3) Gói: Free < 100 sản phẩm · $9 (1k) · $19 (5k) · $49 (30k) · $99 (100k) · $199 (300k); (4) Markets: quy đổi tự động trước, phương án B sau feature flag `fixedMarketPrices`; (5) Headless API mở từ gói $49.
+- 2026-10-26: 0.5 xong: docs/adr/0001–0016 (D1–D16) + README index.
