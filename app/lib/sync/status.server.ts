@@ -10,7 +10,8 @@ export type SyncStatus = {
   percent: number;
   /** Giai đoạn đang chạy (chỉ khi RUNNING) + số dòng đã tải từ Shopify ở giai đoạn fetch. */
   phase: SyncPhase | null;
-  fetched: number | null;
+  /** Số sản phẩm đã tải từ Shopify (giai đoạn fetch), so với productCount. */
+  fetchedProducts: number | null;
   lastFullSyncAt: string | null;
   lastIncrementalAt: string | null;
   running: { id: string; type: string; startedAt: string } | null;
@@ -40,7 +41,7 @@ export async function getSyncStatus(db: Db, shopId: string): Promise<SyncStatus>
             ? 100
             : 0,
     phase: progress?.phase ?? null,
-    fetched: progress?.fetched ?? null,
+    fetchedProducts: progress?.products ?? null,
     lastFullSyncAt: shop.lastFullSyncAt?.toISOString() ?? null,
     lastIncrementalAt: shop.lastIncrementalAt?.toISOString() ?? null,
     running: running

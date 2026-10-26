@@ -253,7 +253,7 @@ export function HomeView(p: HomeViewProps) {
             >
               {t(`sync.state.${p.status.state}` as MessageKey)}
             </s-badge>
-            <s-text>{syncStatusText(t, p.status)}</s-text>
+            <s-text>{syncStatusText(t, p.status, p.locale)}</s-text>
           </s-stack>
           {(p.status.state === "RUNNING" || p.status.state === "QUEUED") && (
             <s-progress

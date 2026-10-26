@@ -37,7 +37,7 @@ import {
   importInBatches,
   type CollectionInfo,
 } from "./pipeline";
-import { fetchPercent, indexPercent, progressReporter } from "./progress";
+import { fetchPercent, fetchProgress, indexPercent, progressReporter } from "./progress";
 import { earlyProductsQuery, PRODUCT_FILTER } from "./queries";
 import { MemoryStaging, MEMORY_STAGING_MAX_PRODUCTS, PgStaging, type Staging } from "./staging";
 
@@ -226,20 +226,17 @@ export async function runFullSync(
 
       onCollection: (c) => collections.push(c),
     });
-    // Tiến độ tải: số bulk đã xong + tổng dòng Shopify báo (objectCount tăng dần trong lúc chạy).
-    const fetched = new Map<string, number>();
-    const doneBulks = new Set<string>();
+    // Tiến độ tải: "x/y sản phẩm" từ objectCount của bulk sản phẩm + số bulk đã xong.
+    const bulks = new Map(specs.map((s) => [s.name, { objects: 0, done: false }]));
     const bulkPromise = runner.run(
       specs.map((s) => ({
         ...s,
         onStatus: (info: BulkOperationInfo) => {
-          fetched.set(s.name, Number(info.objectCount ?? 0));
-          if (info.status === "COMPLETED") doneBulks.add(s.name);
-          report({
-            phase: "fetch",
-            percent: fetchPercent(doneBulks.size, specs.length),
-            fetched: [...fetched.values()].reduce((a, b) => a + b, 0),
+          bulks.set(s.name, {
+            objects: Number(info.objectCount ?? 0),
+            done: info.status === "COMPLETED",
           });
+          report({ phase: "fetch", ...fetchProgress(bulks, catalog.count) });
         },
       })),
     );

@@ -1,6 +1,7 @@
 # Tài liệu kiểm thử: Search & Filter (Shopify app)
 
 Phiên bản: 2026-10-26. Dùng cho tester kiểm thử thủ công trước khi phát hành (và kiểm thử lại sau mỗi bản sửa lớn).
+https://claude.ai/artifact/Pu9LCGQRivgbXsNMjFbL3B
 
 ## 1. Cách dùng tài liệu này
 
@@ -121,7 +122,7 @@ Cần đủ 5 tiến trình, thiếu một cái là lỗi.
 
 | Mã | Ưu tiên | Kịch bản | Các bước | Mong đợi |
 |---|---|---|---|---|
-| SY-01 | P1 | Sync from Shopify | Bấm **Sync from Shopify** | Toast "Full sync queued".<br>Dòng trạng thái lần lượt: "Preparing · x%" → "Downloading from Shopify: N items · x%" → "Building the search index: a/b · x%" → "Switching to the new index · 98%" → "Up to date".<br>Thanh tiến độ tăng dần. Với catalog nhỏ có thể rất nhanh, nhưng không được đứng ở 0% suốt rồi nhảy thẳng lên 100%.<br>Lịch sử có dòng **Full sync / Succeeded** và số đã import |
+| SY-01 | P1 | Sync from Shopify | Bấm **Sync from Shopify** | Toast "Full sync queued".<br>Dòng trạng thái lần lượt: "Preparing · x%" → "Downloading from Shopify: a/b products · x%" (a tăng dần tới tổng số sản phẩm) → "Building the search index: a/b products · x%" → "Switching to the new index · 98%" → "Up to date".<br>Thanh tiến độ tăng dần. Với catalog nhỏ có thể rất nhanh, nhưng không được đứng ở 0% suốt rồi nhảy thẳng lên 100%.<br>Lịch sử có dòng **Full sync / Succeeded** và số đã import |
 | SY-02 | P1 | Không cần reload | Giữ nguyên trang trong lúc sync | Trạng thái và % tự cập nhật khoảng 1,5 giây/lần |
 | SY-03 | P1 | Chặn bấm trùng | Bấm Sync, rồi bấm tiếp Sync hoặc Reindex khi đang Queued hoặc Syncing | Cả 2 nút bị khoá (disabled). Nếu kịp bấm lần nữa: toast "A sync is already running" |
 | SY-04 | P1 | Reindex | Bấm **Reindex** | Toast "Reindex queued". Lần lượt "Preparing" → "Building the search index…" → "Switching to the new index" → "Up to date". Lịch sử có dòng **Reindex / Succeeded**. Số sản phẩm không đổi. Storefront search vẫn chạy bình thường trong lúc reindex |

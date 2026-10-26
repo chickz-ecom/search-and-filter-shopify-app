@@ -88,7 +88,7 @@ export function SyncView({
             <s-badge tone={stateTone[status.state]}>
               {t(`sync.state.${status.state}` as MessageKey)}
             </s-badge>
-            <s-text>{syncStatusText(t, status)}</s-text>
+            <s-text>{syncStatusText(t, status, locale)}</s-text>
           </s-stack>
           {(status.state === "RUNNING" || status.state === "QUEUED") && (
             <s-progress

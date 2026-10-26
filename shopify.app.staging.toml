@@ -1,0 +1,104 @@
+# STAGING (custom distribution) — bản sao của shopify.app.toml, chỉ khác client_id/name/handle/app_proxy.subpath.
+# Khi sửa shopify.app.toml (webhooks, scopes, events…) nhớ sửa cả file này.
+# Cấu hình app (task 0.4). Cú pháp đã đối chiếu: docs/shopify-api/config-extensions.md.
+# client_id / application_url được điền bởi `shopify app config link` (docs/HUMAN_TODO.md A2).
+name = "Search & Filter Staging"
+client_id = "f5ff62ace5237e0e1cf6ac070ce0201a"
+application_url = "https://search.tiepdo.online"
+embedded = true
+handle = "search-filter-staging"
+
+[build]
+automatically_update_urls_on_dev = true
+include_config_on_deploy = true
+
+[access_scopes]
+# Managed install (không use_legacy_install_flow). Chỉ đọc dữ liệu sản phẩm → Protected Customer Data Level 0 (D13).
+# Pages/articles cho autocomplete chỉ xin khi merchant bật (Search → kiểu tìm kiếm) qua shopify.scopes.request.
+# Validator 2026-10 (docs/shopify-api/admin/online-store-content.graphql): pages/articles cần read_content + read_online_store_pages.
+# read_orders (task 2.15, D17): xếp hạng bán chạy theo đơn 60 ngày — chỉ khi merchant bật ở trang Sorting.
+# Cần Protected Customer Data Level 1 (HUMAN_TODO P1); app không đọc trường khách hàng nào.
+optional_scopes = ["read_content", "read_online_store_pages", "read_orders"]
+scopes = "read_products,read_inventory,read_translations,read_locales,read_markets,unauthenticated_read_product_listings,write_app_proxy,write_pixels,read_customer_events"
+
+[auth]
+redirect_urls = ["https://search.tiepdo.online/auth/callback"]
+
+[webhooks]
+api_version = "2026-10"
+
+  # Handler chỉ xác thực HMAC + dedupe + enqueue (D7). Worker tự lấy bản mới nhất qua GraphQL,
+  # nên chỉ cần id + updated_at trong payload.
+  [[webhooks.subscriptions]]
+  topics = ["products/create", "products/update", "products/delete"]
+  uri = "/webhooks/products"
+  include_fields = ["id", "updated_at"]
+
+  [[webhooks.subscriptions]]
+  topics = ["collections/create", "collections/update", "collections/delete"]
+  uri = "/webhooks/collections"
+  include_fields = ["id", "updated_at"]
+
+  [[webhooks.subscriptions]]
+  topics = ["inventory_levels/update"]
+  uri = "/webhooks/inventory"
+  include_fields = ["inventory_item_id", "location_id", "updated_at"]
+
+  [[webhooks.subscriptions]]
+  topics = ["inventory_items/update"]
+  uri = "/webhooks/inventory"
+  include_fields = ["id", "updated_at"]
+
+  [[webhooks.subscriptions]]
+  topics = ["locales/create", "locales/update", "markets/create", "markets/update", "markets/delete", "shop/update"]
+  uri = "/webhooks/shop"
+
+  [[webhooks.subscriptions]]
+  topics = ["bulk_operations/finish"]
+  uri = "/webhooks/bulk"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/scopes_update"]
+  uri = "/webhooks/app/scopes_update"
+
+  # Bắt buộc với app public (BFS): trả 401 khi HMAC sai.
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+  uri = "/webhooks/compliance"
+
+# Events API (D8): bắt đổi thành viên và kiểu sắp xếp collection mà webhook bỏ sót.
+# Smart collection có bắn collection.products hay không: CHƯA XN → HUMAN_TODO (task 1.8); vẫn có đối soát.
+[events]
+api_version = "2026-10"
+
+  [[events.subscription]]
+  handle = "collection-products"
+  topic = "Collection"
+  actions = ["update"]
+  triggers = ["collection.products"]
+  uri = "/api/events/collections"
+
+  [[events.subscription]]
+  handle = "collection-sort-order"
+  topic = "Collection"
+  actions = ["update"]
+  triggers = ["collection.sortOrder"]
+  uri = "/api/events/collections"
+  query = """
+  query CollectionSortOrder($collectionId: ID!) {
+    collection(id: $collectionId) { id handle sortOrder updatedAt }
+  }
+  """
+
+# Proxy same-origin cho search API: https://{shop}/apps/search/* → /proxy/* (tránh CORS, xem mục 6.4g).
+[app_proxy]
+url = "/proxy"
+prefix = "apps"
+subpath = "search-staging"
+
+[pos]
+embedded = false
