@@ -4,7 +4,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactElement } from "react";
-import { AnalyticsView } from "../../app/components/AnalyticsView";
+import { AnalyticsShell } from "../../app/components/analytics/AnalyticsShell";
+import { ExportView } from "../../app/components/analytics/ExportView";
+import { OverviewView } from "../../app/components/analytics/OverviewView";
+import { ReportView } from "../../app/components/analytics/ReportView";
 import { AppearanceView } from "../../app/components/AppearanceView";
 import { DevelopersView } from "../../app/components/DevelopersView";
 import { FiltersView } from "../../app/components/FiltersView";
@@ -85,6 +88,48 @@ const queries = LISTING
       "running shorts",
     ]
   : Array.from({ length: 12 }, (_, i) => `long search term number ${i + 1} with extra words`);
+
+const range = { from: "2026-10-01", to: "2026-10-31" };
+const product = (i: number) => ({
+  id: String(i),
+  title: `Custom Photo Balaclava Mask - Personalized Halloween Birthday Gifts For Dog Lovers ${i}`,
+  image: null,
+  handle: `p-${i}`,
+});
+const overview = {
+  totals: {
+    clicks: 466_310,
+    searches: 242_267,
+    zeroResults: 11_129,
+    clickedValue: 11_054_630.6,
+    filtersApplied: 30_245,
+    boughtValue: 1_460_765.06,
+  },
+  series: Array.from({ length: 31 }, (_, i) => ({
+    date: `2026-10-${String(i + 1).padStart(2, "0")}`,
+    values: {
+      clicks: 15_000,
+      searches: 8000 + i * 100,
+      zeroResults: 300,
+      clickedValue: 350_000,
+      filtersApplied: 1000,
+      boughtValue: 47_000,
+    },
+  })),
+  topQueries: [
+    { query: "advent calendar", searches: 2958 },
+    {
+      query: "a search phrase that is unusually long to test wrapping in narrow cards",
+      searches: 1394,
+    },
+  ],
+  topClicked: [1, 2, 3].map((i) => ({ ...product(i), clicks: 8987 - i })),
+  topZero: [{ query: "lacrosse", count: 61 }],
+  topBought: [1, 2].map((i) => ({ ...product(i), purchases: 1322 - i })),
+  topFilters: [{ filter: "By Recipient", count: 13_529 }],
+  topFilterValues: [{ filter: "By Occasion", value: "Christmas", count: 6672 }],
+  topCollections: [{ id: "1", title: "Christmas Gifts", views: 54_226 }],
+};
 
 function pages(locale: Locale): Record<string, ReactElement> {
   return {
@@ -213,52 +258,86 @@ function pages(locale: Locale): Record<string, ReactElement> {
       />
     ),
     analytics: (
-      <AnalyticsView
+      <AnalyticsShell
         locale={locale}
         currency="USD"
-        loading={false}
-        onRangeChange={noop}
-        suggestions={[
-          { query: "tshirt", searches: 42, term: "T-Shirt", reason: "spacing", products: 128 },
-          {
-            query: "waterproof trainers for winter",
-            searches: 9,
-            term: "Running shoes",
-            reason: "meaning",
-            products: 31,
-          },
-        ]}
-        onSuggestion={noop}
-        report={{
-          // Select chưa hydrate hiện option đầu (7 ngày) trong HTML tĩnh → ảnh listing dùng 7 cho khớp.
-          range: LISTING ? 7 : 30,
-          kpis,
-          topQueries: queries.map((query, i) => ({
-            query,
-            searches: 9000 - i * 100,
-            clicks: 3000,
-            ctr: 0.33,
-            addToCarts: 120,
-            revenue: 12_345.67,
-          })),
-          zeroResults: queries
-            .slice(0, 6)
-            .map((query) => ({ query, searches: 40, zeroResults: 40 })),
-          filterUsage: [
-            {
-              key: "filter.p.vendor",
-              label: "Brand",
-              value: "A brand with a long name",
-              count: 900,
-              share: 0.6,
-            },
-            { key: "filter.v.option.size", label: "Size", value: "XL", count: 600, share: 0.4 },
-          ],
-          sortUsage: [
-            { key: "price_asc", label: "Price, low to high", value: "", count: 300, share: 1 },
-          ],
-        }}
-      />
+        range={range}
+        active="overview"
+        onNavigate={noop}
+        onRange={noop}
+      >
+        <OverviewView locale={locale} currency="USD" loading={false} overview={overview} />
+      </AnalyticsShell>
+    ),
+    "analytics-search": (
+      <AnalyticsShell
+        locale={locale}
+        currency="USD"
+        range={range}
+        active="search"
+        onNavigate={noop}
+        onRange={noop}
+      >
+        <ReportView
+          locale={locale}
+          currency="USD"
+          description="Search queries, clicks and purchases after a search, and how shoppers filter search results."
+          tabs={[
+            "queries",
+            "zero",
+            "suggestions",
+            "products",
+            "filters",
+            "filterValues",
+            "combos",
+            "sorts",
+          ].map((key) => ({ key, label: key }))}
+          activeTab="queries"
+          q=""
+          loading={false}
+          onTab={noop}
+          onQuery={noop}
+          onSort={noop}
+          onPage={noop}
+          table={{
+            columns: [
+              { key: "query", kind: "text" },
+              { key: "searches", kind: "number" },
+              { key: "share", kind: "percent" },
+              { key: "productsBought", kind: "number" },
+              { key: "revenue", kind: "money" },
+              { key: "ctr", kind: "percent" },
+              { key: "cr", kind: "percent" },
+            ],
+            rows: queries.map((query, i) => ({
+              query,
+              searches: 2962 - i * 90,
+              share: 0.0171,
+              productsBought: 428,
+              revenue: 17_057.64,
+              ctr: 1,
+              cr: 0.0989,
+            })),
+            total: 1240,
+            page: 1,
+            pages: 50,
+            sort: "searches",
+            dir: "desc",
+          }}
+        />
+      </AnalyticsShell>
+    ),
+    "analytics-export": (
+      <AnalyticsShell
+        locale={locale}
+        currency="USD"
+        range={range}
+        active="export"
+        onNavigate={noop}
+        onRange={noop}
+      >
+        <ExportView locale={locale} downloading={null} onDownload={noop} />
+      </AnalyticsShell>
     ),
     sync: (
       <SyncView

@@ -588,11 +588,11 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 Giống bố cục Searchanise: Overview (6 KPI + biểu đồ Polaris Viz + 7 bảng top), Search (Queries, 0 results, Suggestions,
 Product performance, Filters, Filter values, Filter value combinations), Collections (Collections, Filters, Filter values,
 Filter value combinations), Export CSV; chọn khoảng ngày. Số liệu mới chỉ đếm từ khi triển khai (không backfill).
-- [ ] 7.1 Thu thập: click kèm nguồn (search/collection/instant) + collection; `collection_view`; filter theo ngữ cảnh
+- [x] 7.1 Thu thập: click kèm nguồn (search/collection/instant) + collection; `collection_view`; filter theo ngữ cảnh
       (search / collection) + tổ hợp giá trị; click gợi ý; pixel `collection_viewed` + `checkout_completed.lineItems`
       (sản phẩm, số lượng, doanh thu). Rollup sang AnalyticsProductDaily, AnalyticsCollectionDaily, cột mới.
-- [ ] 7.2 Báo cáo: khoảng ngày tuỳ ý, overview + chuỗi theo ngày, các bảng có tìm/sắp xếp/phân trang, CSV.
-- [ ] 7.3 Giao diện: Polaris web components + Polaris Viz (chỉ nạp ở trang Analytics, render phía client).
+- [x] 7.2 Báo cáo: khoảng ngày tuỳ ý, overview + chuỗi theo ngày, các bảng có tìm/sắp xếp/phân trang, CSV.
+- [x] 7.3 Giao diện: Polaris web components + Polaris Viz (chỉ nạp ở trang Analytics, render phía client).
 
 ---
 
@@ -708,3 +708,4 @@ Filter value combinations), Export CSV; chọn khoảng ngày. Số liệu mới
 - 2026-10-26: Trang Sync tách 2 nút: "Sync from Shopify" (full sync bulk như cũ) và "Reindex" (`runReindex`: export document đang có → collection version mới theo schema hiện tại, giữ field `mf_*`, bỏ `embedding` để sinh lại, ghi đôi qua marker full sync, kiểm tra số lượng, swap alias, copy cả index content; không gọi Shopify, không lấy sản phẩm mới). Job type REINDEX (migration `20261026120000_reindex_job`), chung khoá với full sync. Sync + Home tự cập nhật trạng thái mỗi 3s khi QUEUED/RUNNING (`useRefreshWhile`).
 - 2026-10-26: Filter storefront: facet thành accordion (`<details>`, badge số lựa chọn, giữ trạng thái qua render); cột left sticky (tự lùi theo header dính của theme, `--sa-sticky-top` ghi đè được), top = hàng dropdown; mobile < 750px (và vị trí drawer) = nút "Filters (n)" + bottom sheet (role=dialog, khoá cuộn, Esc/nền mờ đóng, bẫy Tab, "Show N products" + "Reset filters"). Text mới showResults/resetFilters (merchant sửa được ở Appearance) + close. Price chỉ còn thanh trượt (bỏ ô nhập tay), biên range giữ nguyên khi lọc (range filter vào nhóm disjunctive).
 - 2026-10-26: Tiến độ sync theo giai đoạn (`Shop.syncProgress`, migration `20261026130000_sync_progress`): prepare 0–5 · fetch 5–70 (bulk xong/tổng + objectCount qua `BulkSpec.onStatus`) · index 70–98 · finalize 98–100; reindex 5–95. Trang Sync/Home hiện tên giai đoạn + %, poll 1,5s khi đang chạy. Trước đó thanh đứng 0% suốt lúc chờ bulk rồi nhảy 100%.
+- 2026-10-26: Phase 7 Analytics v2 xong. 7.1 thu thập (click theo nguồn + collection, collection_view, filter theo ngữ cảnh + tổ hợp, click gợi ý, pixel collection_viewed + lineItems; bảng AnalyticsProductDaily/AnalyticsCollectionDaily; SDK 1.2.0). 7.2 báo cáo (khoảng ngày tuỳ ý, overview + chuỗi ngày, 12 báo cáo bảng, CSV chống formula injection). 7.3 giao diện: Overview (6 KPI bấm đổi biểu đồ Polaris Viz — chunk riêng ~104 KB gzip, chỉ client; 7 bảng top), Search (8 tab, có gợi ý synonym ở 0 results), Collections (4 tab), Export (11+1 CSV). Polaris Viz 16.16 khai React ≤ 18 → overrides ép dùng React 19 của app (đã render thử, không lỗi). Kèm: snapshot Typesense dùng client riêng timeout 10 phút (index 35k sản phẩm từng timeout 5 s).

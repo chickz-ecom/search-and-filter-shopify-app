@@ -209,11 +209,10 @@ function toCurationObject(c: CurationItem): Json {
 
 export class TypesenseEngine implements SearchEngine {
   private readonly client: Client;
+  private opsClient?: Client;
 
   constructor(private readonly config: TypesenseConfig) {
-    const nodes = config.nodes?.length
-      ? config.nodes
-      : [{ host: config.host, port: config.port, protocol: config.protocol }];
+    const nodes = this.nodes();
     this.client = new Client({
       nodes,
       apiKey: config.apiKey,
@@ -222,6 +221,28 @@ export class TypesenseEngine implements SearchEngine {
       retryIntervalSeconds: 0.1,
       logLevel: "silent",
     });
+  }
+
+  private nodes() {
+    return this.config.nodes?.length
+      ? this.config.nodes
+      : [{ host: this.config.host, port: this.config.port, protocol: this.config.protocol }];
+  }
+
+  /**
+   * Snapshot ghi toàn bộ dữ liệu ra đĩa: với catalog lớn mất hàng chục giây tới vài phút, vượt timeout 5 s của
+   * request thường (job backup đêm từng timeout với index 35k sản phẩm) → client riêng, 10 phút, không thử lại.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private get ops(): any {
+    this.opsClient ??= new Client({
+      nodes: this.nodes(),
+      apiKey: this.config.apiKey,
+      connectionTimeoutSeconds: 600,
+      numRetries: 0,
+      logLevel: "silent",
+    });
+    return this.opsClient;
   }
 
   // Client typed theo schema chung chung; giữ `any` trong một chỗ duy nhất.
@@ -242,7 +263,7 @@ export class TypesenseEngine implements SearchEngine {
   async snapshot(path: string): Promise<void> {
     // POST /operations/snapshot?snapshot_path=… (đã thử trên Typesense 30.1: {"success":true}).
     const r = await wrap(
-      this.c.operations.perform("snapshot", { snapshot_path: path }),
+      this.ops.operations.perform("snapshot", { snapshot_path: path }),
       "snapshot",
     );
     if (!(r as { success?: boolean })?.success)

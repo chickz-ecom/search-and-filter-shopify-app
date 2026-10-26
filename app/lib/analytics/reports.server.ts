@@ -4,35 +4,22 @@ import { fromMinorUnits } from "../search/query/currency";
 import { urlParamFor } from "../search/query/filters";
 import { labelFor } from "../config/sort-options";
 import { loadShopConfig, type Db } from "../shop/shop.server";
-import { daysIn, rangeBounds, type DateRange } from "./range";
+import { daysIn, parseDateRange, rangeBounds, type DateRange } from "./range";
+import {
+  METRICS,
+  type Column,
+  type MetricKey,
+  type Overview,
+  type ProductRef,
+  type ReportKey,
+  type Table,
+} from "./report-types";
+
+export * from "./report-types";
 
 // Analytics v2 (7.2): Overview, Search, Collections, Export. Đọc bảng rollup (ẩn danh, D13) + tra tên/ảnh sản phẩm
 // và tên collection trong index. Mỗi báo cáo bảng trả về ĐỦ dòng của khoảng ngày; tìm/sắp xếp/phân trang ở
 // `pageRows`, CSV dùng chung dòng đó (`csvOf`).
-
-export type MetricKey =
-  "clicks" | "searches" | "zeroResults" | "clickedValue" | "filtersApplied" | "boughtValue";
-export const METRICS: MetricKey[] = [
-  "clicks",
-  "searches",
-  "zeroResults",
-  "clickedValue",
-  "filtersApplied",
-  "boughtValue",
-];
-
-export type ProductRef = { id: string; title: string; image: string | null; handle: string | null };
-export type Overview = {
-  totals: Record<MetricKey, number>;
-  series: { date: string; values: Record<MetricKey, number> }[];
-  topQueries: { query: string; searches: number }[];
-  topClicked: (ProductRef & { clicks: number })[];
-  topZero: { query: string; count: number }[];
-  topBought: (ProductRef & { purchases: number })[];
-  topFilters: { filter: string; count: number }[];
-  topFilterValues: { filter: string; value: string; count: number }[];
-  topCollections: { id: string; title: string; views: number }[];
-};
 
 export type Ctx = {
   db: Db;
@@ -315,25 +302,6 @@ export async function getOverview(ctx: Ctx, range: DateRange): Promise<Overview>
 
 // ---------- báo cáo dạng bảng ----------
 
-export type Column = { key: string; kind: "text" | "number" | "money" | "percent" | "product" };
-export type Row = Record<string, string | number | null> & { _image?: string | null };
-export type Table = { columns: Column[]; rows: Row[] };
-
-export const REPORTS = [
-  "search-queries",
-  "search-zero",
-  "search-suggestions",
-  "search-products",
-  "search-filters",
-  "search-filter-values",
-  "search-filter-combos",
-  "collections",
-  "collection-filters",
-  "collection-filter-values",
-  "collection-filter-combos",
-] as const;
-export type ReportKey = (typeof REPORTS)[number];
-
 const ratio = (a: number, b: number) => (b ? Math.min(1, a / b) : 0);
 
 export async function getTable(ctx: Ctx, key: ReportKey, range: DateRange): Promise<Table> {
@@ -445,6 +413,30 @@ export async function getTable(ctx: Ctx, key: ReportKey, range: DateRange): Prom
             revenue: money(r._sum.revenue),
           };
         }),
+      };
+    }
+    case "search-sorts": {
+      const rows = await db.analyticsUsageDaily.groupBy({
+        by: ["key"],
+        where: { ...where, kind: "SORT" },
+        _sum: { count: true },
+      });
+      const config = await loadShopConfig(db, shopId);
+      const labels = new Map<string, string>(
+        config.sortOptions.map((o) => [o.key, labelFor(o.label, ctx.locale, o.key)]),
+      );
+      const total = rows.reduce((n, r) => n + num(r._sum.count), 0);
+      return {
+        columns: [
+          { key: "sort", kind: "text" },
+          { key: "uses", kind: "number" },
+          { key: "share", kind: "percent" },
+        ],
+        rows: rows.map((r) => ({
+          sort: labels.get(r.key) ?? r.key,
+          uses: num(r._sum.count),
+          share: ratio(num(r._sum.count), total),
+        })),
       };
     }
     case "collections": {
@@ -608,4 +600,19 @@ export function csvOf(table: Table, headers: Record<string, string>): string {
         .join(","),
     );
   return lines.join("\r\n") + "\r\n";
+}
+
+/** Một trang báo cáo (Search / Collections): tab, ô tìm, sắp xếp, trang — đọc từ URL. */
+export async function reportPage(ctx: Ctx, url: URL, tabs: Record<string, ReportKey>) {
+  const params = url.searchParams;
+  const asked = params.get("tab") ?? "";
+  const tab = asked in tabs ? asked : Object.keys(tabs)[0];
+  const q = params.get("q") ?? "";
+  const table = pageRows(await getTable(ctx, tabs[tab], parseDateRange(params)), {
+    q,
+    sort: params.get("sort") ?? undefined,
+    dir: params.get("dir") === "asc" ? "asc" : "desc",
+    page: Number(params.get("page") ?? 1),
+  });
+  return { tab, q, table };
 }

@@ -321,16 +321,20 @@ Cần đủ 5 tiến trình, thiếu một cái là lỗi.
 
 ### 5.16. Admin: Analytics (`AN`)
 
-Cần có lượt search thật trên storefront. Dữ liệu cập nhật khoảng 10 phút một lần.
+Cần có hoạt động thật trên storefront. Dữ liệu được tổng hợp khoảng 10 phút một lần. Số liệu theo sản phẩm, collection, gợi ý và tổ hợp filter chỉ có từ bản cập nhật Analytics v2 trở đi.
 
 | Mã | Ưu tiên | Kịch bản | Các bước | Mong đợi |
 |---|---|---|---|---|
-| AN-01 | P1 | Số liệu tổng | Search 10 lần (có 2 lần không kết quả), click 3 sản phẩm → đợi 10 phút | Searches, No-result searches, Click-through rate khớp tương đối |
-| AN-02 | P2 | Add to cart và doanh thu | Search → mở sản phẩm → thêm vào giỏ → thanh toán bằng cổng test (Bogus Gateway) trong vòng 30 phút sau khi search | Add to carts và Revenue after search tăng. Không tăng thì kiểm tra web pixel của app đã bật chưa (Settings → Customer events) |
-| AN-03 | P2 | Khoảng thời gian | Đổi Date range 7, 30, 90 ngày | URL có `?range=`, số liệu đổi theo |
-| AN-04 | P2 | Không có kết quả → xử lý | Ở "Searches with no results" bấm **Add redirect** / **Add synonym** | Mở Merchandising với từ khoá điền sẵn (xem `KB-06` cho synonym) |
-| AN-05 | P3 | Gợi ý synonym | Có search sai chính tả hoặc thiếu dấu không ra kết quả | "Suggested synonyms" có gợi ý. Add synonym thì toast "Synonym added". Dismiss thì ẩn |
-| AN-06 | P3 | Dùng filter và sort | Dùng vài filter và sort trên storefront | Bảng "Filter usage" / "Sort usage" có số liệu |
+| AN-01 | P1 | Điều hướng và khoảng ngày | Mở Analytics → bấm lần lượt **Overview / Search / Collections / Export**. Bấm nút ngày → chọn preset "Last 7 days", rồi chọn một khoảng tuỳ ý trên lịch → **Apply** | Nút của trang đang mở được tô đậm. Khoảng ngày hiện trên nút và **được giữ** khi chuyển trang. URL có `from` và `to`; Back trình duyệt trả về khoảng trước |
+| AN-02 | P1 | Overview: 6 ô và biểu đồ | Xem 6 ô (Clicks, Searches, 0-result searches, Value of clicked products, Filters applied, Value of products bought). Bấm từng ô | Ô được chọn có nền khác. Biểu đồ đường (theo ngày) đổi theo chỉ số của ô, có tooltip khi rê chuột, số tiền hiển thị đúng định dạng tiền tệ. Rê chuột vào biểu tượng ⓘ thì hiện giải thích |
+| AN-03 | P1 | Overview: 7 bảng top | Xem các bảng Top search queries, Top clicked products (có ảnh), Top searches with no results, Top bought products, Top filters, Top filter values, Top viewed collections | Đủ 7 bảng, mỗi bảng tối đa 5 dòng. Bảng chưa có dữ liệu ghi "No data for this period yet." |
+| AN-04 | P1 | Ghi nhận hành vi | Trên storefront: search 5 lần (1 lần không ra kết quả), click 2 sản phẩm từ trang search, mở 1 collection và click 1 sản phẩm trong đó, chọn 2 giá trị filter cùng lúc, bấm 1 gợi ý trong ô search → đợi 10 phút | Overview tăng tương ứng. Search → **Queries / 0 results / Suggestions / Filter value combinations** và Collections → **Collections** có dòng mới |
+| AN-05 | P2 | Mua hàng sau search và sau collection | (a) Search → thêm vào giỏ → thanh toán bằng Bogus Gateway trong 30 phút. (b) Phiên mới: chỉ mở một collection → mua | (a) Từ khoá có "Products bought", "Revenue", CR tăng; sản phẩm có trong Top bought. (b) Collection có "Products bought", "Revenue". Không tăng thì kiểm tra web pixel của app đã bật (Settings → Customer events) |
+| AN-06 | P2 | Bảng: tìm, sắp xếp, phân trang | Ở mọi tab của Search và Collections: gõ vào ô **Find**, đổi "Sort by" và chiều sắp xếp, sang trang sau | Lọc theo cột chữ đầu tiên. Sắp xếp đúng. Phân trang 25 dòng/trang. Đổi tab thì ô tìm và trang về mặc định. CTR/CR có dòng giải thích dưới bảng |
+| AN-07 | P2 | 0 results | Tab **0 results** | Có khối "Suggested synonyms" (nếu có gợi ý) kèm **Add synonym** / **Dismiss**. Mỗi dòng có **Add synonym** / **Add redirect** mở Merchandising với từ khoá điền sẵn (xem `KB-06`) |
+| AN-08 | P2 | Product performance | Tab **Product performance** | Ảnh và tên sản phẩm. Các cột Clicks from search, Clicks from collections, Add to carts, Products bought, Revenue |
+| AN-09 | P2 | Export CSV | Export → bấm **Download CSV** ở từng báo cáo | Tải file `<report>_<from>_<to>.csv`. Mở bằng Excel đúng dấu tiếng Việt. Cột tiền ghi đơn vị (USD), cột % ghi (%). Từ khoá bắt đầu bằng `=` hiện thành chữ, không thành công thức |
+| AN-10 | P3 | Hiệu năng | Mở Overview lần đầu | Trang hiện ngay. Biểu đồ tải sau một chút (thư viện biểu đồ chỉ tải ở trang này). Các trang admin khác không chậm đi |
 
 ### 5.17. Admin: Plans, Developers, Help (`PL`, `DV`, `HP`)
 
