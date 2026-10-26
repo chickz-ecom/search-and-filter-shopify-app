@@ -316,6 +316,43 @@ export const vi: Record<MessageKey, string> = {
   "analytics.suggest.approve": "Thêm từ đồng nghĩa",
   "analytics.suggest.dismiss": "Bỏ qua",
   "analytics.suggest.approved": "Đã thêm từ đồng nghĩa",
+  "nav.help": "Trợ giúp",
+  "help.title": "Trợ giúp",
+  "help.setup.heading": "Cài đặt trong 4 bước",
+  "help.setup.embed": "1. Bật app embed",
+  "help.setup.embed.desc":
+    "Thêm tìm kiếm nhanh vào ô tìm kiếm của cửa hàng. Cửa hàng không thay đổi gì cho tới khi bạn bật.",
+  "help.setup.search": "2. Thêm block Search results",
+  "help.setup.search.desc":
+    "Hiển thị kết quả, bộ lọc và sắp xếp ở trang tìm kiếm. Kết quả gốc của theme vẫn là phương án dự phòng.",
+  "help.setup.collection": "3. Thêm block Collection filters",
+  "help.setup.collection.desc": "Thêm bộ lọc và sắp xếp cho trang bộ sưu tập.",
+  "help.setup.configure": "4. Điều chỉnh tìm kiếm và bộ lọc",
+  "help.setup.configure.desc":
+    "Chọn trường nào quan trọng nhất, bộ lọc nào hiển thị và cách sắp xếp sản phẩm.",
+  "help.openThemeEditor": "Mở trình chỉnh sửa theme",
+  "help.openSettings": "Mở cài đặt Tìm kiếm",
+  "help.faq.heading": "Câu hỏi thường gặp",
+  "help.faq.native.q": "Khách thấy gì nếu app tạm không hoạt động?",
+  "help.faq.native.a":
+    "Kết quả tìm kiếm và bộ sưu tập gốc của theme. Block hiển thị chúng trước rồi app mới tăng cường, nên khách luôn thấy sản phẩm.",
+  "help.faq.sync.q": "Thay đổi sản phẩm xuất hiện trong tìm kiếm nhanh thế nào?",
+  "help.faq.sync.a":
+    "Thường trong vòng một phút. Bạn xem tiến độ và chạy đồng bộ toàn bộ ở trang Đồng bộ.",
+  "help.faq.prices.q": "Giá có hiển thị theo tiền tệ của khách không?",
+  "help.faq.prices.a":
+    "Có. Giá lấy từ Shopify theo thị trường của khách, gồm cả giá cố định theo thị trường. Nếu chưa xác nhận được giá, sản phẩm hiện “Xem giá” thay vì số sai.",
+  "help.faq.theme.q": "App có chạy với theme của tôi không?",
+  "help.faq.theme.a":
+    "Có, với theme Online Store 2.0 qua app block và app embed. Màu sắc và văn bản đổi ở mục Giao diện.",
+  "help.faq.uninstall.q": "Điều gì xảy ra khi tôi gỡ app?",
+  "help.faq.uninstall.a":
+    "Hãy gỡ các block khỏi theme trước. Sau khi gỡ, cửa hàng quay về tìm kiếm của Shopify và app xoá dữ liệu tìm kiếm của bạn.",
+  "help.contact.heading": "Liên hệ hỗ trợ",
+  "help.contact.desc":
+    "Chúng tôi thường trả lời trong một ngày làm việc. Hãy ghi địa chỉ cửa hàng và việc bạn đang làm.",
+  "help.contact.email": "Gửi email hỗ trợ",
+  "help.contact.docs": "Tài liệu developer",
   "sorting.title": "Sắp xếp",
   "sorting.options.heading": "Kiểu sắp xếp",
   "sorting.options.desc": "Chọn kiểu sắp xếp khách được thấy, đổi tên và thứ tự hiển thị.",

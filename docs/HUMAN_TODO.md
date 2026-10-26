@@ -142,3 +142,12 @@
       `redirect_urls`, URL app proxy trong shopify.app.toml rồi `shopify app deploy`.
 - [ ] M4. Điền secret thật (Partner Dashboard, Typesense, CDN, Partner API) vào nền tảng; `METRICS_TOKEN`,
       `INTERNAL_API_SECRET` sinh ngẫu nhiên. Đặt `SEARCH_API_PUBLIC_URL` = URL CDN trước khi merchant đầu tiên cài.
+
+## N. Hồ sơ App Store (task 6.5)
+- [ ] N1. Điền [COMPANY NAME], địa chỉ, email hỗ trợ, nhà cung cấp hosting/CDN + vùng trong `docs/app-store/privacy-policy.md`,
+      publish ở URL công khai; đặt `SUPPORT_EMAIL`; cập nhật `supportEmail`/`privacyPolicyUrl` trong `docs/app-store/listing.json`.
+- [ ] N2. Dev store demo (sản phẩm mẫu, embed + 2 block bật) → `demoStoreUrl`; tài khoản/collaborator cho reviewer theo
+      `docs/app-store/review-instructions.md`.
+- [ ] N3. Quay video theo kịch bản (review-instructions.md) hoặc ảnh feature 1600×900; chụp lại 6 ảnh trên admin THẬT
+      (`scripts/app-store-screenshots.ts` dùng fixture — thay bằng ảnh store demo nếu khác); icon app 1200×1200.
+- [ ] N4. Dịch listing sang tiếng Việt (nếu chọn ngôn ngữ listing vi) và nhập vào form nộp App Store.

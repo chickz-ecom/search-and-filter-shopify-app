@@ -12,6 +12,15 @@ describe("search-api http utils", () => {
     expect((await rl.hit("ip:1", 3)).allowed).toBe(true);
   });
 
+  it("forgets client IPs from past windows in the in-process fallback (privacy, memory)", async () => {
+    let t = 0;
+    const rl = new RateLimiter(undefined, "x", () => t);
+    for (let i = 0; i <= 10_000; i++) await rl.hit(`ip:${i}`, 5);
+    t = 61_000;
+    await rl.hit("ip:new", 5);
+    expect((rl as unknown as { local: Map<string, unknown> }).local.size).toBe(1);
+  });
+
   it("micro-caches with TTL, LRU eviction and prefix purge", () => {
     let t = 0;
     const c = new MicroCache<number>(2, 100, () => t);

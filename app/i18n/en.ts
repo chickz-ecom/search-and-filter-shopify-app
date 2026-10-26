@@ -317,6 +317,43 @@ export const en = {
   "analytics.suggest.approve": "Add synonym",
   "analytics.suggest.dismiss": "Dismiss",
   "analytics.suggest.approved": "Synonym added",
+  "nav.help": "Help",
+  "help.title": "Help",
+  "help.setup.heading": "Set up in 4 steps",
+  "help.setup.embed": "1. Turn on the app embed",
+  "help.setup.embed.desc":
+    "Adds instant search to your store's search box. Nothing changes on your store until you turn it on.",
+  "help.setup.search": "2. Add the Search results block",
+  "help.setup.search.desc":
+    "Shows results, filters and sorting on your search page. Your theme's own results stay as a fallback.",
+  "help.setup.collection": "3. Add the Collection filters block",
+  "help.setup.collection.desc": "Adds filters and sorting to your collection pages.",
+  "help.setup.configure": "4. Adjust search and filters",
+  "help.setup.configure.desc":
+    "Choose which fields count most, which filters appear and how products are sorted.",
+  "help.openThemeEditor": "Open theme editor",
+  "help.openSettings": "Open Search settings",
+  "help.faq.heading": "Common questions",
+  "help.faq.native.q": "What do shoppers see if the app is unavailable?",
+  "help.faq.native.a":
+    "Your theme's own search and collection results. The blocks show them first and the app enhances them, so shoppers always see products.",
+  "help.faq.sync.q": "How fast do product changes appear in search?",
+  "help.faq.sync.a":
+    "Usually within a minute. You can check progress and run a full sync on the Sync page.",
+  "help.faq.prices.q": "Are prices shown in the shopper's currency?",
+  "help.faq.prices.a":
+    "Yes. Prices come from Shopify for the shopper's market, including fixed market prices. If a price can't be confirmed, the product shows “View price” instead of a wrong amount.",
+  "help.faq.theme.q": "Does it work with my theme?",
+  "help.faq.theme.a":
+    "It works with Online Store 2.0 themes through app blocks and the app embed. Colors and texts can be changed under Appearance.",
+  "help.faq.uninstall.q": "What happens if I uninstall?",
+  "help.faq.uninstall.a":
+    "Remove the blocks from your theme first. After uninstalling, your store goes back to Shopify's search, and the app deletes your search data.",
+  "help.contact.heading": "Contact support",
+  "help.contact.desc":
+    "We usually reply within one business day. Include your store address and what you were trying to do.",
+  "help.contact.email": "Email support",
+  "help.contact.docs": "Developer docs",
   "sorting.title": "Sorting",
   "sorting.options.heading": "Sort options",
   "sorting.options.desc": "Choose which sort options shoppers see, rename them and set the order.",

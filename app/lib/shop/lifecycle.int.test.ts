@@ -105,4 +105,21 @@ describe.skipIf(!up)("uninstall & compliance (1.10)", () => {
       await testDb().webhookReceipt.findUnique({ where: { webhookId: `old-${shop.id}` } }),
     ).toBeNull();
   });
+
+  it("keeps anonymous analytics for 13 months only (privacy policy)", async () => {
+    const domain = `ret-${Date.now()}.myshopify.com`;
+    const { shop } = await ensureShop(testDb(), domain);
+    // Đồng hồ thật: DB test dùng chung, đồng hồ tương lai sẽ xoá dữ liệu của test khác chạy song song.
+    const day = (daysAgo: number) => new Date(Date.now() - daysAgo * 24 * 3600_000);
+    await testDb().analyticsDaily.createMany({
+      data: [
+        { shopId: shop.id, date: day(401), query: "old", searches: 1 },
+        { shopId: shop.id, date: day(10), query: "recent", searches: 1 },
+      ],
+    });
+    await cleanup({ db: testDb(), engine, redis: testRedis() });
+    const left = await testDb().analyticsDaily.findMany({ where: { shopId: shop.id } });
+    expect(left.map((r) => r.query)).toEqual(["recent"]);
+    await testDb().shop.delete({ where: { id: shop.id } });
+  });
 });

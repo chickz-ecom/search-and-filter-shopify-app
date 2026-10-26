@@ -39,3 +39,4 @@ pnpm-lock.yaml
 # Bundle storefront build từ packages/* (npm run build:storefront; chạy trước dev/deploy)
 /extensions/search-theme/assets/searchapp-*.js
 /e2e/fixtures/admin/
+/e2e/fixtures/admin-listing/

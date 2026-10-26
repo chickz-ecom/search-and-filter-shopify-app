@@ -44,6 +44,7 @@ export default function App() {
         <s-link href="/app/sync">{t("nav.sync")}</s-link>
         <s-link href="/app/developers">{t("nav.developers")}</s-link>
         <s-link href="/app/plans">{t("nav.plans")}</s-link>
+        <s-link href="/app/help">{t("nav.help")}</s-link>
       </s-app-nav>
       <Outlet />
     </AppProvider>

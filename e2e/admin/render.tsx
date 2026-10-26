@@ -8,6 +8,7 @@ import { AnalyticsView } from "../../app/components/AnalyticsView";
 import { AppearanceView } from "../../app/components/AppearanceView";
 import { DevelopersView } from "../../app/components/DevelopersView";
 import { FiltersView } from "../../app/components/FiltersView";
+import { HelpView } from "../../app/components/HelpView";
 import { HomeView } from "../../app/components/HomeView";
 import { MerchIndexView, MerchListView } from "../../app/components/MerchViews";
 import { PlansView } from "../../app/components/PlansView";
@@ -35,15 +36,28 @@ const status = {
   running: null,
   lastError: null,
 };
-const kpis = {
-  searches: 182_340,
-  zeroResultRate: 0.043,
-  clicks: 51_002,
-  ctr: 0.279,
-  addToCarts: 8_210,
-  revenue: 1_284_220.5,
-  previous: { searches: 160_000, zeroResultRate: 0.05, ctr: 0.25, revenue: 1_000_000 },
-};
+// LISTING=1: số liệu mẫu vừa phải cho ảnh App Store (không con số gây hiểu là cam kết kết quả); mặc định: số lớn
+// để thử tràn layout.
+const LISTING = process.env.LISTING === "1";
+const kpis = LISTING
+  ? {
+      searches: 4_820,
+      zeroResultRate: 0.06,
+      clicks: 1_310,
+      ctr: 0.27,
+      addToCarts: 212,
+      revenue: 9_840,
+      previous: { searches: 4_400, zeroResultRate: 0.08, ctr: 0.25, revenue: 9_100 },
+    }
+  : {
+      searches: 182_340,
+      zeroResultRate: 0.043,
+      clicks: 51_002,
+      ctr: 0.279,
+      addToCarts: 8_210,
+      revenue: 1_284_220.5,
+      previous: { searches: 160_000, zeroResultRate: 0.05, ctr: 0.25, revenue: 1_000_000 },
+    };
 const metafieldDefs = [
   {
     namespace: "custom",
@@ -53,10 +67,22 @@ const metafieldDefs = [
   },
   { namespace: "reviews", key: "rating", name: "Rating", type: "rating" },
 ];
-const queries = Array.from(
-  { length: 12 },
-  (_, i) => `long search term number ${i + 1} with extra words`,
-);
+const queries = LISTING
+  ? [
+      "vegan leather tote",
+      "rain jacket kids",
+      "gift card",
+      "linen trousers",
+      "merino socks",
+      "wide fit sneakers",
+      "summer dress",
+      "black jeans",
+      "wool beanie",
+      "canvas backpack",
+      "silk scarf",
+      "running shorts",
+    ]
+  : Array.from({ length: 12 }, (_, i) => `long search term number ${i + 1} with extra words`);
 
 function pages(locale: Locale): Record<string, ReactElement> {
   return {
@@ -202,7 +228,8 @@ function pages(locale: Locale): Record<string, ReactElement> {
         ]}
         onSuggestion={noop}
         report={{
-          range: 30,
+          // Select chưa hydrate hiện option đầu (7 ngày) trong HTML tĩnh → ảnh listing dùng 7 cho khớp.
+          range: LISTING ? 7 : 30,
           kpis,
           topQueries: queries.map((query, i) => ({
             query,
@@ -270,6 +297,14 @@ function pages(locale: Locale): Record<string, ReactElement> {
         onCopy={noop}
       />
     ),
+    help: (
+      <HelpView
+        locale={locale}
+        links={themeEditorLinks(shopDomain, "key123")}
+        supportEmail="support@searchapp.example"
+        docsUrl="https://docs.example-app-domain.com"
+      />
+    ),
     plans: (
       <PlansView
         locale={locale}
@@ -292,7 +327,7 @@ function pages(locale: Locale): Record<string, ReactElement> {
   };
 }
 
-const out = "e2e/fixtures/admin";
+const out = LISTING ? "e2e/fixtures/admin-listing" : "e2e/fixtures/admin";
 mkdirSync(out, { recursive: true });
 const names: string[] = [];
 for (const locale of ["en", "vi"] as const) {

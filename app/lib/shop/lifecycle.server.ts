@@ -82,17 +82,29 @@ export async function redactShop(
   return { shopFound: true, deletedSessions: sessions.count };
 }
 
-/** Dọn định kỳ: receipt > 7 ngày; shop gỡ > 7 ngày mà chưa nhận shop/redact (lưới an toàn). */
+/** Lưu analytics tổng hợp (ẩn danh) tối đa 13 tháng — đủ so sánh cùng kỳ năm trước (chính sách quyền riêng tư). */
+export const ANALYTICS_RETENTION_DAYS = 400;
+
+/** Dọn định kỳ: receipt > 7 ngày; analytics > 13 tháng; shop gỡ > 7 ngày mà chưa nhận shop/redact (lưới an toàn). */
 export async function cleanup(
   deps: { db: Db; engine: SearchEngine; redis?: Redis },
   now = new Date(),
 ) {
   const week = new Date(now.getTime() - 7 * 24 * 3600_000);
   const receipts = await deps.db.webhookReceipt.deleteMany({ where: { receivedAt: { lt: week } } });
+  const retention = new Date(now.getTime() - ANALYTICS_RETENTION_DAYS * 24 * 3600_000);
+  const [daily, usage] = await Promise.all([
+    deps.db.analyticsDaily.deleteMany({ where: { date: { lt: retention } } }),
+    deps.db.analyticsUsageDaily.deleteMany({ where: { date: { lt: retention } } }),
+  ]);
   const stale = await deps.db.shop.findMany({
     where: { uninstalledAt: { lt: week } },
     select: { domain: true },
   });
   for (const s of stale) await redactShop(s.domain, deps);
-  return { receipts: receipts.count, redacted: stale.length };
+  return {
+    receipts: receipts.count,
+    analyticsRows: daily.count + usage.count,
+    redacted: stale.length,
+  };
 }

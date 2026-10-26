@@ -28,6 +28,9 @@ export class RateLimiter {
       const cur = this.local.get(key);
       count = cur && cur.window === window ? cur.count + 1 : 1;
       this.local.set(key, { window, count });
+      // Không giữ IP quá cửa sổ hiện tại (chính sách quyền riêng tư: tối đa ~2 phút) và không phình bộ nhớ.
+      if (this.local.size > 10_000)
+        for (const [k, v] of this.local) if (v.window < window) this.local.delete(k);
     }
     return { allowed: count <= limit, remaining: Math.max(0, limit - count), resetSec };
   }

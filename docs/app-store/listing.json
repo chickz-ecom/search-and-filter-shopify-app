@@ -1,0 +1,31 @@
+{
+  "appName": "Search & Filter",
+  "subtitle": "Fast product search, filters and sorting you control",
+  "introduction": "Help shoppers find products faster with instant search, flexible filters and sorting you control.",
+  "details": "Replace your theme's search with instant results, typo tolerance and synonyms. Add filters by brand, price, size, color, metafields and more to search and collection pages, and choose how products are sorted. Pin, hide or boost products for any search. Prices follow each shopper's market. If the app is ever unavailable, your theme's own results keep showing. Developers get a JavaScript SDK and JSON API for custom sections.",
+  "features": [
+    "Instant search with typo tolerance, synonyms and redirects",
+    "Filters for price, brand, options, metafields and availability",
+    "Sorting options you can rename, reorder and set per collection",
+    "Pin, hide or boost products for specific searches",
+    "Prices shown in each shopper's currency and market",
+    "Analytics for top and zero-result searches, with one-click fixes",
+    "AI search that understands meaning on Pro plans and above"
+  ],
+  "languages": ["English", "Vietnamese"],
+  "categories": ["Store design - Search and filters"],
+  "worksWith": ["Online Store 2.0 themes", "Shopify Markets"],
+  "screenshots": [
+    { "file": "screenshots/01-home.png", "alt": "Home page with a setup guide, app embed status and search activity for the last 7 days" },
+    { "file": "screenshots/02-search-settings.png", "alt": "Search settings with per-field weights and a live search preview" },
+    { "file": "screenshots/03-filters.png", "alt": "Filter builder listing price, brand, size and color filters with display options" },
+    { "file": "screenshots/04-merchandising.png", "alt": "Merchandising rules that pin, hide or boost products for searches and collections" },
+    { "file": "screenshots/05-appearance.png", "alt": "Appearance editor with colors and texts next to a live storefront preview" },
+    { "file": "screenshots/06-analytics.png", "alt": "Analytics with suggested synonyms for searches that returned no results" }
+  ],
+  "featureMedia": { "type": "video", "script": "review-instructions.md#feature-video-script" },
+  "demoStoreUrl": "TODO: dev store search page (HUMAN_TODO N2)",
+  "supportEmail": "TODO: SUPPORT_EMAIL (HUMAN_TODO N1)",
+  "privacyPolicyUrl": "TODO: publish privacy-policy.md (HUMAN_TODO N1)",
+  "pricing": "Shopify App Pricing: Free (under 100 products), Starter $9 (1k), Growth $19 (5k), Pro $49 (30k, AI search, headless API), Scale $99 (100k), Enterprise $199 (300k). Configure in the Partner Dashboard (HUMAN_TODO J1)."
+}
