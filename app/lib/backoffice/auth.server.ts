@@ -12,7 +12,7 @@ export { MIN_PASSWORD };
 // Back-office (8.2): đăng nhập riêng cho nhân viên vận hành (không dùng phiên Shopify).
 // - Mật khẩu scrypt (N=2^15) + salt ngẫu nhiên; so sánh thời gian hằng.
 // - Sai 5 lần → khoá 15 phút; email không có / bị khoá / bị tắt → cùng thông báo "invalid".
-// - Cookie riêng (HttpOnly, SameSite=Strict, Path=/admin, 12 giờ) ký bằng ADMIN_SESSION_SECRET;
+// - Cookie riêng (HttpOnly, SameSite=Strict, Path=/, 12 giờ) ký bằng ADMIN_SESSION_SECRET;
 //   thiếu secret → back-office tắt (404). sessionVersion tăng (đổi mật khẩu, tắt tài khoản) → phiên cũ hết hiệu lực.
 
 const scrypt = promisify(scryptCb) as (
@@ -122,7 +122,9 @@ function sessions() {
       name: "__sa_admin",
       httpOnly: true,
       sameSite: "strict",
-      path: "/admin",
+      // Path=/ chứ không /admin: React Router tải dữ liệu trang qua "/admin.data" (single fetch) — không nằm trong
+      // path /admin → cookie không được gửi → sau khi đăng nhập bị đẩy về trang login. Tên cookie riêng nên không lẫn.
+      path: "/",
       secure: process.env.NODE_ENV === "production",
       secrets: [secret],
       maxAge: 12 * 3600,
