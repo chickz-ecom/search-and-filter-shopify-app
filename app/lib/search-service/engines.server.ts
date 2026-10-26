@@ -1,6 +1,6 @@
 import { env } from "../env.server";
 import type { SearchEngine } from "../search/engine";
-import { TypesenseEngine } from "../search/typesense-engine";
+import { parseTypesenseNodes, TypesenseEngine } from "../search/typesense-engine";
 import type { ShopSearchContext } from "./context.server";
 
 // Engine cho đường đọc (search-api, app proxy): scoped key theo shop (chỉ đọc collection của shop đó);
@@ -14,6 +14,7 @@ function node() {
     host: e.TYPESENSE_HOST,
     port: e.TYPESENSE_PORT,
     protocol: e.TYPESENSE_PROTOCOL,
+    nodes: e.TYPESENSE_NODES ? parseTypesenseNodes(e.TYPESENSE_NODES) : undefined,
   } as const;
 }
 

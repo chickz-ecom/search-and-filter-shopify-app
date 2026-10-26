@@ -1,6 +1,6 @@
 import { env } from "../env.server";
 import type { SearchEngine } from "./engine";
-import { TypesenseEngine } from "./typesense-engine";
+import { parseTypesenseNodes, TypesenseEngine } from "./typesense-engine";
 
 export * from "./engine";
 export * from "./names";
@@ -16,6 +16,7 @@ export function getEngine(): SearchEngine {
       protocol: e.TYPESENSE_PROTOCOL,
       apiKey: e.TYPESENSE_API_KEY,
       searchOnlyKey: e.TYPESENSE_SEARCH_ONLY_KEY,
+      nodes: e.TYPESENSE_NODES ? parseTypesenseNodes(e.TYPESENSE_NODES) : undefined,
     });
   }
   return engine;

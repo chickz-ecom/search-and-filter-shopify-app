@@ -9,6 +9,8 @@ import {
   type SyncJobData,
 } from "../app/lib/queue/queue.server";
 import { refreshAllPlans } from "../app/lib/billing/subscription.server";
+import { env } from "../app/lib/env.server";
+import { snapshotEngine } from "../app/lib/search/backup.server";
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { getEngine } from "../app/lib/search";
 import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
@@ -244,6 +246,8 @@ export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
       return rollupAnalytics(redis(), prisma);
     case "refresh-plans":
       return refreshAllPlans(prisma);
+    case "typesense-snapshot":
+      return snapshotEngine(getEngine(), env().TYPESENSE_SNAPSHOT_DIR);
     case "tick-cleanup":
       return cleanup({ db: prisma, engine: getEngine(), redis: redis() });
     default: {

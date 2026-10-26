@@ -34,7 +34,8 @@ export type MaintJobData =
   | { type: "tick-nightly" }
   | { type: "tick-cleanup" }
   | { type: "rollup-analytics" }
-  | { type: "refresh-plans" };
+  | { type: "refresh-plans" }
+  | { type: "typesense-snapshot" };
 
 let syncQueue: Queue<SyncJobData> | undefined;
 let maintQueue: Queue<MaintJobData> | undefined;

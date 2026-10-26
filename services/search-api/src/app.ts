@@ -59,6 +59,8 @@ export type SearchApiDeps = {
   /** GET /metrics (Prometheus) yêu cầu `Authorization: Bearer <token>`; trống → tắt endpoint. */
   metricsToken?: string;
   metrics?: Registry;
+  /** Nhân hạn mức request/phút theo gói (mùa cao điểm, vd. Black Friday = 10). Mặc định 1. */
+  shopRpmMultiplier?: number;
 };
 
 type Vars = {
@@ -217,7 +219,10 @@ export function createSearchApi(deps: SearchApiDeps) {
       if (decision !== "ok")
         return c.json({ error: `headless_${decision}`, message: HEADLESS_ERRORS[decision] }, 403);
     }
-    const shopRate = await limiter.hit(`shop:${ctx.shop.id}`, planById(ctx.shop.plan).rpm);
+    const shopRate = await limiter.hit(
+      `shop:${ctx.shop.id}`,
+      planById(ctx.shop.plan).rpm * (deps.shopRpmMultiplier ?? 1),
+    );
     if (!shopRate.allowed) {
       c.header("Retry-After", String(shopRate.resetSec));
       return c.json({ error: "rate_limited" }, 429);

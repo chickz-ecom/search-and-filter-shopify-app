@@ -116,6 +116,10 @@ export async function buildShopContext(
 
 export type ContextDeps = { db: Db; engine: SearchEngine; redis?: Redis; now?: () => number };
 
+/** Single-flight: nhiều request cùng shop lúc cache nguội chỉ dựng ngữ cảnh MỘT lần (tải 6.2: hàng trăm request
+ *  đồng thời từng làm cạn pool Postgres — "too many clients"). */
+const inflight = new Map<string, Promise<ShopSearchContext | null>>();
+
 export async function getShopContext(
   domain: string,
   deps: ContextDeps,
@@ -123,6 +127,18 @@ export async function getShopContext(
   const now = deps.now?.() ?? Date.now();
   const hit = memory.get(domain);
   if (hit && now - hit.at < MEMORY_TTL_MS) return hit.ctx;
+  const pending = inflight.get(domain);
+  if (pending) return pending;
+  const p = loadShopContext(domain, deps, now).finally(() => inflight.delete(domain));
+  inflight.set(domain, p);
+  return p;
+}
+
+async function loadShopContext(
+  domain: string,
+  deps: ContextDeps,
+  now: number,
+): Promise<ShopSearchContext | null> {
   if (deps.redis) {
     const raw = await deps.redis.get(cacheKey(domain)).catch(() => null);
     if (raw) {

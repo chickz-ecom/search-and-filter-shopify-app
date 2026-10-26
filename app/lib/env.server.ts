@@ -10,6 +10,10 @@ const EnvSchema = z.object({
   TYPESENSE_PORT: z.coerce.number().int().positive().default(8108),
   TYPESENSE_PROTOCOL: z.enum(["http", "https"]).default("http"),
   TYPESENSE_API_KEY: z.string().min(1),
+  // HA (task 6.2): danh sách node "https://ts1.example.com:443,https://ts2…" — có thì thay TYPESENSE_HOST/PORT/PROTOCOL.
+  TYPESENSE_NODES: z.string().default(""),
+  // Backup (6.2): thư mục snapshot TRÊN máy Typesense, vd. /data/snapshots → job đêm ghi /data/snapshots/YYYY-MM-DD.
+  TYPESENSE_SNAPSHOT_DIR: z.string().default(""),
   TYPESENSE_SEARCH_ONLY_KEY: z.string().optional(),
   SEARCH_API_PORT: z.coerce.number().int().positive().default(8787),
   SEARCH_API_PUBLIC_URL: z.string().default("http://localhost:8787"),

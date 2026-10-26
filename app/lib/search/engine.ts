@@ -145,6 +145,8 @@ export type ScopedKeyParams = {
 
 export interface SearchEngine {
   health(): Promise<boolean>;
+  /** Snapshot toàn bộ dữ liệu engine vào thư mục TRÊN MÁY engine (backup, task 6.2). */
+  snapshot?(path: string): Promise<void>;
 
   createCollection(schema: CollectionSchema): Promise<void>;
   /** Thêm field mới vào collection có sẵn (không cần re-index nếu field optional). */

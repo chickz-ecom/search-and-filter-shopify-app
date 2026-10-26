@@ -16,6 +16,25 @@ import {
   type SynonymItem,
 } from "./engine";
 
+/** "https://a:443,http://b:8108" → node list cho client Typesense (HA). Sai định dạng → lỗi sớm lúc khởi động. */
+export function parseTypesenseNodes(spec: string): NonNullable<TypesenseConfig["nodes"]> {
+  return spec
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => {
+      const u = new URL(s);
+      if (u.protocol !== "http:" && u.protocol !== "https:")
+        throw new Error(`Invalid TYPESENSE_NODES entry: ${s}`);
+      const protocol = u.protocol === "https:" ? "https" : "http";
+      return {
+        host: u.hostname,
+        port: Number(u.port || (protocol === "https" ? 443 : 80)),
+        protocol,
+      };
+    });
+}
+
 export type TypesenseConfig = {
   host: string;
   port: number;
@@ -218,6 +237,16 @@ export class TypesenseEngine implements SearchEngine {
     } catch {
       return false;
     }
+  }
+
+  async snapshot(path: string): Promise<void> {
+    // POST /operations/snapshot?snapshot_path=… (đã thử trên Typesense 30.1: {"success":true}).
+    const r = await wrap(
+      this.c.operations.perform("snapshot", { snapshot_path: path }),
+      "snapshot",
+    );
+    if (!(r as { success?: boolean })?.success)
+      throw new Error(`Typesense snapshot failed: ${JSON.stringify(r)}`);
   }
 
   async createCollection(schema: CollectionSchema): Promise<void> {

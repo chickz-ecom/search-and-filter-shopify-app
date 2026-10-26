@@ -5,7 +5,7 @@ import {
   metafieldEngineType,
   schemaNeedsReindex,
 } from "./index-schema";
-import { toEngineFieldForTest } from "./typesense-engine";
+import { parseTypesenseNodes, toEngineFieldForTest } from "./typesense-engine";
 import { isShopResource, nextVersion, productAlias, productCollection } from "./names";
 import { fromTypesenseResult, toTypesenseSearchParams } from "./typesense-engine";
 
@@ -138,5 +138,20 @@ describe("AI search schema and params (5.1)", () => {
       hits: [{ document: { id: "1" }, vector_distance: 0.4 }],
     });
     expect(r.hits[0].vectorDistance).toBe(0.4);
+  });
+});
+
+describe("Typesense HA nodes (6.2)", () => {
+  it("parses a node list with default ports and rejects other schemes", () => {
+    expect(
+      parseTypesenseNodes(
+        "https://ts1.example.com, http://10.0.0.2:8108 ,https://ts3.example.com:8443",
+      ),
+    ).toEqual([
+      { host: "ts1.example.com", port: 443, protocol: "https" },
+      { host: "10.0.0.2", port: 8108, protocol: "http" },
+      { host: "ts3.example.com", port: 8443, protocol: "https" },
+    ]);
+    expect(() => parseTypesenseNodes("ftp://x")).toThrow(/Invalid TYPESENSE_NODES/);
   });
 });

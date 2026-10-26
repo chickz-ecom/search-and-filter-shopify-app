@@ -72,6 +72,15 @@ await maint.upsertJobScheduler(
   { name: "rollup-analytics", data: { type: "rollup-analytics" } },
 );
 
+// Backup Typesense (6.2): chỉ khi cấu hình thư mục snapshot; sidecar đẩy thư mục lên object storage (docs/ops).
+if (env().TYPESENSE_SNAPSHOT_DIR) {
+  await maint.upsertJobScheduler(
+    "typesense-snapshot",
+    { pattern: "30 2 * * *", tz: "UTC" },
+    { name: "typesense-snapshot", data: { type: "typesense-snapshot" } },
+  );
+}
+
 console.log(`[worker] started (sync concurrency ${concurrency})`);
 
 async function shutdown() {

@@ -126,3 +126,8 @@
 - [ ] L1. (6.1) Dựng Prometheus + Alertmanager (hoặc Grafana Cloud) với `deploy/observability/{prometheus.yml,alerts.yml}`;
       đặt cùng `METRICS_TOKEN` cho search-api, worker và file `/etc/prometheus/metrics_token`; nối alert `severity: page`
       tới kênh trực (PagerDuty/Slack).
+- [ ] L2. (6.2) Production: Typesense HA 3 node (Typesense Cloud HA hoặc self-host theo `deploy/typesense-ha`), đặt
+      `TYPESENSE_NODES`; CDN trước search-api; trước Black Friday đặt `SEARCH_API_SHOP_RPM_MULTIPLIER=10` và scale theo
+      bảng ở docs/ops/load-and-ha.md. Chạy lại `scripts/load-test-search.ts --rps 2000 --workers 8 --zipf` trên hạ tầng thật.
+- [ ] L3. (6.2) Backup: bật PITR Postgres (14 ngày), Redis AOF, đặt `TYPESENSE_SNAPSHOT_DIR` + sidecar đẩy snapshot lên
+      object storage (S3/GCS, giữ 14 bản). Diễn tập khôi phục (snapshot và `scripts/reindex-all.ts --dry-run`) mỗi quý.

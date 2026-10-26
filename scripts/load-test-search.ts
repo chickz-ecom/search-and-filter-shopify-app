@@ -1,6 +1,9 @@
 // Load test search-api (DoD 2.1: 200 RPS, p95 < 120 ms; task 6.2: Black Friday ×10).
 //   npx tsx scripts/load-test-search.ts --products 30000 --rps 200 --duration 20 [--queries 300] [--connections 50]
-// Seed shop tạm (DB dev + Typesense), chạy server trong process, bắn tải, in p50/p95/p99 rồi dọn sạch.
+//   Black Friday ×10: --rps 2000 --workers 8 --queries 3000 --zipf  (search-api nhiều process, truy vấn phân bố Zipf
+//   như thật: vài truy vấn rất phổ biến + đuôi dài; KHÔNG tính CDN — đây là tải tới origin).
+// Seed shop tạm (DB dev + Typesense), chạy server (cluster nếu --workers > 1), bắn tải, in p50/p95/p99 rồi dọn sạch.
+import cluster from "node:cluster";
 import { serve } from "@hono/node-server";
 import { PrismaClient } from "@prisma/client";
 import autocannon from "autocannon";
@@ -27,6 +30,10 @@ const { values: a } = parseArgs({
     connections: { type: "string", default: "50" },
     port: { type: "string", default: "8799" },
     keep: { type: "boolean", default: false },
+    workers: { type: "string", default: "1" },
+    zipf: { type: "boolean", default: false },
+    // Đối chứng: chỉ /v1/config (cache trong process, không chạm Typesense) → đo overhead máy tải/Node.
+    "config-only": { type: "boolean", default: false },
   },
 });
 
@@ -43,7 +50,10 @@ const engine = new TypesenseEngine({
   apiKey: process.env.TYPESENSE_API_KEY ?? "dev-typesense-key",
   connectionTimeoutSeconds: 10,
 });
-const db = new PrismaClient();
+// Giống server.ts của search-api: pool nhỏ mỗi process.
+const dbUrl = new URL(process.env.DATABASE_URL ?? "");
+if (!dbUrl.searchParams.has("connection_limit")) dbUrl.searchParams.set("connection_limit", "5");
+const db = new PrismaClient({ datasourceUrl: dbUrl.toString() });
 
 function doc(i: number): ProductDoc {
   const w = (k: number) => WORDS[(i * 7 + k * 3) % WORDS.length];
@@ -121,15 +131,19 @@ async function main() {
   }
   await importInBatches(engine, pname, docs());
 
-  const app = createSearchApi({
-    db,
-    engineFor: () => engine,
-    defaultEngine: engine,
-    ipRpm: 1_000_000,
-  });
-  // Rate limit theo shop: gói free 600 rpm → nâng tạm cho load test.
+  // Rate limit theo shop: gói free 600 rpm → nâng tạm cho load test (×10 vượt cả rpm enterprise → feature riêng).
   await db.shop.update({ where: { id: shop.id }, data: { plan: "enterprise" } });
-  const server = serve({ fetch: app.fetch, port: Number(a.port) });
+  const W = Number(a.workers);
+  let server: { close(): void };
+  if (W > 1) {
+    // Node cluster: các process chia nhau cổng (round-robin) — giống chạy N replica sau load balancer.
+    let ready = 0;
+    const workers = Array.from({ length: W }, () => cluster.fork({ LOAD_PORT: a.port }));
+    await new Promise<void>((res) =>
+      workers.forEach((w) => w.on("message", (m) => m === "ready" && ++ready === W && res())),
+    );
+    server = { close: () => workers.forEach((w) => w.kill()) };
+  } else server = serve({ fetch: serverApp().fetch, port: Number(a.port) });
   const base = `http://127.0.0.1:${a.port}`;
   const common = `shop=${domain}&key=${shop.publicKey}`;
   const Q = Number(a.queries);
@@ -163,7 +177,22 @@ async function main() {
   for (const p of paths.slice(0, 20))
     await fetch(base + p, { headers: { Origin: `https://${domain}` } });
 
-  let idx = 0;
+  if (a["config-only"]) paths.splice(0, paths.length, `/v1/config?${common}`);
+  // Zipf (s = 1): truy vấn hạng k được hỏi tỉ lệ 1/k — sát hành vi thật (top 1% truy vấn chiếm phần lớn lượt).
+  const cdf: number[] = [];
+  let acc = 0;
+  for (let k = 1; k <= paths.length; k++) cdf.push((acc += a.zipf ? 1 / k : 1));
+  const pick = () => {
+    const r = Math.random() * acc;
+    let lo = 0;
+    let hi = cdf.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cdf[mid] < r) lo = mid + 1;
+      else hi = mid;
+    }
+    return paths[lo];
+  };
   const result = await autocannon({
     url: base,
     connections: Number(a.connections),
@@ -172,7 +201,7 @@ async function main() {
     headers: { Origin: `https://${domain}` },
     requests: [
       {
-        setupRequest: (req) => ({ ...req, path: paths[idx++ % paths.length] }),
+        setupRequest: (req) => ({ ...req, path: pick() }),
       },
     ],
   });
@@ -196,6 +225,8 @@ async function main() {
           max: result.latency.max,
         },
         distinctPaths: paths.length,
+        workers: W,
+        zipf: Boolean(a.zipf),
       },
       null,
       2,
@@ -213,7 +244,24 @@ async function main() {
   await db.$disconnect();
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+function serverApp() {
+  return createSearchApi({
+    db,
+    engineFor: () => engine,
+    defaultEngine: engine,
+    ipRpm: 1_000_000,
+    shopRpmMultiplier: 10, // cấu hình Black Friday (docs/ops/load-and-ha.md)
+  });
+}
+
+if (cluster.isWorker) {
+  // Shop trong load test dùng gói enterprise; rate limit theo shop của gói vẫn áp dụng như thật.
+  serve({ fetch: serverApp().fetch, port: Number(process.env.LOAD_PORT) }, () =>
+    process.send?.("ready"),
+  );
+} else {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
