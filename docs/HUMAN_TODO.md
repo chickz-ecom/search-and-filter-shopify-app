@@ -43,3 +43,5 @@
       thêm job `checksum` (BullMQ UI hoặc `node -e` với getSyncQueue().add) → kiểm tra < 2 phút và `writes: 0`.
 - [ ] C4. Mở app trong admin (ngôn ngữ tài khoản = Tiếng Việt) → xác nhận URL app nhúng có `?locale=vi...`
       (app dùng tham số này để chọn en/vi, `app/i18n/index.ts`). Nếu không có, đổi sang đọc `session.locale` (online token).
+- [ ] D7. (1.12) Trên dev store có đơn hàng thử: chạy job `best-selling` → so thứ tự `best_selling_rank` với Admin → Products
+      sort "Best selling" của collection All. Xác nhận private token (`unauthenticated.storefront`) không bị 430.

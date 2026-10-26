@@ -16,6 +16,7 @@ import { pushMerchToEngine } from "../merch/engine-sync.server";
 import { loadShopConfig, requiredMetafields, type Db } from "../shop/shop.server";
 import { rkey } from "../redis.server";
 import { realClock, type Clock, type GraphqlExecutor } from "../shopify/graphql";
+import { currentRanks } from "./best-selling.server";
 import { BulkRunner, catalogStats, planShards } from "./bulk-runner";
 import { mapProduct, type ProductNode } from "./mapper";
 import { fetchProductMetafieldDefinitions, resolveMetafieldSpecs } from "./metafields.server";
@@ -171,11 +172,15 @@ export async function runFullSync(
     }));
 
     const staged = await staging.count();
+    // Re-index: giữ best_selling_rank đang có (lượt đêm cập nhật lại sau).
+    const bestSelling = current
+      ? await currentRanks(engine, current).catch(() => new Map<string, number>())
+      : undefined;
     let lastProgress = 0;
     const imported = await importInBatches(
       engine,
       name,
-      assembleDocs(staging, { currency: shop.currency, metafields }),
+      assembleDocs(staging, { currency: shop.currency, metafields, bestSelling }),
       {
         onProgress: (n) => {
           if (clock.now() - lastProgress > 2000) {

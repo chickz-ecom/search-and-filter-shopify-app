@@ -10,7 +10,13 @@ import {
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { getEngine } from "../app/lib/search";
 import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
+import {
+  applyBestSellingRanks,
+  fetchBestSellingOrder,
+  storefrontContextTransport,
+} from "../app/lib/sync/best-selling.server";
 import { runChecksum } from "../app/lib/sync/checksum.server";
+import { unauthenticated } from "../app/shopify.server";
 import { syncCollection } from "../app/lib/sync/collections.server";
 import { runDelta } from "../app/lib/sync/delta.server";
 import { runFullSync } from "../app/lib/sync/full-sync.server";
@@ -113,6 +119,16 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
       } finally {
         await release();
       }
+    }
+    case "best-selling": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      const transport = async (q: string, v: Record<string, unknown>) => {
+        const { storefront } = await unauthenticated.storefront(domain);
+        return storefrontContextTransport(storefront)(q, v);
+      };
+      const order = await fetchBestSellingOrder(transport);
+      return applyBestSellingRanks(getEngine(), data.shopId, order);
     }
     case "uninstall":
       return uninstallShop(data.shopId, { db: prisma, redis: redis() });
