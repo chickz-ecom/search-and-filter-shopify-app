@@ -1,0 +1,21 @@
+query FindOnlineStorePublication {
+  publications(first: 50, catalogType: APP) {
+    nodes {
+      id
+      autoPublish
+      catalog {
+        id
+        title
+        ... on AppCatalog {
+          apps(first: 1) {
+            nodes {
+              id
+              handle
+              title
+            }
+          }
+        }
+      }
+    }
+  }
+}

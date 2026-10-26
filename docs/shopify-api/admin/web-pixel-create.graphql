@@ -1,0 +1,13 @@
+mutation WebPixelCreate($webPixel: WebPixelInput!) {
+  webPixelCreate(webPixel: $webPixel) {
+    webPixel {
+      id
+      settings
+    }
+    userErrors {
+      field
+      message
+      code
+    }
+  }
+}

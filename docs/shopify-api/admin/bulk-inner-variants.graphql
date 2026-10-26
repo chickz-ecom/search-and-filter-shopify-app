@@ -1,0 +1,27 @@
+query BulkInnerVariants {
+  productVariants(query: "product_status:active AND published_status:published") {
+    edges {
+      node {
+        id
+        product {
+          id
+        }
+        title
+        sku
+        barcode
+        price
+        compareAtPrice
+        availableForSale
+        inventoryQuantity
+        inventoryPolicy
+        sellableOnlineQuantity
+        position
+        updatedAt
+        selectedOptions {
+          name
+          value
+        }
+      }
+    }
+  }
+}

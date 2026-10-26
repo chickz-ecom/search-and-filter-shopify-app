@@ -1,0 +1,24 @@
+query InventoryLevelById($id: ID!) {
+  inventoryLevel(id: $id) {
+    id
+    updatedAt
+    location {
+      id
+    }
+    quantities(names: ["available", "on_hand"]) {
+      name
+      quantity
+    }
+    item {
+      id
+      variants(first: 10) {
+        nodes {
+          id
+          product {
+            id
+          }
+        }
+      }
+    }
+  }
+}

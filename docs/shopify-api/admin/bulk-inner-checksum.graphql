@@ -1,0 +1,10 @@
+query BulkInnerChecksum {
+  products(query: "status:active AND published_status:published") {
+    edges {
+      node {
+        id
+        updatedAt
+      }
+    }
+  }
+}

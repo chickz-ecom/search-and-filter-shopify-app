@@ -1,0 +1,6 @@
+query WebPixel {
+  webPixel {
+    id
+    settings
+  }
+}

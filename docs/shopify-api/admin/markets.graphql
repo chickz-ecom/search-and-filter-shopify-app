@@ -1,0 +1,82 @@
+query Markets($cursor: String) {
+  markets(first: 50, after: $cursor) {
+    nodes {
+      id
+      handle
+      name
+      type
+      status
+      currencySettings {
+        baseCurrency {
+          currencyCode
+          currencyName
+          enabled
+        }
+        localCurrencies
+        roundingEnabled
+      }
+      conditions {
+        conditionTypes
+        regionsCondition {
+          regions(first: 250) {
+            nodes {
+              __typename
+              id
+              name
+              ... on MarketRegionCountry {
+                code
+                currency {
+                  currencyCode
+                }
+              }
+            }
+          }
+        }
+      }
+      webPresences(first: 5) {
+        nodes {
+          id
+          subfolderSuffix
+          domain {
+            host
+          }
+          defaultLocale {
+            locale
+          }
+          alternateLocales {
+            locale
+          }
+          rootUrls {
+            locale
+            url
+          }
+        }
+      }
+      catalogs(first: 5) {
+        nodes {
+          id
+          title
+          status
+          publication {
+            id
+          }
+          priceList {
+            id
+            currency
+            fixedPricesCount
+            parent {
+              adjustment {
+                type
+                value
+              }
+            }
+          }
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

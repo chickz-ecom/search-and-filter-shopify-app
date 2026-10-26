@@ -1,0 +1,25 @@
+query ShopInfo {
+  shop {
+    id
+    name
+    currencyCode
+    enabledPresentmentCurrencies
+    ianaTimezone
+    myshopifyDomain
+    primaryDomain {
+      host
+      url
+    }
+    plan {
+      publicDisplayName
+      partnerDevelopment
+      shopifyPlus
+    }
+  }
+  shopLocales {
+    locale
+    name
+    primary
+    published
+  }
+}

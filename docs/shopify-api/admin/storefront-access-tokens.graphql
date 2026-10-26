@@ -1,0 +1,14 @@
+query StorefrontAccessTokens {
+  shop {
+    storefrontAccessTokens(first: 100) {
+      nodes {
+        id
+        title
+        createdAt
+        accessScopes {
+          handle
+        }
+      }
+    }
+  }
+}

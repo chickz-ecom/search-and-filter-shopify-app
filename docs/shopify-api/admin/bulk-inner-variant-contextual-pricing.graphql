@@ -1,0 +1,32 @@
+query BulkInnerVariantContextualPricing {
+  productVariants(query: "product_status:active AND published_status:published") {
+    edges {
+      node {
+        id
+        product {
+          id
+        }
+        ctx_CA: contextualPricing(context: { country: CA }) {
+          price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
+            amount
+            currencyCode
+          }
+        }
+        ctx_GB: contextualPricing(context: { country: GB }) {
+          price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+}

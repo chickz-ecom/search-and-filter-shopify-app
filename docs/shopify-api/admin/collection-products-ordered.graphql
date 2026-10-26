@@ -1,0 +1,20 @@
+query CollectionProductsOrdered($id: ID!, $cursor: String) {
+  collection(id: $id) {
+    id
+    handle
+    updatedAt
+    sortOrder
+    productsCount {
+      count
+    }
+    products(first: 250, after: $cursor, sortKey: COLLECTION_DEFAULT) {
+      nodes {
+        id
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}

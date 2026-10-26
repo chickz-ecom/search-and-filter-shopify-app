@@ -1,0 +1,17 @@
+query InventoryItemToProduct($inventoryItemId: ID!) {
+  inventoryItem(id: $inventoryItemId) {
+    id
+    tracked
+    variants(first: 10) {
+      nodes {
+        id
+        inventoryQuantity
+        availableForSale
+        product {
+          id
+          totalInventory
+        }
+      }
+    }
+  }
+}

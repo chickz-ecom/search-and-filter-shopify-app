@@ -1,0 +1,19 @@
+query BulkInnerProductTranslations {
+  products(query: "status:active AND published_status:published") {
+    edges {
+      node {
+        id
+        tr_fr: translations(locale: "fr") {
+          key
+          value
+          outdated
+        }
+        tr_de: translations(locale: "de") {
+          key
+          value
+          outdated
+        }
+      }
+    }
+  }
+}

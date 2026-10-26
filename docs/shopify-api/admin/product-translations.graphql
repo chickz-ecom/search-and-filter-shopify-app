@@ -1,0 +1,17 @@
+query ProductTranslations($resourceType: TranslatableResourceType!, $locale: String!, $cursor: String) {
+  translatableResources(first: 100, after: $cursor, resourceType: $resourceType) {
+    nodes {
+      resourceId
+      translations(locale: $locale) {
+        key
+        value
+        locale
+        outdated
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

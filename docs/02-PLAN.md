@@ -480,7 +480,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 0.5 `docs/adr/` cho D1–D16.
 
 ### Phase 1 — Index và Sync (1–2 tuần)
-- [ ] 1.1 GraphQL executor biết throttle.
+- [x] 1.1 GraphQL executor biết throttle.
 - [x] 1.2 `SearchEngine` + `TypesenseEngine` (gồm field động `pos_.*`, `mf_.*`, `price_min_.*`).
 - [ ] 1.3 Bulk runner: nhiều bulk phẳng song song, chia shard theo `created_at`, stream-parse JSONL, staging, join theo ID (không dựa thứ tự dòng).
   - **Benchmark** trên dev store có 30k và 100k sản phẩm (dùng `productSet` hoặc bulk mutation để tạo dữ liệu mẫu). So 3 cấu hình: lồng một query / phẳng song song / phẳng + shard. Ghi kết quả vào Nhật ký.
@@ -623,3 +623,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: Chốt câu hỏi mở mục 13 bằng mặc định: (1) Typesense self-host docker cho dev, cấu hình deploy cho cả Typesense Cloud và self-host; (2) UI admin en + vi, search tối ưu tiếng Anh trước, locale cấu hình được (`SEARCH_DEFAULT_LOCALE`); (3) Gói: Free < 100 sản phẩm · $9 (1k) · $19 (5k) · $49 (30k) · $99 (100k) · $199 (300k); (4) Markets: quy đổi tự động trước, phương án B sau feature flag `fixedMarketPrices`; (5) Headless API mở từ gói $49.
 - 2026-10-26: 0.5 xong: docs/adr/0001–0016 (D1–D16) + README index.
 - 2026-10-26: 1.2 xong: SearchEngine interface + TypesenseEngine (Typesense 30: synonym_sets/curation_sets thay synonyms/overrides theo collection), schema dựng từ config với field động pos_.*, opt_.*, price_min_.* và metafield có kiểu; integration test chạy với Typesense thật (alias swap, curation pin/hide, export).
+- 2026-10-26: 1.1 xong: GraphqlExecutor theo leaky bucket (extensions.cost.throttleStatus), chờ trước query đắt, retry THROTTLED/429/5xx có backoff, giới hạn song song; adapter cho admin.graphql (GraphqlQueryError) và fetch trực tiếp. 11 unit test.

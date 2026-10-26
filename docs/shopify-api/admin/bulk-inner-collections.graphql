@@ -1,0 +1,32 @@
+query BulkInnerCollections {
+  collections(query: "published_status:published") {
+    edges {
+      node {
+        id
+        handle
+        title
+        updatedAt
+        sortOrder
+        templateSuffix
+        productsCount {
+          count
+        }
+        sources {
+          __typename
+          id
+          title
+          ... on CollectionConditionsSource {
+            targetType
+          }
+        }
+        products(sortKey: COLLECTION_DEFAULT) {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}

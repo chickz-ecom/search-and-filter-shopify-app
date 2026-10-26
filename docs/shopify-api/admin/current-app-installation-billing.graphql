@@ -1,0 +1,41 @@
+query CurrentAppInstallationBilling {
+  currentAppInstallation {
+    id
+    activeSubscriptions {
+      id
+      name
+      status
+      test
+      trialDays
+      currentPeriodEnd
+      lineItems {
+        id
+        plan {
+          pricingDetails {
+            __typename
+            ... on AppRecurringPricing {
+              planHandle
+              interval
+              price {
+                amount
+                currencyCode
+              }
+            }
+            ... on AppUsagePricing {
+              terms
+              interval
+              cappedAmount {
+                amount
+                currencyCode
+              }
+              balanceUsed {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

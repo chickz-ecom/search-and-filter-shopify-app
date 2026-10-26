@@ -1,0 +1,31 @@
+query ProductMetafieldDefinitions($cursor: String) {
+  metafieldDefinitions(ownerType: PRODUCT, first: 250, after: $cursor, pinnedStatus: ANY) {
+    nodes {
+      id
+      namespace
+      key
+      name
+      description
+      type {
+        name
+        category
+      }
+      access {
+        storefront
+      }
+      capabilities {
+        adminFilterable {
+          enabled
+        }
+        smartCollectionCondition {
+          enabled
+        }
+      }
+      pinnedPosition
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

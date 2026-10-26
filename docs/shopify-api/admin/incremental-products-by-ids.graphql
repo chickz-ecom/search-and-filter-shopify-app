@@ -1,0 +1,94 @@
+query IncrementalProductsByIds($ids: [ID!]!, $onlineStorePublicationId: ID!) {
+  nodes(ids: $ids) {
+    __typename
+    id
+    ... on Product {
+      handle
+      title
+      vendor
+      productType
+      tags
+      status
+      description
+      createdAt
+      publishedAt
+      updatedAt
+      onlineStoreUrl
+      publishedOnOnlineStore: publishedOnPublication(publicationId: $onlineStorePublicationId)
+      totalInventory
+      variantsCount {
+        count
+      }
+      featuredMedia {
+        preview {
+          image {
+            url
+            altText
+          }
+        }
+      }
+      options {
+        name
+        values
+      }
+      priceRangeV2 {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+        maxVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+      compareAtPriceRange {
+        minVariantCompareAtPrice {
+          amount
+          currencyCode
+        }
+        maxVariantCompareAtPrice {
+          amount
+          currencyCode
+        }
+      }
+      mf_0: metafield(namespace: "custom", key: "material") {
+        value
+        type
+      }
+      variants(first: 100) {
+        nodes {
+          id
+          title
+          sku
+          barcodes(first: 1) {
+            nodes {
+              value
+            }
+          }
+          price
+          compareAtPrice
+          availableForSale
+          inventoryQuantity
+          position
+          selectedOptions {
+            name
+            value
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+      collections(first: 250) {
+        nodes {
+          id
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+}

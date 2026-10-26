@@ -1,0 +1,19 @@
+query VariantContextualPricing($id: ID!, $country: CountryCode!) {
+  productVariant(id: $id) {
+    id
+    contextualPricing(context: { country: $country }) {
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
+      unitPrice {
+        amount
+        currencyCode
+      }
+    }
+  }
+}

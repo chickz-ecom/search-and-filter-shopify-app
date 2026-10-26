@@ -1,0 +1,14 @@
+query DeltaProductsUpdatedSince($cursor: String, $query: String!) {
+  products(first: 250, after: $cursor, query: $query, sortKey: UPDATED_AT) {
+    nodes {
+      id
+      updatedAt
+      status
+      onlineStoreUrl
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
