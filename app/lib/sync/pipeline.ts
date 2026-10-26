@@ -55,6 +55,8 @@ export type FullSyncSpecInput = {
   shards: (string | undefined)[];
   /** Phương án B: country có price list cố định (alias contextualPricing trong bulk variants). */
   priceCountries?: string[];
+  /** Locale phụ → alias translations trong bulk products (task 2.12). */
+  locales?: string[];
 };
 
 /** Tạo danh sách bulk: products × shards, variants × shards, collections (grouped). */
@@ -64,7 +66,7 @@ export function buildFullSyncSpecs(input: FullSyncSpecInput): BulkSpec<never>[] 
   shards.forEach((filter, i) => {
     specs.push({
       name: shards.length > 1 ? `products#${i + 1}` : "products",
-      query: bulkProductsQuery(metafields, filter),
+      query: bulkProductsQuery(metafields, filter, input.locales),
       onRow: ((row: ProductNode) => staging.putProduct(row)) as never,
     });
   });
@@ -158,6 +160,7 @@ export async function* assembleDocs(
       marketPrices: opts.marketPrices?.get(id),
       posCap: opts.posCap,
       priceCountries: opts.priceCountries,
+      locales: opts.locales,
     });
   }
 }
@@ -218,10 +221,12 @@ export function nestedSpec(
   staging: Staging,
   metafields: MetafieldSpec[],
   priceCountries: string[] = [],
+  locales: string[] = [],
 ): BulkSpec<never> {
   return {
     name: "nested",
-    query: bulkNestedQuery(metafields, priceCountries),
+    query: bulkNestedQuery(metafields, priceCountries, locales),
+
     onRow: ((row: Record<string, unknown> & { id: string; __parentId?: string }) => {
       if (!row.__parentId) return staging.putProduct(row as unknown as ProductNode);
       if (row.id.includes("/ProductVariant/")) {

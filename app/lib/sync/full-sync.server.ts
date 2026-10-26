@@ -186,6 +186,8 @@ export async function runFullSync(
         shards,
         priceCountries,
         manualSizes,
+        locales: secondaryLocales,
+
         onCollection: (c) => collections.push(c),
       }),
     );
@@ -225,6 +227,7 @@ export async function runFullSync(
         bestSelling,
         posCap,
         priceCountries,
+        locales: secondaryLocales,
       }),
       {
         onProgress: (n) => {

@@ -34,8 +34,27 @@ const PRODUCT_CORE_FIELDS = `id
         priceRangeV2 { minVariantPrice { amount currencyCode } maxVariantPrice { amount currencyCode } }
         compareAtPriceRange { maxVariantCompareAtPrice { amount currencyCode } }`;
 
+/** Alias tên an toàn cho locale (`pt-BR` → `pt_br`). */
+export const translationAlias = (locale: string) =>
+  `tr_${locale.toLowerCase().replace(/[^a-z0-9]/g, "_")}`;
+
+/**
+ * Bản dịch theo locale phụ (task 2.12): `tr_vi: translations(locale: "vi") { key value }` — field, không phải connection,
+ * nên dùng được trong bulk phẳng. VERIFY: chạy thật trong bulk (schema hợp lệ 2026-10) — HUMAN_TODO H1.
+ */
+export function translationAliases(locales: string[]): string {
+  return locales
+    .filter((l) => /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})?$/.test(l))
+    .map((l) => `${translationAlias(l)}: translations(locale: ${JSON.stringify(l)}) { key value }`)
+    .join("\n        ");
+}
+
 /** (a) Bulk phẳng: chỉ field cấp product + metafield alias. `extraFilter` để shard theo created_at. */
-export function bulkProductsQuery(metafields: MetafieldRef[], extraFilter?: string): string {
+export function bulkProductsQuery(
+  metafields: MetafieldRef[],
+  extraFilter?: string,
+  locales: string[] = [],
+): string {
   const q = extraFilter ? `${PRODUCT_FILTER} AND ${extraFilter}` : PRODUCT_FILTER;
   return `{
   products(query: ${JSON.stringify(q)}) {
@@ -43,6 +62,7 @@ export function bulkProductsQuery(metafields: MetafieldRef[], extraFilter?: stri
       node {
         ${PRODUCT_CORE_FIELDS}
         ${metafieldAliases(metafields)}
+        ${translationAliases(locales)}
       }
     }
   }
@@ -116,13 +136,18 @@ export function bulkCollectionsQuery(): string {
 }
 
 /** Cấu hình so sánh benchmark 1.3: một query lồng (product → variants, collections). Không dùng trong production. */
-export function bulkNestedQuery(metafields: MetafieldRef[], priceCountries: string[] = []): string {
+export function bulkNestedQuery(
+  metafields: MetafieldRef[],
+  priceCountries: string[] = [],
+  locales: string[] = [],
+): string {
   return `{
   products(query: ${JSON.stringify(PRODUCT_FILTER)}) {
     edges {
       node {
         ${PRODUCT_CORE_FIELDS}
         ${metafieldAliases(metafields)}
+        ${translationAliases(locales)}
         variants { edges { node { ${VARIANT_FIELDS.replace("product { id }", "")} ${contextualPricingAliases(priceCountries)} } } }
         collections { edges { node { id handle title sortOrder } } }
       }
@@ -161,7 +186,7 @@ export const BULK_CANCEL_MUTATION = `mutation BulkOperationCancel($id: ID!) {
 }`;
 
 /** Incremental (mục 3 của ghi chú): core ≤ 50 ID ≈ 750 điểm. Variants và collections lấy riêng. */
-export function productsCoreByIdsQuery(metafields: MetafieldRef[]): string {
+export function productsCoreByIdsQuery(metafields: MetafieldRef[], locales: string[] = []): string {
   return `query ProductsCoreByIds($ids: [ID!]!) {
   nodes(ids: $ids) {
     __typename
@@ -169,6 +194,8 @@ export function productsCoreByIdsQuery(metafields: MetafieldRef[]): string {
     ... on Product {
         ${PRODUCT_CORE_FIELDS.replace(/^id\n\s*/, "")}
         ${metafieldAliases(metafields)}
+        ${translationAliases(locales)}
+
     }
   }
 }`;

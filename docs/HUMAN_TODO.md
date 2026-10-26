@@ -71,3 +71,7 @@
       search và "Collection filters" vào template collection (deep link: `…/admin/themes/current/editor?template=search&addAppBlockId={client_id}/search-results&target=mainSection`).
       Kiểm tra: tắt JS → vẫn thấy kết quả native; bật lại → widget hydrate, filter/sort/phân trang đổi URL đúng kiểu `filter.p.*`.
 - [ ] G2. Đổi app embed sang "Search API (CDN)" sau khi deploy search-api → xác nhận đọc được `app.metafields.searchapp.public_key`.
+
+## H. Đa ngôn ngữ
+- [ ] H1. Dev store có ngôn ngữ thứ hai (vi) + bản dịch (Translate & Adapt): chạy full sync → xác nhận bulk chấp nhận alias
+      `tr_vi: translations(locale:"vi")` và tìm "áo thun" ở storefront `/vi/search` ra đúng sản phẩm; nhãn sort/filter tiếng Việt.

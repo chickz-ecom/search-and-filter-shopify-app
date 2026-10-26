@@ -77,7 +77,8 @@ export async function runDeltaBulk(
   const mfs = metafields ?? (await shopMetafields(deps.db, deps.ex, shopId));
   const staging = new MemoryStaging();
   const priceCountries = fixedPriceCountries(shop);
-  const spec = nestedSpec(staging, mfs, priceCountries);
+  const locales = shop.locales.filter((l) => l !== shop.primaryLocale);
+  const spec = nestedSpec(staging, mfs, priceCountries, locales);
   spec.query = spec.query.replace(
     JSON.stringify(PRODUCT_FILTER),
     JSON.stringify(`${PRODUCT_FILTER} AND ${sinceFilter(since)}`),
@@ -88,6 +89,7 @@ export async function runDeltaBulk(
     currency: shop.currency,
     metafields: mfs,
     priceCountries,
+    locales,
   }))
     docs.push(d);
 

@@ -71,10 +71,15 @@ export function carryOver(next: ProductDoc, prev: Record<string, unknown> | null
   return next;
 }
 
-async function fetchCore(ex: GraphqlExecutor, gids: string[], metafields: MetafieldSpec[]) {
+async function fetchCore(
+  ex: GraphqlExecutor,
+  gids: string[],
+  metafields: MetafieldSpec[],
+  locales: string[] = [],
+) {
   type R = { nodes: (({ __typename: string } & ProductNode) | null)[] };
   const d = await ex.query<R>(
-    productsCoreByIdsQuery(metafields),
+    productsCoreByIdsQuery(metafields, locales),
     { ids: gids },
     {
       estimatedCost: COST.coreBase + gids.length * (COST.corePerProduct + metafields.length),
@@ -194,12 +199,13 @@ export async function refreshProducts(
   const metafields = ctx?.metafields ?? (await shopMetafields(deps.db, deps.ex, shopId));
   const currency = ctx?.currency ?? shop.currency;
   const priceCountries = ctx?.priceCountries ?? fixedPriceCountries(shop);
+  const locales = shop.locales.filter((l) => l !== shop.primaryLocale);
   const targets = await writeTargets(shopId, deps);
   const result: RefreshResult = { upserted: 0, deleted: 0 };
 
   for (const part of chunk([...new Set(productIds.map((id) => gidToId(id)))], CORE_BATCH)) {
     const gids = part.map(productGid);
-    const core = await fetchCore(deps.ex, gids, metafields);
+    const core = await fetchCore(deps.ex, gids, metafields, locales);
     const keep = gids.filter((g) => isIndexable(core.get(g)));
     const remove = part.filter((id) => !keep.includes(productGid(id)));
     const keepIds = keep.map(gidToId);
@@ -219,6 +225,7 @@ export async function refreshProducts(
           metafields,
           collections: collections.get(g) ?? [],
           priceCountries,
+          locales,
         }),
       ),
     );

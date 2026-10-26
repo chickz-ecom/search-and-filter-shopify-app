@@ -233,3 +233,32 @@ describe("fixed market prices (2.8)", () => {
     expect(d.price_min).toBe(1900); // giá gốc không đổi
   });
 });
+
+describe("translations (2.12)", () => {
+  it("maps translations(locale:) aliases to title_{l}/description_{l}", () => {
+    const p = {
+      ...products[0],
+      tr_vi: [
+        { key: "title", value: "Áo thun cổ điển" },
+        { key: "body_html", value: "<p>Áo <b>cotton</b> mềm</p>" },
+        { key: "handle", value: "ao-thun" },
+      ],
+      tr_pt_br: [],
+    };
+    const d = mapProduct(p as never, [], {
+      currency: "USD",
+      metafields: [],
+      locales: ["vi", "pt-BR"],
+    });
+    expect(d.title_vi).toBe("Áo thun cổ điển");
+    expect(d.description_vi).toBe("Áo cotton mềm");
+    expect(d.title_pt_br).toBeUndefined();
+  });
+
+  it("builds translation aliases with safe names and skips invalid locales", async () => {
+    const { translationAliases } = await import("./queries");
+    expect(translationAliases(["vi", "pt-BR", "bad locale!"])).toBe(
+      'tr_vi: translations(locale: "vi") { key value }\n        tr_pt_br: translations(locale: "pt-BR") { key value }',
+    );
+  });
+});

@@ -1,6 +1,7 @@
 import { optionDocField } from "../config/filters";
 import { metafieldDocField } from "../config/search-fields";
 import { localeSuffix, type MetafieldSpec } from "../search/index-schema";
+import { translationAlias } from "./queries";
 import type { ProductDoc, VariantSummary } from "../search/product-doc";
 import { toMinorUnits } from "../search/query/currency";
 
@@ -71,6 +72,8 @@ export type MapOptions = {
   bestSellingRank?: number;
   /** locale → bản dịch. */
   translations?: Record<string, ProductTranslation>;
+  /** Locale phụ có alias tr_{locale} trong query (task 2.12). */
+  locales?: string[];
   /** Phương án B: country → giá min (minor units, currency của market). */
   marketPrices?: Record<string, number>;
   /** Task 1.13: khi tổng vị trí thủ công vượt ngân sách, chỉ lưu pos_ cho N vị trí đầu mỗi collection. */
@@ -290,7 +293,16 @@ export function mapProduct(p: ProductNode, variants: VariantNode[], opts: MapOpt
         v as ProductDoc[`mf_${string}`];
   });
 
-  for (const [locale, t] of Object.entries(opts.translations ?? {})) {
+  const translations: Record<string, ProductTranslation> = { ...(opts.translations ?? {}) };
+  for (const locale of opts.locales ?? []) {
+    const rows = (
+      p as unknown as Record<string, { key: string; value: string | null }[] | undefined>
+    )[translationAlias(locale)];
+    if (!rows?.length) continue;
+    const get = (k: string) => rows.find((r) => r.key === k)?.value ?? undefined;
+    translations[locale] = { title: get("title"), description: get("body_html") };
+  }
+  for (const [locale, t] of Object.entries(translations)) {
     const s = localeSuffix(locale);
     if (t.title) doc[`title_${s}`] = t.title;
     if (t.description) doc[`description_${s}`] = stripHtml(t.description);
