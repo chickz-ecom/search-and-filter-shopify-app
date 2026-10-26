@@ -1,0 +1,7 @@
+{
+  "name": "@searchapp/storefront-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Widget mặc định (instant search, kết quả, filter, sort, phân trang) xây trên window.SearchApp."
+}

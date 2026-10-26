@@ -1,0 +1,275 @@
+/* Search & Filter — giao diện mặc định. Biến CSS chỉnh ở admin (Appearance) hoặc ghi đè trong theme. Kế thừa font của theme. */
+:root {
+  --sa-accent: #1a1a1a;
+  --sa-text: inherit;
+  --sa-muted: #6b6b6b;
+  --sa-border: #e3e3e3;
+  --sa-bg: #fff;
+  --sa-radius: 8px;
+  --sa-gap: 16px;
+  --sa-sale: #b42318;
+}
+.sa-ac {
+  z-index: 1000;
+  background: var(--sa-bg);
+  border: 1px solid var(--sa-border);
+  border-radius: var(--sa-radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  max-height: 70vh;
+  overflow: auto;
+  padding: 8px;
+}
+.sa-ac__heading {
+  margin: 8px 8px 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sa-muted);
+}
+.sa-ac__item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.sa-ac__item[aria-selected="true"],
+.sa-ac__item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.sa-ac__item img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: none;
+}
+.sa-ac__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sa-ac__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sa-ac__price,
+.sa-ac__empty {
+  color: var(--sa-muted);
+  font-size: 0.875rem;
+}
+.sa-ac__empty {
+  padding: 8px;
+  margin: 0;
+}
+
+.sa-block.sa-loading {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.sa-layout {
+  display: grid;
+  gap: var(--sa-gap);
+}
+.sa-layout--left {
+  grid-template-columns: minmax(200px, 260px) 1fr;
+}
+.sa-layout--left .sa-toolbar {
+  grid-column: 1 / -1;
+}
+@media (max-width: 749px) {
+  .sa-layout--left {
+    grid-template-columns: 1fr;
+  }
+}
+.sa-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.sa-total {
+  margin: 0;
+  color: var(--sa-muted);
+}
+.sa-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sa-layout--top .sa-filters {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.sa-facet {
+  border: 0;
+  border-bottom: 1px solid var(--sa-border);
+  margin: 0;
+  padding: 0 0 12px;
+  min-width: 160px;
+}
+.sa-facet__title {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 8px;
+}
+.sa-facet ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.sa-opt {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+.sa-count {
+  color: var(--sa-muted);
+}
+.sa-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sa-swatch);
+  border: 1px solid var(--sa-border);
+}
+.sa-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+.sa-range label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+}
+.sa-range input {
+  width: 6.5em;
+  padding: 6px;
+  border: 1px solid var(--sa-border);
+  border-radius: 4px;
+}
+.sa-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--sa-accent);
+  background: var(--sa-accent);
+  color: #fff;
+  border-radius: var(--sa-radius);
+  cursor: pointer;
+}
+.sa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: var(--sa-gap);
+}
+.sa-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--sa-border);
+  border-radius: 999px;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+.sa-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sa-gap);
+  grid-template-columns: repeat(var(--sa-cols, 4), minmax(0, 1fr));
+}
+@media (max-width: 989px) {
+  .sa-grid {
+    grid-template-columns: repeat(min(3, var(--sa-cols, 4)), minmax(0, 1fr));
+  }
+}
+@media (max-width: 749px) {
+  .sa-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.sa-card__link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+.sa-card__media {
+  position: relative;
+  aspect-ratio: 1;
+  background: #f4f4f4;
+  border-radius: var(--sa-radius);
+  overflow: hidden;
+}
+.sa-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.sa-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--sa-sale);
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.sa-card__vendor {
+  margin: 8px 0 0;
+  color: var(--sa-muted);
+  font-size: 0.8125rem;
+}
+.sa-card__title {
+  margin: 4px 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.sa-card__price {
+  margin: 0;
+  min-height: 1.5em;
+  min-width: 4em;
+}
+.sa-card__price s {
+  color: var(--sa-muted);
+}
+.sa-card__pending {
+  color: var(--sa-muted);
+}
+.sa-pagination {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: calc(var(--sa-gap) * 2);
+}
+.sa-pagination a,
+.sa-pagination span {
+  padding: 6px 12px;
+  border: 1px solid var(--sa-border);
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.sa-pagination [aria-current] {
+  background: var(--sa-accent);
+  color: #fff;
+  border-color: var(--sa-accent);
+}
+.sa-empty {
+  text-align: center;
+  padding: 48px 16px;
+}
+.sa-empty__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}

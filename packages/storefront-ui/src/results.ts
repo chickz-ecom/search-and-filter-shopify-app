@@ -1,0 +1,304 @@
+import type {
+  Facet,
+  Filters,
+  MountOptions,
+  Product,
+  PublicConfig,
+  SearchAppSDK,
+  SearchResponse,
+} from "../../storefront-sdk/src/index";
+import { esc, fill, templateFor } from "./templates";
+
+// Widget "search-page" cho app block search-results / collection-filter (mục 7.2) và data-searchapp-mount.
+// Liquid in sẵn grid native (SEO + fallback, D11); widget chỉ thay nội dung TRONG vùng của block khi có dữ liệu.
+// Lỗi API → giữ nguyên grid native, không lỗi console (task 2.11).
+
+type Opts = MountOptions & {
+  mode?: string;
+  collection?: string;
+  perPage?: string;
+  columns?: string;
+  filterPosition?: string;
+  showSort?: string;
+  defaultSort?: string;
+};
+
+export class SearchPage {
+  private cfg: PublicConfig | null = null;
+  private last: SearchResponse | null = null;
+  private loading = 0;
+  private readonly perPage: number;
+
+  constructor(
+    private readonly el: HTMLElement,
+    private readonly o: Opts,
+    private readonly sdk: SearchAppSDK,
+  ) {
+    this.perPage = Math.min(48, Number(o.perPage) || 24);
+    el.addEventListener("change", (e) => this.onChange(e));
+    el.addEventListener("click", (e) => this.onClick(e));
+    el.addEventListener("submit", (e) => this.onSubmit(e));
+    window.addEventListener("popstate", () => void this.load());
+    void this.load();
+  }
+
+  private get isCollection() {
+    return this.o.mode === "collection" && Boolean(this.o.collection);
+  }
+
+  async load(): Promise<void> {
+    const mine = ++this.loading;
+    try {
+      this.cfg ??= await this.sdk.getConfig();
+      const st = this.sdk.state.get();
+      const params = {
+        ...st,
+        sort: st.sort ?? (this.o.defaultSort || undefined),
+        perPage: this.perPage,
+      };
+      const res = this.isCollection
+        ? await this.sdk.collection(this.o.collection!, params)
+        : await this.sdk.search(params);
+      if (mine !== this.loading) return;
+      if (res.redirect) {
+        location.assign(res.redirect);
+        return;
+      }
+      this.last = res;
+      this.render(res);
+    } catch {
+      // Engine/API lỗi: giữ kết quả native do Liquid in sẵn (không ném lỗi ra console).
+      this.el.classList.remove("sa-loading");
+    }
+  }
+
+  private t(key: string, vars: Record<string, string | number> = {}) {
+    return fill(this.cfg?.texts[key] ?? key, vars);
+  }
+
+  private card(p: Product, i: number, tpl: string) {
+    return this.sdk.render(tpl, {
+      ...p,
+      position: i + 1,
+      view_price: this.t("viewPrice"),
+      badge_labels: p.badges.map((b) =>
+        b === "sale" ? this.t("sale") : b === "sold_out" ? this.t("soldOut") : b,
+      ),
+    });
+  }
+
+  private facet(f: Facet): string {
+    const head = `<legend class="sa-facet__title">${esc(f.label)}</legend>`;
+    if (f.type === "range") {
+      const sel = f.selected ?? {};
+      return (
+        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}">` +
+        `<label>${esc(this.t("min"))}<input type="number" name="min" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f.min}" value="${sel.min ?? ""}"></label>` +
+        `<label>${esc(this.t("max"))}<input type="number" name="max" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f.max}" value="${sel.max ?? ""}"></label>` +
+        `<button type="submit" class="sa-btn">${esc(this.t("apply"))}</button></form></fieldset>`
+      );
+    }
+    const type = f.type === "radio" ? "radio" : "checkbox";
+    const values = f.values
+      .map((v) => {
+        const label = f.type === "toggle" ? this.t("inStock") : (v.label ?? v.value);
+        const swatch =
+          f.type === "swatch"
+            ? `<span class="sa-swatch" style="--sa-swatch:${esc(v.value.toLowerCase())}"></span>`
+            : "";
+        return `<li><label class="sa-opt"><input type="${type}" name="${esc(f.key)}" value="${esc(v.value)}"${v.selected ? " checked" : ""}>${swatch}<span>${esc(label)}</span>${f.showCount ? ` <span class="sa-count">(${v.count})</span>` : ""}</label></li>`;
+      })
+      .join("");
+    return `<fieldset class="sa-facet" data-key="${esc(f.key)}"${f.collapsed ? ' data-collapsed=""' : ""}>${head}<ul>${values}</ul></fieldset>`;
+  }
+
+  private chips(res: SearchResponse): string {
+    const out: string[] = [];
+    for (const f of res.facets) {
+      if (f.type === "range") {
+        if (f.selected && (f.selected.min !== undefined || f.selected.max !== undefined)) {
+          out.push(
+            `<button type="button" class="sa-chip" data-remove="${esc(f.key)}">${esc(f.label)}: ${f.selected.min ?? f.min}–${f.selected.max ?? f.max} ×</button>`,
+          );
+        }
+      } else {
+        for (const v of f.values)
+          if (v.selected)
+            out.push(
+              `<button type="button" class="sa-chip" data-remove="${esc(f.key)}" data-value="${esc(v.value)}">${esc(f.type === "toggle" ? f.label : (v.label ?? v.value))} ×</button>`,
+            );
+      }
+    }
+    return out.length
+      ? `<div class="sa-chips">${out.join("")}<button type="button" class="sa-chip sa-chip--clear" data-clear="">${esc(this.t("clearAll"))}</button></div>`
+      : "";
+  }
+
+  private pagination(res: SearchResponse): string {
+    if (res.pages <= 1) return "";
+    const href = (p: number) => {
+      const u = new URL(location.href);
+      if (p > 1) u.searchParams.set("page", String(p));
+      else u.searchParams.delete("page");
+      return esc(u.pathname + u.search);
+    };
+    const parts: string[] = [];
+    if (res.page > 1)
+      parts.push(
+        `<a href="${href(res.page - 1)}" data-page="${res.page - 1}" rel="prev">${esc(this.t("previous"))}</a>`,
+      );
+    const from = Math.max(1, res.page - 2);
+    const to = Math.min(res.pages, res.page + 2);
+    for (let p = from; p <= to; p++) {
+      parts.push(
+        p === res.page
+          ? `<span aria-current="page">${p}</span>`
+          : `<a href="${href(p)}" data-page="${p}">${p}</a>`,
+      );
+    }
+    if (res.page < res.pages)
+      parts.push(
+        `<a href="${href(res.page + 1)}" data-page="${res.page + 1}" rel="next">${esc(this.t("next"))}</a>`,
+      );
+    return `<nav class="sa-pagination" aria-label="Pagination">${parts.join("")}</nav>`;
+  }
+
+  render(res: SearchResponse) {
+    const tpl = templateFor("product-card", this.el);
+    const pos = this.o.filterPosition || "left";
+    const sort =
+      this.o.showSort === "false" || !res.sort_options.length
+        ? ""
+        : `<label class="sa-sort">${esc(this.t("sortBy"))} <select name="sort_by">${res.sort_options
+            .map(
+              (o) =>
+                `<option value="${esc(o.key)}"${o.key === res.sort ? " selected" : ""}>${esc(o.label)}</option>`,
+            )
+            .join("")}</select></label>`;
+    const grid = res.products.length
+      ? `<ul class="sa-grid" style="--sa-cols:${Number(this.o.columns) || 4}">${res.products.map((p, i) => this.card(p, i, tpl)).join("")}</ul>`
+      : this.sdk.render(templateFor("empty", this.el), {
+          title: this.t("noResults", { q: res.query }),
+          hint: this.t("noResultsHint"),
+        });
+    const filters = res.facets.length
+      ? `<aside class="sa-filters" aria-label="${esc(this.t("filters"))}"${pos === "drawer" ? " hidden" : ""}>${res.facets.map((f) => this.facet(f)).join("")}</aside>`
+      : "";
+    const drawerBtn =
+      filters && pos === "drawer"
+        ? `<button type="button" class="sa-btn" data-drawer="" aria-expanded="false">${esc(this.t("filters"))}</button>`
+        : "";
+    // Giữ chiều cao cũ trong lúc thay nội dung → không giật layout (CLS).
+    this.el.style.minHeight = `${this.el.offsetHeight}px`;
+    this.el.innerHTML =
+      `<div class="sa-layout sa-layout--${esc(pos)}"><div class="sa-toolbar"><p class="sa-total" aria-live="polite">${esc(this.t("results", { n: res.total }))}</p>${drawerBtn}${sort}</div>` +
+      `${filters}<div class="sa-main">${this.chips(res)}${grid}${this.pagination(res)}</div></div>`;
+    this.el.classList.remove("sa-loading");
+    requestAnimationFrame(() => (this.el.style.minHeight = ""));
+  }
+
+  private readFilters(): Filters {
+    const out: Filters = {};
+    if (!this.last) return out;
+    for (const f of this.last.facets) {
+      if (f.type === "range") {
+        if (f.selected) out[f.key] = f.selected;
+        continue;
+      }
+      const checked = Array.from(
+        this.el.querySelectorAll<HTMLInputElement>(`input[name="${CSS.escape(f.key)}"]:checked`),
+      ).map((i) => i.value);
+      if (!checked.length) continue;
+      out[f.key] = f.type === "toggle" ? checked.includes("true") : checked;
+    }
+    return out;
+  }
+
+  private apply(filters: Filters, extra: { sort?: string; page?: number } = {}) {
+    this.sdk.state.set({
+      filters,
+      page: extra.page ?? 1,
+      ...(extra.sort ? { sort: extra.sort } : {}),
+    });
+    this.el.classList.add("sa-loading");
+    void this.load();
+  }
+
+  private onChange(e: Event) {
+    const t = e.target as HTMLInputElement | HTMLSelectElement;
+    if (t.name === "sort_by") {
+      this.sdk.track("sort", { key: t.value });
+      return this.apply(this.readFilters(), { sort: t.value });
+    }
+    if (t instanceof HTMLInputElement && (t.type === "checkbox" || t.type === "radio")) {
+      if (t.checked) this.sdk.track("filter", { key: t.name, value: t.value });
+      this.apply(this.readFilters());
+    }
+  }
+
+  private onSubmit(e: Event) {
+    const form = e.target as HTMLFormElement;
+    if (!form.classList.contains("sa-range")) return;
+    e.preventDefault();
+    const data = new FormData(form);
+    const num = (k: string) =>
+      data.get(k) === "" || data.get(k) === null ? undefined : Number(data.get(k));
+    const filters = this.readFilters();
+    const range = { min: num("min"), max: num("max") };
+    if (range.min === undefined && range.max === undefined) delete filters[form.dataset.key!];
+    else filters[form.dataset.key!] = range;
+    this.apply(filters);
+  }
+
+  private onClick(e: Event) {
+    const t = e.target as HTMLElement;
+    const a = t.closest<HTMLAnchorElement>("a[data-page]");
+    if (a) {
+      e.preventDefault();
+      this.apply(this.readFilters(), { page: Number(a.dataset.page) });
+      this.el.scrollIntoView({ block: "start", behavior: "smooth" });
+      return;
+    }
+    const product = t.closest<HTMLAnchorElement>("a[data-sa-product]");
+    if (product) {
+      this.sdk.track("click", {
+        query: this.last?.query,
+        productId: product.dataset.saProduct,
+        position: Number(product.dataset.saPos),
+      });
+      return;
+    }
+    const chip = t.closest<HTMLButtonElement>("button[data-remove], button[data-clear]");
+    if (chip) {
+      const filters = chip.dataset.clear !== undefined ? {} : this.readFilters();
+      const key = chip.dataset.remove;
+      if (key) {
+        const cur = filters[key];
+        if (Array.isArray(cur) && chip.dataset.value) {
+          const next = cur.filter((v) => v !== chip.dataset.value);
+          if (next.length) filters[key] = next;
+          else delete filters[key];
+        } else delete filters[key];
+      }
+      return this.apply(filters);
+    }
+    const drawer = t.closest<HTMLButtonElement>("button[data-drawer]");
+    if (drawer) {
+      const aside = this.el.querySelector<HTMLElement>(".sa-filters");
+      if (aside) {
+        aside.hidden = !aside.hidden;
+        drawer.setAttribute("aria-expanded", String(!aside.hidden));
+      }
+    }
+  }
+}
+
+if (typeof window !== "undefined") {
+  const start = () =>
+    window.SearchApp?.registerWidget(
+      "search-page",
+      (el, o, sdk) => void new SearchPage(el, o as Opts, sdk),
+    );
+  if (window.SearchApp) start();
+  else document.addEventListener("searchapp:ready", start, { once: true });
+}

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Collection – Fixture theme</title>
+    <link rel="stylesheet" href="/assets/searchapp.css" />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+      }
+      header {
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+      }
+      main {
+        padding: 16px;
+        max-width: 1100px;
+        margin: auto;
+      }
+      .native-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        list-style: none;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body data-page="collection">
+    <header>
+      <form action="/search.html" method="get" role="search">
+        <label for="q">Search</label>
+        <input id="q" type="search" name="q" placeholder="Search" />
+        <button type="submit">Go</button>
+      </form>
+    </header>
+    <main>
+      <h1>Summer</h1>
+      <div
+        class="sa-block"
+        data-searchapp-mount="search-page"
+        data-mode="collection"
+        data-collection="summer"
+        data-per-page="2"
+        data-columns="2"
+        data-filter-position="left"
+      >
+        <ul class="native-grid" data-native-results>
+          <li><a href="/products/red-tee">Red tee (native)</a></li>
+          <li><a href="/products/blue-jeans">Blue jeans (native)</a></li>
+        </ul>
+      </div>
+    </main>
+    <script src="/theme.js"></script>
+    <script src="/assets/searchapp-sdk.js" defer></script>
+    <script src="/assets/searchapp-results.js" defer></script>
+    <script src="/assets/searchapp-instant.js" defer></script>
+  </body>
+</html>

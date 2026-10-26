@@ -5,12 +5,14 @@
 
 ## Hiện tại
 - Phase: 2 — Search API, Currency, SDK, Storefront
-- Task: 2.1 (services/search-api)
+- Task: 2.9 (packages/storefront-ui)
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
 - Phase 1: 1.1–1.14 xong (xem tổng kết bên dưới).
-- Phase 2 (logic thuần, làm sớm vì không phụ thuộc Shopify): 2.2 query builder, 2.3 sort builder, 2.4 filter/facet.
+- Phase 2: 2.1 search-api (load test 204 RPS, p99 78 ms), 2.2–2.4 builders, 2.5 merch, 2.6 SDK (5,97 KB gzip), 2.7 pricing Storefront API, 2.8 phương án B.
+- Mẫu làm việc: dùng `scratchpad/check.sh` (prettier+typecheck+lint+test) trước mọi commit; `scratchpad/rep.py` để sửa file (báo lỗi nếu không tìm thấy chuỗi).
+
 
 ## Bị chặn / `[~]`
 - (chưa có) — các phần cần Shopify thật nằm trong docs/HUMAN_TODO.md (A–D).
