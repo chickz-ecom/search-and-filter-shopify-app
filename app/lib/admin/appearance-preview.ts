@@ -80,7 +80,7 @@ ${SAMPLE.slice(0, 2)
   .join("")}
 </div></div>
 <div class="sa-layout sa-layout--left"><div class="sa-toolbar"><p class="sa-total">${esc(fill(texts.results, { n: 132 }))}</p><label class="sa-sort">${esc(texts.sortBy)} <select><option>Relevance</option></select></label></div>
-<aside class="sa-filters" aria-label="${esc(texts.filters)}"><fieldset class="sa-facet"><legend class="sa-facet__title">Brand</legend><ul><li><label class="sa-opt"><input type="checkbox" checked><span>Acme</span> <span class="sa-count">(12)</span></label></li><li><label class="sa-opt"><input type="checkbox"><span>Fjord</span> <span class="sa-count">(4)</span></label></li></ul></fieldset></aside>
+<aside class="sa-filters" aria-label="${esc(texts.filters)}"><div class="sa-filters__panel"><div class="sa-filters__body"><details class="sa-facet" open><summary class="sa-facet__title">Brand<span class="sa-badge-count">1</span></summary><div class="sa-facet__body"><ul><li><label class="sa-opt"><input type="checkbox" checked><span>Acme</span> <span class="sa-count">(12)</span></label></li><li><label class="sa-opt"><input type="checkbox"><span>Fjord</span> <span class="sa-count">(4)</span></label></li></ul></div></details></div></div></aside>
 <div class="sa-main"><div class="sa-chips"><button type="button" class="sa-chip">Acme ×</button><button type="button" class="sa-chip">${esc(texts.clearAll)}</button></div>
 <ul class="sa-grid" style="--sa-cols:${cfg.tokens.columns}">${cards}</ul></div></div></body></html>`;
 }

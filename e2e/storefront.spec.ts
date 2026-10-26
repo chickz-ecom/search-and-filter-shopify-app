@@ -1,6 +1,6 @@
 import { AxeBuilder } from "@axe-core/playwright";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { mockApi, type MockState } from "./mock-api";
 
 // E2E storefront widget (2.9–2.11) trên trang fixture giống theme; API + Storefront API được mock.
@@ -77,6 +77,19 @@ test.describe("instant search", () => {
   });
 });
 
+// Mobile: filter nằm trong bottom sheet (mở bằng nút "Filters"); facet là accordion.
+const sheetOpen = (block: Locator) => block.locator(".sa-filters__panel[role=dialog]");
+async function openFacet(block: Locator, key: string) {
+  if ((await block.locator("[data-sheet-open]").isVisible()) && !(await sheetOpen(block).count()))
+    await block.locator("[data-sheet-open]").click();
+  const d = block.locator(`details.sa-facet[data-key="${key}"]`);
+  if ((await d.getAttribute("open")) === null) await d.locator("summary").click();
+}
+async function closeSheet(block: Locator) {
+  if (await sheetOpen(block).count())
+    await block.locator(".sa-filters__foot [data-sheet-close]").click();
+}
+
 test.describe("results page", () => {
   test("hydrates the native grid, filters/sorts/paginates via native URL params, no CLS, passes axe", async ({
     page,
@@ -90,9 +103,11 @@ test.describe("results page", () => {
     await expect(block.locator("[data-native-results]")).toHaveCount(0);
     await expect(block.locator(".sa-total")).toHaveText("5 results");
 
+    await openFacet(block, "vendor");
     await block.getByRole("checkbox", { name: /Nike/ }).check();
     await expect(page).toHaveURL(/filter\.p\.vendor=Nike/);
     await expect(block.locator(".sa-total")).toHaveText("3 results");
+    await closeSheet(block);
     await expect(block.getByRole("button", { name: /Nike ×/ })).toBeVisible();
 
     await block.getByLabel("Sort by").selectOption("price_desc");
@@ -108,6 +123,7 @@ test.describe("results page", () => {
     await expect(block.locator(".sa-pagination [aria-current]")).toHaveText("2");
 
     // Price: thanh trượt 2 đầu, không ô nhập tay; nhãn giá trị theo tiền tệ.
+    await openFacet(block, "price");
     await expect(block.locator("form.sa-range input:not([type=range])")).toHaveCount(0);
     await expect(block.locator("form.sa-range output").first()).toHaveText("$19");
     const minThumb = block.locator('form.sa-range input[type="range"]').first();
@@ -128,11 +144,67 @@ test.describe("results page", () => {
     await maxThumb.press("ArrowLeft");
     await expect(page).toHaveURL(/filter\.v\.price\.lte=/);
     await page.goBack();
+    await closeSheet(block);
 
     expect(await seriousViolations(page, ".sa-block")).toEqual([]);
     const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
     expect(cls).toBeLessThan(0.1);
     expect(state.storefrontCalls).toBe(0); // cùng currency: không gọi Storefront API
+    expect(errors).toEqual([]);
+  });
+
+  test("desktop: facets are accordions in a sticky column", async ({ page, isMobile }) => {
+    test.skip(isMobile, "desktop layout");
+    await mockApi(page);
+    await page.goto("/search.html?q=");
+    const block = page.locator(".sa-block");
+    const brand = block.locator('details.sa-facet[data-key="vendor"]');
+    await expect(brand).toHaveAttribute("open", "");
+    await brand.locator("summary").click();
+    await expect(block.getByRole("checkbox", { name: /Nike/ })).toBeHidden();
+    await brand.locator("summary").click();
+    await block.getByRole("checkbox", { name: /Nike/ }).check();
+    // Đóng/mở giữ nguyên qua lần render lại; badge đếm lựa chọn trên tiêu đề.
+    await expect(brand.locator(".sa-badge-count")).toHaveText("1");
+    await expect(brand).toHaveAttribute("open", "");
+    expect(await block.locator(".sa-filters").evaluate((e) => getComputedStyle(e).position)).toBe(
+      "sticky",
+    );
+    await expect(block.locator("[data-sheet-open]")).toBeHidden();
+  });
+
+  test("mobile: Filters button opens a bottom sheet with Show N products and Reset", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, "mobile layout");
+    await mockApi(page);
+    const errors = jsErrors(page);
+    await page.goto("/search.html?q=");
+    const block = page.locator(".sa-block");
+    const button = block.getByRole("button", { name: "Filters" });
+    await expect(block.locator(".sa-filters")).toBeHidden();
+    await button.click();
+    const dialog = page.getByRole("dialog", { name: "Filters" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Close" })).toBeFocused();
+    await expect(page.locator("html")).toHaveClass(/sa-lock/);
+    // Accordion đóng sẵn trong sheet; mở Brand, chọn → kết quả + nút đếm cập nhật ngay.
+    await dialog.locator('details[data-key="vendor"] summary').click();
+    await dialog.getByRole("checkbox", { name: /Nike/ }).check();
+    await expect(page).toHaveURL(/filter\.p\.vendor=Nike/);
+    await expect(dialog.getByRole("button", { name: "Show 3 products" })).toBeVisible();
+    expect(await seriousViolations(page, ".sa-filters")).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+    await expect(button.locator(".sa-badge-count")).toHaveText("1");
+    await button.click();
+    await dialog.getByRole("button", { name: "Reset filters" }).click();
+    await expect(page).not.toHaveURL(/filter\.p\.vendor/);
+    await dialog.getByRole("button", { name: /^Show \d+ products$/ }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.locator("html")).not.toHaveClass(/sa-lock/);
     expect(errors).toEqual([]);
   });
 
@@ -212,6 +284,7 @@ test("collection: adopts the native grid when the API returns the same products 
   await expect(block.locator(".sa-total")).toBeVisible();
   // Grid native được giữ nguyên (cùng phần tử DOM, có data-native-results) thay vì vẽ lại.
   await expect(block.locator("[data-native-results] [data-sa-id]")).toHaveCount(2);
+  await openFacet(block, "vendor");
   await block.getByRole("checkbox", { name: /Nike/ }).check();
   await expect(block.locator("[data-native-results]")).toHaveCount(0); // thao tác → vẽ lại bằng widget
 });

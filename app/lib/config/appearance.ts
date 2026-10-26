@@ -40,6 +40,8 @@ export const TEXT_KEYS = [
   "viewAll",
   "filters",
   "clearAll",
+  "showResults",
+  "resetFilters",
   "sortBy",
   "results",
   "loadMore",

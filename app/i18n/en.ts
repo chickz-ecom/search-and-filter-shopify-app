@@ -192,6 +192,8 @@ export const en = {
   "appearance.text.viewAll": "View all link ({n} = count)",
   "appearance.text.filters": "Filters heading",
   "appearance.text.clearAll": "Clear all filters",
+  "appearance.text.showResults": "Show products button in the mobile filter panel ({n} = count)",
+  "appearance.text.resetFilters": "Reset filters button",
   "appearance.text.sortBy": "Sort label",
   "appearance.text.results": "Result count ({n} = count)",
   "appearance.text.loadMore": "Load more button",

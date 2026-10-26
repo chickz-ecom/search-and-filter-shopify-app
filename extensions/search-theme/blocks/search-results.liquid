@@ -15,7 +15,7 @@
 >
   {%- comment -%} Khung layout in sẵn (toolbar + cột filter giữ chỗ) → widget điền vào, grid native không bị di chuyển (CLS/LCP, task 2.14). {%- endcomment -%}
   <div class="sa-layout sa-layout--{{ block.settings.filter_position | escape }}">
-    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p>{%- if block.settings.filter_position == 'drawer' -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}{%- if block.settings.show_sort -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}</div>
+    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p>{%- if block.settings.filter_position != 'none' -%}<span class="sa-skel sa-skel--pill sa-skel--filters"></span>{%- endif -%}{%- if block.settings.show_sort -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}</div>
     {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true">{% render 'sa-skeleton', part: 'facets' %}</aside>{%- endif -%}
     <div class="sa-main">
       {% render 'sa-skeleton', part: 'grid', columns: block.settings.columns, per_page: block.settings.per_page %}

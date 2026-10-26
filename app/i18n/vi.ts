@@ -192,6 +192,8 @@ export const vi: Record<MessageKey, string> = {
   "appearance.text.viewAll": "Liên kết xem tất cả ({n} = số lượng)",
   "appearance.text.filters": "Tiêu đề bộ lọc",
   "appearance.text.clearAll": "Xoá tất cả bộ lọc",
+  "appearance.text.showResults": "Nút xem sản phẩm trong bảng lọc trên mobile ({n} = số lượng)",
+  "appearance.text.resetFilters": "Nút đặt lại bộ lọc",
   "appearance.text.sortBy": "Nhãn sắp xếp",
   "appearance.text.results": "Số kết quả ({n} = số lượng)",
   "appearance.text.loadMore": "Nút xem thêm",

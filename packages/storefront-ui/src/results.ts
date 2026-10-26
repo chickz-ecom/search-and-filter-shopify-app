@@ -29,6 +29,12 @@ export class SearchPage {
   private loading = 0;
   private adopted = false;
   private rangeTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Accordion mở/đóng theo facet (giữ qua các lần render lại). */
+  private open = new Map<string, boolean>();
+  private sheetOpen = false;
+  /** Mobile (< 750px): filter thành nút + bottom sheet. */
+  private readonly mq =
+    typeof matchMedia === "function" ? matchMedia("(max-width: 749px)") : undefined;
 
   private readonly perPage: number;
 
@@ -42,6 +48,17 @@ export class SearchPage {
     el.addEventListener("input", (e) => syncRange(e.target as HTMLInputElement));
     el.addEventListener("click", (e) => this.onClick(e));
     el.addEventListener("submit", (e) => this.onSubmit(e));
+    // "toggle" của <details> không nổi bọt → nghe ở pha capture.
+    el.addEventListener("toggle", (e) => this.onToggle(e), true);
+    el.addEventListener("keydown", (e) => this.onKey(e));
+    this.mq?.addEventListener?.("change", () => this.syncSheet());
+    // Lọc ngang (top): bấm ra ngoài thì đóng dropdown đang mở.
+    document.addEventListener("click", (e) => {
+      if (this.o.filterPosition === "top" && !this.sheetMode && !el.contains(e.target as Node))
+        el.querySelectorAll<HTMLDetailsElement>("details.sa-facet[open]").forEach(
+          (d) => (d.open = false),
+        );
+    });
     window.addEventListener("popstate", () => this.reload());
     // Code khác (section tuỳ biến, docs/developers/examples) đổi filter/sort qua SDK → widget tải lại theo URL.
     sdk.on("filters:change", () => this.reload());
@@ -59,6 +76,11 @@ export class SearchPage {
       this.el.classList.add("sa-loading");
       void this.load();
     });
+  }
+
+  /** Filter hiện dạng sheet: mobile, hoặc vị trí "drawer" ở mọi màn hình. */
+  private get sheetMode() {
+    return this.o.filterPosition === "drawer" || Boolean(this.mq?.matches);
   }
 
   private get isCollection() {
@@ -112,30 +134,40 @@ export class SearchPage {
   }
 
   private facet(f: Facet): string {
-    const head = `<legend class="sa-facet__title">${esc(f.label)}</legend>`;
+    const chosen = chosenCount(f);
+    let body: string;
     if (f.type === "range") {
       // Thanh trượt 2 đầu (không ô nhập tay); giá trị hiện dưới thanh, thả tay → áp dụng.
       const sel = f.selected ?? {};
       const thumb = (n: "min" | "max") =>
         `<input type="range" name="${n}" min="${f.min}" max="${f.max}" step="1" value="${sel[n] ?? f[n]}" aria-label="${esc(`${f.label} ${this.t(n)}`)}">`;
-      return (
-        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}" data-min="${f.min}" data-max="${f.max}" data-currency="${esc(f.currency ?? "")}" data-locale="${esc(this.sdk.context.locale)}">` +
+      body =
+        `<form class="sa-range" data-key="${esc(f.key)}" data-min="${f.min}" data-max="${f.max}" data-currency="${esc(f.currency ?? "")}" data-locale="${esc(this.sdk.context.locale)}">` +
         `<div class="sa-slider">${thumb("min")}${thumb("max")}</div>` +
-        `<div class="sa-range__values"><output></output><output></output></div></form></fieldset>`
-      );
+        `<div class="sa-range__values"><output></output><output></output></div></form>`;
+    } else {
+      const type = f.type === "radio" ? "radio" : "checkbox";
+      const values = f.values
+        .map((v) => {
+          const label = f.type === "toggle" ? this.t("inStock") : (v.label ?? v.value);
+          const swatch =
+            f.type === "swatch"
+              ? `<span class="sa-swatch" style="--sa-swatch:${esc(v.value.toLowerCase())}"></span>`
+              : "";
+          return `<li><label class="sa-opt"><input type="${type}" name="${esc(f.key)}" value="${esc(v.value)}"${v.selected ? " checked" : ""}>${swatch}<span>${esc(label)}</span>${f.showCount ? ` <span class="sa-count">(${v.count})</span>` : ""}</label></li>`;
+        })
+        .join("");
+      body = `<ul>${values}</ul>`;
     }
-    const type = f.type === "radio" ? "radio" : "checkbox";
-    const values = f.values
-      .map((v) => {
-        const label = f.type === "toggle" ? this.t("inStock") : (v.label ?? v.value);
-        const swatch =
-          f.type === "swatch"
-            ? `<span class="sa-swatch" style="--sa-swatch:${esc(v.value.toLowerCase())}"></span>`
-            : "";
-        return `<li><label class="sa-opt"><input type="${type}" name="${esc(f.key)}" value="${esc(v.value)}"${v.selected ? " checked" : ""}>${swatch}<span>${esc(label)}</span>${f.showCount ? ` <span class="sa-count">(${v.count})</span>` : ""}</label></li>`;
-      })
-      .join("");
-    return `<fieldset class="sa-facet" data-key="${esc(f.key)}"${f.collapsed ? ' data-collapsed=""' : ""}>${head}<ul>${values}</ul></fieldset>`;
+    // Mặc định: desktop mở (trừ facet admin đặt "thu gọn"), sheet mobile và lọc ngang thì đóng; đang có lựa chọn → mở.
+    const top = this.o.filterPosition === "top" && !this.sheetMode;
+    const open =
+      this.open.get(f.key) ?? (!top && (chosen > 0 || (!this.sheetMode && !f.collapsed)));
+    return (
+      `<details class="sa-facet" data-key="${esc(f.key)}"${open ? " open" : ""}>` +
+      `<summary class="sa-facet__title">${esc(f.label)}${chosen ? `<span class="sa-badge-count">${chosen}</span>` : ""}</summary>` +
+      `<div class="sa-facet__body" role="group" aria-label="${esc(f.label)}">${body}</div></details>`
+    );
   }
 
   private chips(res: SearchResponse): string {
@@ -218,14 +250,20 @@ export class SearchPage {
           hint: this.t("noResultsHint"),
         });
     // "none": theme tự dựng filter bằng SDK (docs/developers/examples/horizontal-filters.liquid).
+    // Cùng một khối filter: desktop là cột (sticky) / hàng dropdown; mobile/"drawer" là sheet có đầu + chân.
+    const active = res.facets.reduce((n, f) => n + chosenCount(f), 0);
     const filters =
       res.facets.length && pos !== "none"
-        ? `<aside class="sa-filters" aria-label="${esc(this.t("filters"))}"${pos === "drawer" ? " hidden" : ""}>${res.facets.map((f) => this.facet(f)).join("")}</aside>`
+        ? `<aside class="sa-filters" aria-label="${esc(this.t("filters"))}"><div class="sa-filters__panel">` +
+          `<div class="sa-filters__head"><p class="sa-filters__title">${esc(this.t("filters"))}</p><button type="button" class="sa-close" data-sheet-close="" aria-label="${esc(this.t("close"))}">${ICON_CLOSE}</button></div>` +
+          `<div class="sa-filters__body">${res.facets.map((f) => this.facet(f)).join("")}</div>` +
+          `<div class="sa-filters__foot"><button type="button" class="sa-btn" data-sheet-close="">${esc(this.t("showResults", { n: res.total }))}</button>` +
+          `<button type="button" class="sa-btn sa-btn--secondary" data-clear=""${active ? "" : " disabled"}>${esc(this.t("resetFilters"))}</button></div>` +
+          `</div></aside>`
         : "";
-    const drawerBtn =
-      filters && pos === "drawer"
-        ? `<button type="button" class="sa-btn" data-drawer="" aria-expanded="false">${esc(this.t("filters"))}</button>`
-        : "";
+    const drawerBtn = filters
+      ? `<button type="button" class="sa-btn sa-btn--secondary sa-filters-btn" data-sheet-open="" aria-haspopup="dialog" aria-expanded="false">${ICON_FILTER}${esc(this.t("filters"))}${active ? `<span class="sa-badge-count">${active}</span>` : ""}</button>`
+      : "";
     // Lần đầu: nếu grid native (Liquid) đã đúng các sản phẩm theo đúng thứ tự → giữ nguyên DOM đó (ảnh không vẽ lại
     // → không đổi LCP, task 2.14); chỉ thêm filter/toolbar/phân trang quanh nó.
     const native = this.adopted
@@ -250,6 +288,9 @@ export class SearchPage {
           `[name="${CSS.escape(a.name)}"]` +
           (a.type === "checkbox" || a.type === "radio" ? `[value="${CSS.escape(a.value)}"]` : "")
         : "";
+    const scrolls = [".sa-filters", ".sa-filters__body"].map(
+      (sel) => this.el.querySelector(sel)?.scrollTop ?? 0,
+    );
     const toolbar = `<p class="sa-total" aria-live="polite">${esc(this.t("results", { n: res.total }))}</p>${drawerBtn}${sort}`;
     const layout = this.el.querySelector<HTMLElement>(".sa-layout");
     if (adopt && layout && native!.closest(".sa-main")) {
@@ -274,7 +315,15 @@ export class SearchPage {
     }
 
     this.el.querySelectorAll<HTMLFormElement>(".sa-range").forEach(paintRange);
+    [".sa-filters", ".sa-filters__body"].forEach((sel, i) => {
+      const n = this.el.querySelector(sel);
+      if (n) n.scrollTop = scrolls[i];
+    });
+    this.syncSheet();
     if (refocus) this.el.querySelector<HTMLElement>(refocus)?.focus();
+    // Cột filter sticky: chừa chỗ cho header dính của theme (theme có thể tự đặt --sa-sticky-top).
+    if (!getComputedStyle(this.el).getPropertyValue("--sa-sticky-top").trim())
+      this.el.style.setProperty("--sa-sticky-top", `${headerOffset() + 16}px`);
     this.el.classList.remove("sa-loading", "sa-pending");
     requestAnimationFrame(() => (this.el.style.minHeight = ""));
   }
@@ -376,15 +425,90 @@ export class SearchPage {
       }
       return this.apply(filters);
     }
-    const drawer = t.closest<HTMLButtonElement>("button[data-drawer]");
-    if (drawer) {
-      const aside = this.el.querySelector<HTMLElement>(".sa-filters");
-      if (aside) {
-        aside.hidden = !aside.hidden;
-        drawer.setAttribute("aria-expanded", String(!aside.hidden));
-      }
+    if (t.closest("[data-sheet-open]")) return this.setSheet(true);
+    // Nút đóng, "Xem N sản phẩm" (kết quả đã cập nhật trực tiếp) hoặc bấm vào nền mờ ngoài sheet.
+    if (t.closest("[data-sheet-close]") || (this.sheetOpen && t.classList.contains("sa-filters")))
+      this.setSheet(false);
+  }
+
+  private onToggle(e: Event) {
+    const d = e.target as HTMLDetailsElement;
+    if (!d.matches?.("details.sa-facet")) return;
+    this.open.set(d.dataset.key!, d.open);
+    // Lọc ngang: mỗi lúc chỉ một dropdown mở.
+    if (d.open && this.o.filterPosition === "top" && !this.sheetMode)
+      this.el.querySelectorAll<HTMLDetailsElement>("details.sa-facet[open]").forEach((x) => {
+        if (x !== d) x.open = false;
+      });
+  }
+
+  private setSheet(open: boolean) {
+    this.sheetOpen = open;
+    this.syncSheet();
+    this.el.querySelector<HTMLElement>(open ? "[data-sheet-close]" : "[data-sheet-open]")?.focus();
+  }
+
+  /** Áp trạng thái sheet lên DOM hiện tại (gọi sau mỗi render và khi đổi cỡ màn hình). */
+  private syncSheet() {
+    const sheet = this.sheetMode;
+    if (!sheet) this.sheetOpen = false;
+    const open = this.sheetOpen;
+    this.el.classList.toggle("sa-sheet", sheet);
+    this.el.classList.toggle("sa-sheet-open", open);
+    document.documentElement.classList.toggle("sa-lock", open);
+    this.el.querySelector("[data-sheet-open]")?.setAttribute("aria-expanded", String(open));
+    const panel = this.el.querySelector<HTMLElement>(".sa-filters__panel");
+    if (!panel) return;
+    if (open) {
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-modal", "true");
+      panel.setAttribute("aria-label", this.t("filters"));
+    } else ["role", "aria-modal", "aria-label"].forEach((a) => panel.removeAttribute(a));
+  }
+
+  /** Sheet đang mở: Esc đóng, Tab chạy vòng trong sheet. */
+  private onKey(e: KeyboardEvent) {
+    if (!this.sheetOpen) return;
+    if (e.key === "Escape") return this.setSheet(false);
+    if (e.key !== "Tab") return;
+    const items = Array.from(
+      this.el.querySelectorAll<HTMLElement>(
+        ".sa-filters__panel :is(button, summary, input, select, a[href]):not([disabled])",
+      ),
+    ).filter((x) => x.offsetParent !== null);
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last?.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first?.focus();
     }
   }
+}
+
+const ICON_CLOSE =
+  '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const ICON_FILTER =
+  '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+/** Số lựa chọn đang áp dụng của một facet (badge trên tiêu đề accordion + nút Filters). */
+function chosenCount(f: Facet): number {
+  if (f.type === "range")
+    return f.selected && (f.selected.min !== undefined || f.selected.max !== undefined) ? 1 : 0;
+  return f.values.filter((v) => v.selected).length;
+}
+
+/** Chiều cao header dính/cố định của theme (Dawn sticky-header, Horizon header-component, …). */
+function headerOffset(): number {
+  for (const h of document.querySelectorAll<HTMLElement>(
+    "sticky-header, header-component, .shopify-section-group-header-group, [id^='shopify-section'][id*='header']",
+  )) {
+    const p = getComputedStyle(h).position;
+    if (p === "sticky" || p === "fixed") return Math.round(h.getBoundingClientRect().height);
+  }
+  return 0;
 }
 
 /** Vị trí 2 đầu thanh trượt → biến CSS --lo/--hi (đoạn tô màu giữa 2 đầu). */
