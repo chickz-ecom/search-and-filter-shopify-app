@@ -33,3 +33,5 @@ pnpm-lock.yaml
 /test-results/
 /playwright-report/
 /coverage/
+!.env.example
+!.env.test

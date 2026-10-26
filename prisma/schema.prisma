@@ -1,34 +1,317 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Prisma schema — PostgreSQL (D3). Mô hình theo docs/02-PLAN.md mục 4.1.
 
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+
+  @@index([shop])
+}
+
+enum SyncState {
+  IDLE
+  QUEUED
+  RUNNING
+  ERROR
+}
+
+model Shop {
+  id                  String    @id @default(cuid())
+  domain              String    @unique
+  plan                String    @default("free")
+  installedAt         DateTime  @default(now())
+  uninstalledAt       DateTime?
+  publicKey           String    @unique
+  // Cấu hình index
+  currency            String    @default("USD")
+  primaryLocale       String    @default("en")
+  locales             String[]  @default([])
+  // Markets: [{ handle, countries[], currency, hasFixedPrices }]
+  markets             Json      @default("[]")
+  // Engine
+  searchKeyScoped     String?
+  indexAlias          String
+  indexVersion        Int       @default(0)
+  // Sync
+  syncState           SyncState @default(IDLE)
+  lastFullSyncAt      DateTime?
+  lastIncrementalAt   DateTime?
+  lastSyncedUpdatedAt DateTime?
+  productCount        Int       @default(0)
+  indexedCount        Int       @default(0)
+  // Storefront access token (server-side best-selling, task 1.12) — chỉ lưu, không lộ ra client
+  storefrontToken     String?
+  // Feature flags: { fixedMarketPrices?: boolean, headless?: boolean }
+  features            Json      @default("{}")
+  onboardingDismissed Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  syncJobs       SyncJob[]
+  searchSettings SearchSettings?
+  sortOptions    SortOption[]
+  sortDefaults   SortDefault[]
+  filterSets     FilterSet[]
+  synonyms       Synonym[]
+  redirects      Redirect[]
+  merchRules     MerchRule[]
+  stopWords      StopWord[]
+  appearance     Appearance?
+  analytics      AnalyticsDaily[]
+  usage          AnalyticsUsageDaily[]
+}
+
+enum SyncJobType {
+  FULL
+  INCREMENTAL
+  RECONCILE
+  CHECKSUM
+}
+
+enum SyncJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+}
+
+model SyncJob {
+  id              String        @id @default(cuid())
+  shopId          String
+  type            SyncJobType
+  status          SyncJobStatus @default(QUEUED)
+  bulkOperationId String?
+  // { total, processed, upserted, deleted, durationMs, phases: {...} }
+  stats           Json          @default("{}")
+  error           String?
+  startedAt       DateTime      @default(now())
+  finishedAt      DateTime?
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, startedAt])
+}
+
+enum TypoTolerance {
+  OFF
+  LOW
+  NORMAL
+}
+
+enum OutOfStockMode {
+  SHOW
+  HIDE
+  PUSH_DOWN
+}
+
+model SearchSettings {
+  shopId                String         @id
+  // SearchField[] (mục 4.3)
+  fields                Json
+  typoTolerance         TypoTolerance  @default(NORMAL)
+  minWordLengthFor1Typo Int            @default(4)
+  minWordLengthFor2Typo Int            @default(7)
+  prioritizeExactMatch  Boolean        @default(true)
+  matchMode             String         @default("max_score")
+  showOutOfStock        OutOfStockMode @default(PUSH_DOWN)
+  excludeTags           String[]       @default([])
+  variantAsProduct      Boolean        @default(false)
+  // { products: {autocomplete, results}, collections: {...}, pages: {...}, articles: {...} }
+  searchTypes           Json
+  // tie-break cho relevance: "best_selling" | "created_desc"
+  relevanceTieBreak     String         @default("best_selling")
+  updatedAt             DateTime       @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model SortOption {
+  id       String  @id @default(cuid())
+  shopId   String
+  key      String
+  // { en: "...", vi: "..." }
+  label    Json
+  enabled  Boolean @default(true)
+  position Int
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, key])
+  @@index([shopId, position])
+}
+
+enum SortScope {
+  SEARCH
+  COLLECTION_DEFAULT
+  COLLECTION
+}
+
+model SortDefault {
+  id           String    @id @default(cuid())
+  shopId       String
+  scope        SortScope
+  // "" cho SEARCH / COLLECTION_DEFAULT để unique hoạt động (Postgres coi NULL là khác nhau)
+  collectionId String    @default("")
+  sortKey      String
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, scope, collectionId])
+}
+
+enum FilterScope {
+  DEFAULT
+  COLLECTION
+  SEARCH
+}
+
+model FilterSet {
+  id           String      @id @default(cuid())
+  shopId       String
+  scope        FilterScope
+  collectionId String      @default("")
+  // FilterItem[] (app/lib/config)
+  items        Json
+  updatedAt    DateTime    @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, scope, collectionId])
+}
+
+model Synonym {
+  id        String   @id @default(cuid())
+  shopId    String
+  // "multi" (đồng nghĩa hai chiều) | "one_way" (root → synonyms)
+  type      String   @default("multi")
+  root      String?
+  terms     String[]
+  locale    String?
+  createdAt DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+}
+
+model Redirect {
+  id        String   @id @default(cuid())
+  shopId    String
+  // query đã chuẩn hoá (lowercase, trim)
+  query     String
+  url       String
+  createdAt DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, query])
+}
+
+model MerchRule {
+  id        String    @id @default(cuid())
+  shopId    String
+  name      String
+  enabled   Boolean   @default(true)
+  // { query?: string, match: "exact"|"contains", collectionId?: string }
+  condition Json
+  // { pin: [{productId, position}], hide: [productId], boost: [{filter, weight}], bury: [...] }
+  actions   Json
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+}
+
+model StopWord {
+  id     String  @id @default(cuid())
+  shopId String
+  word   String
+  locale String  @default("en")
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, word, locale])
+}
+
+model Appearance {
+  shopId    String   @id
+  tokens    Json     @default("{}")
+  texts     Json     @default("{}")
+  templates Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsDaily {
+  id                  String   @id @default(cuid())
+  shopId              String
+  date                DateTime @db.Date
+  query               String
+  searches            Int      @default(0)
+  zeroResults         Int      @default(0)
+  clicks              Int      @default(0)
+  addToCarts          Int      @default(0)
+  revenueShopCurrency Decimal  @default(0) @db.Decimal(14, 2)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, date, query])
+  @@index([shopId, date])
+}
+
+enum UsageKind {
+  FILTER
+  SORT
+}
+
+model AnalyticsUsageDaily {
+  id     String    @id @default(cuid())
+  shopId String
+  date   DateTime  @db.Date
+  kind   UsageKind
+  key    String
+  value  String    @default("")
+  count  Int       @default(0)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, date, kind, key, value])
+}
+
+model WebhookReceipt {
+  webhookId  String   @id
+  topic      String
+  shopDomain String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
 }

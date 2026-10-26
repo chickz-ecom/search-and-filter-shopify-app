@@ -472,7 +472,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 ### Phase 0 — Khởi tạo (1–2 ngày)
 - [x] 0.1 `shopify app init`, chọn template React Router. Nâng `@shopify/shopify-app-react-router@^4` và `@shopify/polaris-types@^2`; pin `react-router@7`.
   - DoD: `shopify app dev` cài được vào dev store (`--feature-preview new_admin_design`).
-- [ ] 0.2 Prisma chuyển sang PostgreSQL; `docker-compose` (postgres, redis, typesense).
+- [x] 0.2 Prisma chuyển sang PostgreSQL; `docker-compose` (postgres, redis, typesense).
 - [ ] 0.3 Lint, Prettier, Vitest, Playwright; CI chạy typecheck, test và `shopify app config validate`.
 - [ ] 0.4 `shopify.app.toml`:
   - Scopes: `read_products, read_inventory, read_product_listings, read_publications, read_translations, read_locales, read_markets, unauthenticated_read_product_listings, write_app_proxy, write_pixels, read_customer_events`
@@ -618,3 +618,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: Tối ưu sync: bỏ full re-index hằng đêm, chuyển sang delta + checksum; full sync dùng bulk phẳng song song + shard + metafield alias + có kết quả sớm; incremental gom lô `nodes(ids:)` và dùng payload của Events.
 - 2026-10-26: Bỏ phần chat AI ("app chat" là gõ nhầm). Thêm D15 (currency qua Storefront API, 1 request mỗi trang), D16 (Developer SDK/API cho custom section), cấu hình trường search (bật/tắt và trọng số), cấu hình sorting.
 - 2026-10-26: 0.1 xong: template React Router clone từ GitHub, nâng @shopify/shopify-app-react-router@4.0.0, polaris-types@2.0.0, pin react-router@7.18.4; Node 22.23.4 qua nvm (.nvmrc). DoD cài vào dev store → HUMAN_TODO A1–A3.
+- 2026-10-26: 0.2 xong: Prisma → PostgreSQL với đầy đủ model mục 4.1 (+ AnalyticsUsageDaily cho filter/sort usage); docker-compose chỉ Typesense 30.1, postgres/redis sau profile standalone; dev dùng lại postgres_db/docker-redis-1.
