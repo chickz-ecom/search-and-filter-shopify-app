@@ -367,6 +367,7 @@ if (typeof window !== "undefined") {
         (el, o, sdk) => void new SearchPage(el, o as Opts, sdk),
       );
   };
-  if (window.SearchApp) start();
+  // App embed đặt stub { ready() } trước SDK thật → chỉ coi là sẵn sàng khi có `version`, không thì chờ event.
+  if (window.SearchApp?.version) start();
   else document.addEventListener("searchapp:ready", start, { once: true });
 }

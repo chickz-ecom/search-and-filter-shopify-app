@@ -170,6 +170,7 @@ export function initInstant(sdk: SearchAppSDK, root: ParentNode = document) {
 
 if (typeof window !== "undefined") {
   const start = () => window.SearchApp && initInstant(window.SearchApp);
-  if (window.SearchApp) start();
+  // Stub { ready() } của app embed không phải SDK thật (xem results.ts).
+  if (window.SearchApp?.version) start();
   else document.addEventListener("searchapp:ready", start, { once: true });
 }
