@@ -45,3 +45,10 @@
       (app dùng tham số này để chọn en/vi, `app/i18n/index.ts`). Nếu không có, đổi sang đọc `session.locale` (online token).
 - [ ] D7. (1.12) Trên dev store có đơn hàng thử: chạy job `best-selling` → so thứ tự `best_selling_rank` với Admin → Products
       sort "Best selling" của collection All. Xác nhận private token (`unauthenticated.storefront`) không bị 430.
+
+## E. Hạ tầng search-api
+- [ ] E1. Tạo Typesense key search-only cho search-api (không dùng admin key ở production):
+      `curl -X POST $TS/keys -H "X-TYPESENSE-API-KEY: $ADMIN" -d '{"description":"search-api","actions":["documents:search"],"collections":["p_.*","c_.*"]}'`
+      → đặt vào `TYPESENSE_SEARCH_ONLY_KEY`. (Mỗi shop còn có scoped key riêng do full sync tạo.)
+- [ ] E2. Đặt CDN (Cloudflare) trước `search.<domain>`: tôn trọng Cache-Control, bật Cache-Tag; tạo API token quyền
+      "Cache Purge" → `CDN_PURGE_URL`, `CDN_PURGE_TOKEN`.
