@@ -20,6 +20,8 @@ export const BUNDLES = [
     entry: "packages/storefront-ui/src/results.ts",
     out: "searchapp-results.js",
     budget: 10 * 1024,
+    // Khai trong "javascript" của app block → Theme Check AssetSizeAppBlockJavaScript: ≤ 10 000 B (chưa nén).
+    rawBudget: 10_000,
   },
 ];
 // Tổng JS tải lần đầu (SDK + instant, results chỉ tải ở trang có block) ≤ 20 KB gzip.
@@ -42,16 +44,18 @@ for (const b of BUNDLES) {
     bundle: true,
     minify: true,
     format: "iife",
-    target: ["es2019"],
+    target: ["es2020"],
     legalComments: "none",
     define: { "process.env.NODE_ENV": '"production"' },
   });
-  const gz = gzipSync(readFileSync(outfile), { level: 9 }).length;
+  const raw = readFileSync(outfile);
+  const gz = gzipSync(raw, { level: 9 }).length;
   sizes[b.out] = gz;
-  const ok = gz <= b.budget;
+  const ok = gz <= b.budget && (!b.rawBudget || raw.length <= b.rawBudget);
   if (!ok) failed = true;
   console.log(
-    `${ok ? "ok  " : "FAIL"} ${b.out}: ${(gz / 1024).toFixed(2)} KB gzip (budget ${b.budget / 1024} KB)`,
+    `${ok ? "ok  " : "FAIL"} ${b.out}: ${(gz / 1024).toFixed(2)} KB gzip (budget ${b.budget / 1024} KB)` +
+      (b.rawBudget ? `, ${raw.length} B raw (budget ${b.rawBudget} B)` : ""),
   );
 }
 const first = FIRST_LOAD.reduce((s, f) => s + (sizes[f] ?? 0), 0);

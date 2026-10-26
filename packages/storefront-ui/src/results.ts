@@ -7,7 +7,7 @@ import type {
   SearchAppSDK,
   SearchResponse,
 } from "../../storefront-sdk/src/index";
-import { applyCssVars, esc, fill, templateFor } from "./templates";
+import { applyCssVars, EMPTY, PRODUCT_CARD, esc, fill, templateFor } from "./templates";
 
 // Widget "search-page" cho app block search-results / collection-filter (mục 7.2) và data-searchapp-mount.
 // Liquid in sẵn grid native (SEO + fallback, D11); widget chỉ thay nội dung TRONG vùng của block khi có dữ liệu.
@@ -40,8 +40,23 @@ export class SearchPage {
     el.addEventListener("change", (e) => this.onChange(e));
     el.addEventListener("click", (e) => this.onClick(e));
     el.addEventListener("submit", (e) => this.onSubmit(e));
-    window.addEventListener("popstate", () => void this.load());
+    window.addEventListener("popstate", () => this.reload());
+    // Code khác (section tuỳ biến, docs/developers/examples) đổi filter/sort qua SDK → widget tải lại theo URL.
+    sdk.on("filters:change", () => this.reload());
+    sdk.on("sort:change", () => this.reload());
     void this.load();
+  }
+
+  private queued = false;
+  /** Gộp các yêu cầu tải lại trong cùng một tick (apply() vừa set state vừa phát event). */
+  private reload() {
+    if (this.queued) return;
+    this.queued = true;
+    queueMicrotask(() => {
+      this.queued = false;
+      this.el.classList.add("sa-loading");
+      void this.load();
+    });
   }
 
   private get isCollection() {
@@ -171,7 +186,7 @@ export class SearchPage {
   }
 
   render(res: SearchResponse) {
-    const tpl = templateFor("product-card", this.el, this.cfg?.templates);
+    const tpl = templateFor("product-card", PRODUCT_CARD, this.el, this.cfg?.templates);
     const pos = this.o.filterPosition || "left";
     const sort =
       this.o.showSort === "false" || !res.sort_options.length
@@ -184,13 +199,15 @@ export class SearchPage {
             .join("")}</select></label>`;
     const grid = res.products.length
       ? `<ul class="sa-grid" style="--sa-cols:${Number(this.o.columns) || 4}">${res.products.map((p, i) => this.card(p, i, tpl)).join("")}</ul>`
-      : this.sdk.render(templateFor("empty", this.el, this.cfg?.templates), {
+      : this.sdk.render(templateFor("empty", EMPTY, this.el, this.cfg?.templates), {
           title: this.t("noResults", { q: res.query }),
           hint: this.t("noResultsHint"),
         });
-    const filters = res.facets.length
-      ? `<aside class="sa-filters" aria-label="${esc(this.t("filters"))}"${pos === "drawer" ? " hidden" : ""}>${res.facets.map((f) => this.facet(f)).join("")}</aside>`
-      : "";
+    // "none": theme tự dựng filter bằng SDK (docs/developers/examples/horizontal-filters.liquid).
+    const filters =
+      res.facets.length && pos !== "none"
+        ? `<aside class="sa-filters" aria-label="${esc(this.t("filters"))}"${pos === "drawer" ? " hidden" : ""}>${res.facets.map((f) => this.facet(f)).join("")}</aside>`
+        : "";
     const drawerBtn =
       filters && pos === "drawer"
         ? `<button type="button" class="sa-btn" data-drawer="" aria-expanded="false">${esc(this.t("filters"))}</button>`
@@ -260,8 +277,7 @@ export class SearchPage {
       page: extra.page ?? 1,
       ...(extra.sort ? { sort: extra.sort } : {}),
     });
-    this.el.classList.add("sa-loading");
-    void this.load();
+    this.reload();
   }
 
   private onChange(e: Event) {

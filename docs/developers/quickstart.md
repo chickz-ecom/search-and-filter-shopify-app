@@ -29,7 +29,7 @@ Put this in any section. The app embed loads the results widget when it finds `d
 | `data-searchapp-mount` | `results` (alias of `search-page`), or a type you registered | — |
 | `data-per-page` | 1–48 | `24` |
 | `data-columns` | Number of columns on desktop | `4` |
-| `data-filter-position` | `left`, `top`, `drawer` | `left` |
+| `data-filter-position` | `left`, `top`, `drawer`, `none` (build your own filters with the SDK) | `left` |
 | `data-show-sort` | `true`, `false` | `true` |
 | `data-mode` + `data-collection` | `collection` + a collection handle | search page |
 
@@ -37,11 +37,11 @@ Add a `<template data-searchapp="product-card">` inside the same element to chan
 
 ## 3. JavaScript SDK
 
-`window.SearchApp` is available on every page once the app embed is on. `ready()` is safe to call before the SDK loads.
+`window.SearchApp` is available on every page once the app embed is on. The embed renders at the end of `<body>`, after your sections, so wait for `DOMContentLoaded` before using it. `ready()` loads the SDK on demand and resolves when it's available.
 
 ```html
 <script>
-  window.SearchApp.ready().then(async (sdk) => {
+  document.addEventListener("DOMContentLoaded", () => window.SearchApp?.ready().then(async (sdk) => {
     const res = await sdk.search({
       q: "dress",
       filters: { vendor: ["Nike"], price: { min: 10, max: 50 } },
@@ -49,7 +49,7 @@ Add a `<template data-searchapp="product-card">` inside the same element to chan
       perPage: 24,
     });
     console.log(res.total, res.products.map((p) => `${p.title} ${p.price}`));
-  });
+  }));
 </script>
 ```
 

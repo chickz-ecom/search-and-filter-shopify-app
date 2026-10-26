@@ -1,0 +1,167 @@
+{%- comment -%}
+  Example section: horizontal filter bar above the results, built on window.SearchApp.
+  Pair it with the app's results (Search results block, or data-searchapp-mount="results") set to
+  filter position "none", or with the custom-grid example. Requires the app embed to be on.
+
+  How it works: the bar renders the facets of the latest results (the "results" event), and writes the
+  selection to the URL with sdk.state.set(). Every results widget on the page reloads from the URL.
+{%- endcomment -%}
+<div class="ex-filters" id="ex-filters-{{ section.id }}" data-label-clear="{{ section.settings.clear_label }}" data-label-apply="{{ section.settings.apply_label }}">
+  <div class="ex-filters__bar" role="group" aria-label="{{ section.settings.heading | escape }}"></div>
+  <div class="ex-filters__chips"></div>
+</div>
+
+<style>
+  #ex-filters-{{ section.id }} .ex-filters__bar { display: flex; flex-wrap: wrap; gap: 8px; }
+  #ex-filters-{{ section.id }} details { position: relative; }
+  #ex-filters-{{ section.id }} summary {
+    list-style: none; cursor: pointer; padding: 8px 14px; border: 1px solid rgba(0,0,0,.2); border-radius: 999px;
+  }
+  #ex-filters-{{ section.id }} summary::-webkit-details-marker { display: none; }
+  #ex-filters-{{ section.id }} .ex-filters__panel {
+    position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; min-width: 220px; max-height: 320px; overflow: auto;
+    padding: 12px; background: #fff; border: 1px solid rgba(0,0,0,.15); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  }
+  #ex-filters-{{ section.id }} label { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+  #ex-filters-{{ section.id }} .ex-filters__chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  #ex-filters-{{ section.id }} .ex-filters__chips button { padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,.2); background: none; }
+  #ex-filters-{{ section.id }} input[type="number"] { width: 6em; }
+</style>
+
+<script>
+  (function () {
+    // Sections render before the app embed (which sits at the end of <body>), so wait for the DOM before
+    // touching window.SearchApp. ready() loads the SDK on demand.
+    function whenSearchApp(cb) {
+      var go = function () { if (window.SearchApp) window.SearchApp.ready().then(cb); };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go, { once: true });
+      else go();
+    }
+    var root = document.getElementById('ex-filters-{{ section.id }}');
+    if (!root) return;
+    var bar = root.querySelector('.ex-filters__bar');
+    var chips = root.querySelector('.ex-filters__chips');
+    var esc = function (s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    };
+
+    whenSearchApp(function (sdk) {
+      var open = {}; // Keep dropdowns open across re-renders.
+
+      function current() {
+        return sdk.state.get().filters || {};
+      }
+      function apply(next, key, value) {
+        if (key && value !== undefined) sdk.track('filter', { key: key, value: String(value) });
+        sdk.state.set({ filters: next, page: 1 });
+      }
+
+      function render(res) {
+        bar.innerHTML = res.facets
+          .map(function (f) {
+            var body;
+            if (f.type === 'range') {
+              var sel = f.selected || {};
+              body =
+                '<form data-range="' + esc(f.key) + '">' +
+                '<label>Min <input type="number" name="min" min="' + Math.floor(f.min) + '" max="' + Math.ceil(f.max) + '" value="' + (sel.min !== undefined ? sel.min : '') + '" placeholder="' + Math.floor(f.min) + '"></label>' +
+                '<label>Max <input type="number" name="max" min="' + Math.floor(f.min) + '" max="' + Math.ceil(f.max) + '" value="' + (sel.max !== undefined ? sel.max : '') + '" placeholder="' + Math.ceil(f.max) + '"></label>' +
+                '<button type="submit">' + esc(root.dataset.labelApply) + '</button></form>';
+            } else if (f.type === 'toggle') {
+              var v = f.values[0];
+              body = '<label><input type="checkbox" data-toggle="' + esc(f.key) + '"' + (v && v.selected ? ' checked' : '') + '> ' + esc(f.label) + '</label>';
+            } else {
+              body = f.values
+                .map(function (v) {
+                  return '<label><input type="checkbox" data-key="' + esc(f.key) + '" value="' + esc(v.value) + '"' + (v.selected ? ' checked' : '') + (v.count === 0 && !v.selected ? ' disabled' : '') + '> ' + esc(v.label || v.value) + (f.showCount ? ' <span>(' + v.count + ')</span>' : '') + '</label>';
+                })
+                .join('');
+            }
+            return '<details data-facet="' + esc(f.key) + '"' + (open[f.key] ? ' open' : '') + '><summary>' + esc(f.label) + '</summary><div class="ex-filters__panel">' + body + '</div></details>';
+          })
+          .join('');
+
+        var selected = [];
+        res.facets.forEach(function (f) {
+          if (f.type === 'range') {
+            if (f.selected) selected.push({ key: f.key, label: f.label + ': ' + (f.selected.min !== undefined ? f.selected.min : f.min) + '–' + (f.selected.max !== undefined ? f.selected.max : f.max) });
+          } else {
+            f.values.forEach(function (v) {
+              if (v.selected) selected.push({ key: f.key, value: v.value, label: f.type === 'toggle' ? f.label : v.label || v.value });
+            });
+          }
+        });
+        chips.innerHTML = selected.length
+          ? selected
+              .map(function (s) {
+                return '<button type="button" data-remove="' + esc(s.key) + '"' + (s.value !== undefined ? ' data-value="' + esc(s.value) + '"' : '') + '>' + esc(s.label) + ' ×</button>';
+              })
+              .join('') + '<button type="button" data-clear>' + esc(root.dataset.labelClear) + '</button>'
+          : '';
+      }
+
+      sdk.on('results', render);
+
+      bar.addEventListener('toggle', function (e) {
+        if (e.target.dataset && e.target.dataset.facet) open[e.target.dataset.facet] = e.target.open;
+      }, true);
+
+      bar.addEventListener('change', function (e) {
+        var t = e.target;
+        var next = Object.assign({}, current());
+        if (t.dataset.toggle) {
+          if (t.checked) next[t.dataset.toggle] = true;
+          else delete next[t.dataset.toggle];
+          return apply(next, t.dataset.toggle, t.checked);
+        }
+        if (!t.dataset.key) return;
+        var values = (Array.isArray(next[t.dataset.key]) ? next[t.dataset.key] : []).filter(function (v) { return v !== t.value; });
+        if (t.checked) values.push(t.value);
+        if (values.length) next[t.dataset.key] = values;
+        else delete next[t.dataset.key];
+        apply(next, t.dataset.key, t.value);
+      });
+
+      bar.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = e.target;
+        var range = {};
+        if (form.min.value !== '') range.min = Number(form.min.value);
+        if (form.max.value !== '') range.max = Number(form.max.value);
+        var next = Object.assign({}, current());
+        if (range.min === undefined && range.max === undefined) delete next[form.dataset.range];
+        else next[form.dataset.range] = range;
+        apply(next, form.dataset.range, JSON.stringify(range));
+      });
+
+      chips.addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        if (b.hasAttribute('data-clear')) return apply({});
+        var next = Object.assign({}, current());
+        var key = b.dataset.remove;
+        if (b.dataset.value !== undefined && Array.isArray(next[key])) {
+          next[key] = next[key].filter(function (v) { return v !== b.dataset.value; });
+          if (!next[key].length) delete next[key];
+        } else delete next[key];
+        apply(next);
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Horizontal filters",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Accessible name", "default": "Filters" },
+    { "type": "text", "id": "apply_label", "label": "Apply button label", "default": "Apply" },
+    { "type": "text", "id": "clear_label", "label": "Clear all label", "default": "Clear all" }
+  ],
+  "presets": [{ "name": "Horizontal filters" }]
+}
+{% endschema %}

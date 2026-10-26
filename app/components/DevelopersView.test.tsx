@@ -25,7 +25,7 @@ describe("DevelopersView (3.8)", () => {
     expect(html).toMatch(/<s-text-field[^>]*label="Public key"[^>]*value="pk_test123"/);
     expect(html).toContain('value="https://api.example"');
     expect(html).toContain('href="https://docs.example/searchapp"');
-    expect(html).toContain("window.SearchApp.ready()");
+    expect(html).toContain("window.SearchApp?.ready()");
     expect(html).toContain(
       "https://api.example/v1/search?shop=acme.myshopify.com&amp;key=pk_test123",
     );

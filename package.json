@@ -84,6 +84,7 @@
     "graphql-config": "^5.1.1",
     "happy-dom": "^20.0.0",
     "lighthouse": "^13.5.0",
+    "liquidjs": "^10.30.0",
     "prettier": "^3.6.2",
     "smol-toml": "^1.9.1",
     "tsx": "^4.20.0",

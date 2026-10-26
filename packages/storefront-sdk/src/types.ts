@@ -242,7 +242,10 @@ export interface SearchAppSDK {
   readonly version: string;
   /** Storefront context from the app embed. */
   readonly context: SearchAppContext;
-  /** Resolves once the SDK has loaded. Safe to call before the SDK script loads (the app embed provides a stub). */
+  /**
+   * Resolves once the SDK has loaded. The app embed defines a stub that loads the SDK on demand; it renders at the
+   * end of `<body>`, so call this after `DOMContentLoaded` from section scripts.
+   */
   ready(): Promise<SearchAppSDK>;
   /** Searches products with the merchant's relevance, synonyms, merchandising rules and market prices. */
   search(params?: SearchParams): Promise<SearchResponse>;

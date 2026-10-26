@@ -25,10 +25,12 @@ function snippets(info: DevelopersInfo) {
   const qs = `shop=${info.shopDomain}&key=${info.publicKey}`;
   return {
     theme: `<script>
-  window.SearchApp.ready().then((sdk) => {
-    sdk.on("results", (res) => console.log(res.total, "results"));
-    sdk.search({ q: "shirt", sort: "price_asc" });
-  });
+  document.addEventListener("DOMContentLoaded", () =>
+    window.SearchApp?.ready().then((sdk) => {
+      sdk.on("results", (res) => console.log(res.total, "results"));
+      sdk.search({ q: "shirt", sort: "price_asc" });
+    }),
+  );
 </script>`,
     template: `<template data-searchapp="product-card">
   <li class="my-card">

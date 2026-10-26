@@ -43,6 +43,14 @@ jobs:
       - run: npm run build:storefront
       # docs/developers/sdk-reference.md sinh từ .d.ts — fail nếu quên `npm run docs:sdk`
       - run: node scripts/gen-sdk-docs.mjs --check
+      # Theme Check (không cần đăng nhập): extension + 3 section mẫu cho developer (task 4.2)
+      - run: npx -y -p @shopify/cli@4 shopify theme check --path extensions/search-theme --fail-level error
+      - run: |
+          mkdir -p /tmp/tc/sections /tmp/tc/layout /tmp/tc/locales /tmp/tc/config
+          cp docs/developers/examples/*.liquid /tmp/tc/sections/
+          printf '<!doctype html><html><head>{{ content_for_header }}</head><body>{{ content_for_layout }}</body></html>' > /tmp/tc/layout/theme.liquid
+          echo '{}' > /tmp/tc/locales/en.default.json && echo '[]' > /tmp/tc/config/settings_schema.json
+          npx -y -p @shopify/cli@4 shopify theme check --path /tmp/tc --fail-level error
       - run: npm test
         env:
           CI: "true"

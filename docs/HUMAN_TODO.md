@@ -108,3 +108,6 @@
 - [ ] J3. Trên dev store: bấm "Change plan" ở trang Plans → phải mở trang chọn gói do Shopify host (VERIFY URL
       `https://admin.shopify.com/store/{store}/charges/{app_handle}/pricing_plans`). Chọn gói test → quay về /app/plans
       hiển thị đúng gói; search-api áp rpm/headless theo gói mới (cache ngữ cảnh đã purge).
+- [ ] G4. (4.2) Trên dev store theme Horizon: thêm 3 section mẫu `docs/developers/examples/*.liquid` vào template search
+      (cùng block Search results đặt filter position "none", tắt Show sort) → filter ngang, sort riêng, grid tuỳ biến chạy
+      đúng, đổi market hiển thị đúng giá; mobile không vỡ layout.

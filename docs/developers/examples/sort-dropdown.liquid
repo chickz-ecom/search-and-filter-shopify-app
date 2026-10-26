@@ -1,0 +1,62 @@
+{%- comment -%}
+  Example section: a custom sort dropdown placed anywhere on the search or collection page.
+  Turn off "Show sort" on the app's Search results / Collection filters block so there's only one sort control.
+  Requires the app embed to be on.
+
+  The options come from the latest results (only sort options the merchant enabled for this page type),
+  and the choice is written to the URL with sdk.state.set(). Every results widget on the page reloads.
+{%- endcomment -%}
+<div class="ex-sort" id="ex-sort-{{ section.id }}" hidden>
+  <label for="ex-sort-select-{{ section.id }}">{{ section.settings.label }}</label>
+  <select id="ex-sort-select-{{ section.id }}"></select>
+</div>
+
+<style>
+  #ex-sort-{{ section.id }} { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin: 12px 0; }
+  #ex-sort-{{ section.id }}[hidden] { display: none; }
+  #ex-sort-{{ section.id }} select { padding: 8px 32px 8px 12px; border-radius: 8px; }
+</style>
+
+<script>
+  (function () {
+    // Sections render before the app embed (which sits at the end of <body>), so wait for the DOM before
+    // touching window.SearchApp. ready() loads the SDK on demand.
+    function whenSearchApp(cb) {
+      var go = function () { if (window.SearchApp) window.SearchApp.ready().then(cb); };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go, { once: true });
+      else go();
+    }
+    var root = document.getElementById('ex-sort-{{ section.id }}');
+    if (!root) return;
+    var select = root.querySelector('select');
+
+    whenSearchApp(function (sdk) {
+      sdk.on('results', function (res) {
+        select.innerHTML = '';
+        res.sort_options.forEach(function (o) {
+          var opt = document.createElement('option');
+          opt.value = o.key;
+          opt.textContent = o.label;
+          opt.selected = o.key === res.sort;
+          select.appendChild(opt);
+        });
+        root.hidden = res.sort_options.length < 2;
+      });
+
+      select.addEventListener('change', function () {
+        sdk.track('sort', { key: select.value });
+        sdk.state.set({ sort: select.value, page: 1 });
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Sort dropdown",
+  "tag": "section",
+  "class": "section",
+  "settings": [{ "type": "text", "id": "label", "label": "Label", "default": "Sort by" }],
+  "presets": [{ "name": "Sort dropdown" }]
+}
+{% endschema %}

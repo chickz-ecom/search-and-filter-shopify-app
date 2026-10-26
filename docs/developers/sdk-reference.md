@@ -41,7 +41,8 @@ The global `window.SearchApp` object (SDK v1).
 
 | Method | Description |
 |---|---|
-| `ready(): Promise<SearchAppSDK>` | Resolves once the SDK has loaded. Safe to call before the SDK script loads (the app embed provides a stub). |
+| `ready(): Promise<SearchAppSDK>` | Resolves once the SDK has loaded. The app embed defines a stub that loads the SDK on demand; it renders at the
+end of `<body>`, so call this after `DOMContentLoaded` from section scripts. |
 | `search(params?: SearchParams): Promise<SearchResponse>` | Searches products with the merchant's relevance, synonyms, merchandising rules and market prices. |
 | `suggest(q: string, options?: { limit?: number }): Promise<SuggestResponse>` | Instant search suggestions: products, collections, pages, articles and query suggestions. |
 | `collection(handle: string, params?: CollectionParams): Promise<SearchResponse>` | Filters and sorts products within a collection (by handle). |
