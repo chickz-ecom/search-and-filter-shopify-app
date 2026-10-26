@@ -39,10 +39,12 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
+      # Bundle storefront trước test: contract test của theme extension kiểm tra asset tồn tại; vượt ngân sách gzip → fail.
+      - run: npm run build:storefront
       - run: npm test
         env:
           CI: "true"
-      - run: npm run build:storefront
+
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npm run build
