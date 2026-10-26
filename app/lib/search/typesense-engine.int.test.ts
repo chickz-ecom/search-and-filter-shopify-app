@@ -138,9 +138,9 @@ describe.skipIf(!up)("TypesenseEngine (live)", () => {
     const ctx = { locale: "en", primaryLocale: "en", indexedLocales: [], mode: "search" as const };
     const s = defaultSearchSettings();
     const run = async () =>
-      (await engine.search<ProductDoc>(alias, { q: "Zorblax", ...buildTextQuery(s, ctx) })).hits.map(
-        (h) => h.document.id,
-      );
+      (
+        await engine.search<ProductDoc>(alias, { q: "Zorblax", ...buildTextQuery(s, ctx) })
+      ).hits.map((h) => h.document.id);
     await engine.importDocuments(v1, [
       doc("w1", { title: "Zorblax runner", vendor: "Other" }),
       doc("w2", { title: "Plain runner", vendor: "Zorblax" }),

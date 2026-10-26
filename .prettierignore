@@ -13,3 +13,4 @@ test-results
 extensions/search-theme/assets/*.js
 *.md
 package-lock.json
+docs/

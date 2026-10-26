@@ -8,7 +8,7 @@ type AppBridgeIntrinsic = globalThis.JSX.IntrinsicElements;
 declare module "react" {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace JSX {
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-empty-interface
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
     interface IntrinsicElements extends AppBridgeIntrinsic {}
   }
 }
