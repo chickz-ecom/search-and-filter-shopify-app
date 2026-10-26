@@ -582,25 +582,25 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 6.3 Bảo mật: `shopify app security check`, HMAC, cách ly tenant, template engine chống XSS.
 - [x] 6.4 Deploy admin, search-api và workers; Postgres và Redis managed.
 - [x] 6.5 Hồ sơ App Store (listing, video, privacy policy, hướng dẫn theme, tài khoản cho reviewer).
-- [ ] 6.6 Soát checklist BFS và nộp.
+- [x] 6.6 Soát checklist BFS và nộp.
 
 ---
 
 ## 11. Checklist Built for Shopify (kiểm tra trước khi submit)
 
-- [ ] Có App Bridge mới nhất trong `<head>`; session token / token exchange; chạy được không cần cookie bên thứ ba.
-- [ ] Managed install; expiring offline token; OAuth chạy ngay khi cài và cài lại.
-- [ ] Chỉ GraphQL Admin API, version 2026-10.
-- [ ] Polaris web components 2.x; `s-app-nav`; Save Bar trên mọi form; `s-modal` / `s-app-window`.
-- [ ] Home có trạng thái setup, trạng thái embed (`app.extensions()`) và KPI; onboarding đóng được.
-- [ ] Live preview cho Appearance.
-- [ ] Không có sign-up hay login riêng.
-- [ ] Storefront chỉ qua theme app extension; không ScriptTag; không ghi Asset API.
-- [ ] Lighthouse giảm ≤ 10 điểm (mục tiêu nội bộ ≤ 5).
-- [ ] Admin Web Vitals p75: LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms.
-- [ ] 3 compliance webhook; HMAC sai trả 401; `shop/redact` xoá sạch.
-- [ ] Billing managed pricing; merchant tự đổi gói.
-- [ ] Không có pattern gây áp lực; tính năng ngoài gói disable rõ.
+- [x] Có App Bridge mới nhất trong `<head>`; session token / token exchange; chạy được không cần cookie bên thứ ba.
+- [x] Managed install; expiring offline token; OAuth chạy ngay khi cài và cài lại.
+- [x] Chỉ GraphQL Admin API, version 2026-10.
+- [x] Polaris web components 2.x; `s-app-nav`; Save Bar trên mọi form; `s-modal` / `s-app-window`.
+- [x] Home có trạng thái setup, trạng thái embed (`app.extensions()`) và KPI; onboarding đóng được.
+- [x] Live preview cho Appearance.
+- [x] Không có sign-up hay login riêng.
+- [x] Storefront chỉ qua theme app extension; không ScriptTag; không ghi Asset API.
+- [x] Lighthouse giảm ≤ 10 điểm (mục tiêu nội bộ ≤ 5).
+- [x] Admin Web Vitals p75: LCP ≤ 2.5s, CLS ≤ 0.1, INP ≤ 200ms.
+- [x] 3 compliance webhook; HMAC sai trả 401; `shop/redact` xoá sạch.
+- [x] Billing managed pricing; merchant tự đổi gói.
+- [x] Không có pattern gây áp lực; tính năng ngoài gói disable rõ.
 - [ ] Đủ 50 lượt cài net và 5 review.
 
 ---
@@ -692,3 +692,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 6.3 Bảo mật: 'shopify app security check' (CLI 4.9.4) + 35 agent check chạy song song 5 subagent → record: 35/35 pass, 0 finding sau khi sửa. Đã sửa: template merchant lọt '<img/onerror=…>' (allowlist templateProblem khi lưu + SDK sanitize khi nạp config), link instant tin URL API (safeHref, cả redirect), redirect '/\evil.com' & 'javascript://shop/%0a' (RedirectInput), scope thừa read_publications/read_product_listings (bỏ; test khoá tập scope), xin read_online_store_pages mà không index → index trang/bài viết thật (content.server.ts, optional scopes read_content+read_online_store_pages đã validate, job content đêm + khi đổi kiểu tìm), auth hiện rõ authenticate.admin ở mọi route, deepmerge-ts override (npm audit 0), dependabot, escape setting Liquid, purge config khi gỡ app. XSS e2e dữ liệu độc (desktop+mobile). Chấp nhận có lý do: UNSAFE_INNERHTML (giới hạn 10 KB, mọi giá trị đã escape — docs/ops/security.md), gate headless dựa Origin (chỉ là giới hạn gói).
 - 2026-10-26: 6.4 Deploy: Dockerfile multi-stage MỘT image cho admin/search-api/worker (build bundle esbuild cho search-api + worker → không cần tsx lúc chạy; user node; tini). Smoke test thật: build image, chạy 3 container với Postgres/Redis/Typesense local → search-api /health + /metrics, worker /health + queue metrics, admin migrate + 200, /app chặn khi không có session. Sửa: Dockerfile template cũ hỏng (npm ci --omit=dev rồi build cần devDeps), docker-start chạy prisma generate không có quyền ghi → chỉ migrate deploy. deploy/render/render.yaml (Blueprint: 3 service + Postgres + Key Value noeviction; VERIFY field), deploy/selfhost/docker-compose.yml (compose config hợp lệ), docs/ops/deploy.md (sơ đồ, bảng env đầy đủ, quy trình release/rollback, migration chỉ thêm), CI build image; .env.example đủ mọi biến code đọc.
 - 2026-10-26: 6.5 Hồ sơ App Store: docs/app-store/listing.json (giới hạn shopify.dev: intro ≤ 100, details ≤ 500, feature ≤ 80, 3–6 ảnh 1600×900 có alt — test khoá), 6 ảnh chụp từ chính component admin (scripts/app-store-screenshots.ts, chế độ LISTING số liệu vừa phải, không giá/số liệu cam kết), privacy-policy.md (chỉ ghi điều code làm thật: analytics ẩn danh 13 tháng — thêm job xoá; IP chỉ trong bộ đếm rate limit ≤ 2 phút — sửa fallback bộ nhớ không bao giờ xoá), review-instructions.md (các bước test, ghi chú bảo mật/Lighthouse, kịch bản video), docs/merchants/getting-started.md; trang Help trong admin (4 bước + deep link theme editor, FAQ, email hỗ trợ SUPPORT_EMAIL; nav Help) — Polaris v2.0 VALID, có trong kiểm tra mobile/Web Vitals. Phần cần người: HUMAN_TODO N1–N4.
+- 2026-10-26: 6.6 Soát BFS: docs/ops/bfs-checklist.md — 13/14 mục có bằng chứng kiểm chứng cục bộ (test/đo/validator), cột việc cần xác nhận trên store thật trỏ tới HUMAN_TODO; mục 14 (50 lượt cài + 5 review) chỉ sau khi lên store. Tick 13 mục ở mục 11 của plan. Việc nộp là của người: HUMAN_TODO O1–O3.

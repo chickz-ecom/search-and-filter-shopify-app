@@ -151,3 +151,10 @@
 - [ ] N3. Quay video theo kịch bản (review-instructions.md) hoặc ảnh feature 1600×900; chụp lại 6 ảnh trên admin THẬT
       (`scripts/app-store-screenshots.ts` dùng fixture — thay bằng ảnh store demo nếu khác); icon app 1200×1200.
 - [ ] N4. Dịch listing sang tiếng Việt (nếu chọn ngôn ngữ listing vi) và nhập vào form nộp App Store.
+
+## O. Nộp App Store và BFS (task 6.6)
+- [ ] O1. Hoàn tất A → C, D, J, M, N (app chạy thật trên hạ tầng production, dev store demo), rồi đi lại
+      `docs/app-store/review-instructions.md` trên store demo.
+- [ ] O2. Soát lại `docs/ops/bfs-checklist.md` cột "Still to confirm on a real store" (I1, G3, field Web Vitals 28 ngày).
+- [ ] O3. Partner Dashboard → Distribution → Shopify App Store: nhập listing (`docs/app-store/listing.json`), ảnh,
+      privacy policy URL, hướng dẫn test; nộp review. Sau khi được duyệt và đạt 50 lượt cài net + 5 review → đăng ký BFS.
