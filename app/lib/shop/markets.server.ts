@@ -21,6 +21,7 @@ export const MARKETS_QUERY = `query Markets($cursor: String) {
           }
         }
       }
+      webPresences(first: 5) { nodes { domain { host } } }
       catalogs(first: 5) {
         nodes {
           status
@@ -45,6 +46,7 @@ type MarketNode = {
       regions: { nodes: ({ code?: string; currency?: { currencyCode: string } } | null)[] };
     } | null;
   } | null;
+  webPresences?: { nodes: { domain: { host: string } | null }[] };
   catalogs: {
     nodes: {
       status: string;
@@ -94,6 +96,16 @@ export async function fetchMarkets(
   ex: GraphqlExecutor,
   shopCurrency: string,
 ): Promise<MarketDetail[]> {
+  return parseMarkets(await fetchMarketNodes(ex), shopCurrency);
+}
+
+/** Domain riêng của web presence theo market (vd. shop.de) — cho CORS của search-api. */
+export function marketDomains(nodes: MarketNode[]): string[] {
+  const hosts = nodes.flatMap((m) => (m.webPresences?.nodes ?? []).map((w) => w.domain?.host));
+  return [...new Set(hosts.filter((h): h is string => Boolean(h)))];
+}
+
+async function fetchMarketNodes(ex: GraphqlExecutor): Promise<MarketNode[]> {
   const nodes: MarketNode[] = [];
   let cursor: string | null = null;
   for (let page = 0; page < 10; page++) {
@@ -108,7 +120,7 @@ export async function fetchMarkets(
     if (!d.markets.pageInfo.hasNextPage) break;
     cursor = d.markets.pageInfo.endCursor;
   }
-  return parseMarkets(nodes, shopCurrency);
+  return nodes;
 }
 
 export type ShopRefreshResult = {
@@ -170,7 +182,13 @@ export async function refreshShop(
   }
   if (what.includes("markets")) {
     const prev = (Array.isArray(shop.markets) ? shop.markets : []) as unknown as MarketInfo[];
-    const next = await fetchMarkets(deps.ex, (data.currency as string) ?? shop.currency);
+    const nodes = await fetchMarketNodes(deps.ex);
+    const next = parseMarkets(nodes, (data.currency as string) ?? shop.currency);
+    const domains = [
+      ...new Set([shop.domain, ...shop.storefrontDomains, ...marketDomains(nodes)]),
+    ].sort();
+    if (domains.join(",") !== [...shop.storefrontDomains].sort().join(","))
+      data.storefrontDomains = domains;
     if (canonical(prev) !== canonical(next)) {
       data.markets = next as unknown as Prisma.InputJsonValue;
       result.marketsChanged = true;

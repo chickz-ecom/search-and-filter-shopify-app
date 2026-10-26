@@ -47,7 +47,7 @@ export async function getShopByPublicKey(db: Db, publicKey: string) {
 export async function ensureShop(
   db: Db,
   domain: string,
-  info: { currency?: string; primaryLocale?: string; locales?: string[] } = {},
+  info: { currency?: string; primaryLocale?: string; locales?: string[]; domains?: string[] } = {},
 ): Promise<{ shop: Shop; created: boolean; reinstalled: boolean }> {
   const existing = await db.shop.findUnique({ where: { domain } });
   if (existing) {
@@ -60,6 +60,7 @@ export async function ensureShop(
         ...(info.currency ? { currency: info.currency } : {}),
         ...(info.primaryLocale ? { primaryLocale: info.primaryLocale } : {}),
         ...(info.locales ? { locales: info.locales } : {}),
+        ...(info.domains ? { storefrontDomains: info.domains } : {}),
       },
     });
     await seedDefaults(db, shop.id);
@@ -75,6 +76,7 @@ export async function ensureShop(
       currency: info.currency ?? "USD",
       primaryLocale: info.primaryLocale ?? "en",
       locales: info.locales ?? [],
+      storefrontDomains: info.domains ?? [domain],
     },
   });
   await seedDefaults(db, shop.id);

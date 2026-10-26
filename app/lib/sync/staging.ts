@@ -116,20 +116,22 @@ let tablesReady: Promise<void> | undefined;
  */
 export function ensureStagingTables(db: SqlClient): Promise<void> {
   tablesReady ??= (async () => {
+    // Schema riêng: Prisma chỉ quản lý "public" → không bị coi là drift khi `prisma migrate`.
+    await db.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS sync_stage`);
     await db.$executeRawUnsafe(
-      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage_products (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL, PRIMARY KEY (job_id, pid))`,
+      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage.products (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL, PRIMARY KEY (job_id, pid))`,
     );
     await db.$executeRawUnsafe(
-      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage_variants (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL)`,
+      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage.variants (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL)`,
     );
     await db.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS sync_stage_variants_idx ON sync_stage_variants (job_id, pid)`,
+      `CREATE INDEX IF NOT EXISTS variants_idx ON sync_stage.variants (job_id, pid)`,
     );
     await db.$executeRawUnsafe(
-      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage_collections (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL, handle text NOT NULL, title text NOT NULL)`,
+      `CREATE UNLOGGED TABLE IF NOT EXISTS sync_stage.collections (job_id text NOT NULL, pid text NOT NULL, data text NOT NULL, handle text NOT NULL, title text NOT NULL)`,
     );
     await db.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS sync_stage_collections_idx ON sync_stage_collections (job_id, pid)`,
+      `CREATE INDEX IF NOT EXISTS collections_idx ON sync_stage.collections (job_id, pid)`,
     );
   })().catch((err) => {
     tablesReady = undefined;
@@ -183,7 +185,7 @@ export class PgStaging implements Staging {
     if (!rows.length) return this.pending;
     return this.enqueue(() =>
       this.db.$executeRawUnsafe(
-        `INSERT INTO sync_stage_products (job_id, pid, data) SELECT $1, * FROM unnest($2::text[], $3::text[])
+        `INSERT INTO sync_stage.products (job_id, pid, data) SELECT $1, * FROM unnest($2::text[], $3::text[])
          ON CONFLICT (job_id, pid) DO UPDATE SET data = EXCLUDED.data`,
         this.jobId,
         rows.map((r) => r[0]),
@@ -197,7 +199,7 @@ export class PgStaging implements Staging {
     if (!rows.length) return this.pending;
     return this.enqueue(() =>
       this.db.$executeRawUnsafe(
-        `INSERT INTO sync_stage_variants (job_id, pid, data) SELECT $1, * FROM unnest($2::text[], $3::text[])`,
+        `INSERT INTO sync_stage.variants (job_id, pid, data) SELECT $1, * FROM unnest($2::text[], $3::text[])`,
         this.jobId,
         rows.map((r) => r[0]),
         rows.map((r) => r[1]),
@@ -210,7 +212,7 @@ export class PgStaging implements Staging {
     if (!rows.length) return this.pending;
     return this.enqueue(() =>
       this.db.$executeRawUnsafe(
-        `INSERT INTO sync_stage_collections (job_id, pid, data, handle, title) SELECT $1, * FROM unnest($2::text[], $3::text[], $4::text[], $5::text[])`,
+        `INSERT INTO sync_stage.collections (job_id, pid, data, handle, title) SELECT $1, * FROM unnest($2::text[], $3::text[], $4::text[], $5::text[])`,
         this.jobId,
         rows.map((r) => r[0]),
         rows.map((r) => r[1]),
@@ -230,7 +232,7 @@ export class PgStaging implements Staging {
   async count() {
     await this.flush();
     const r = await this.db.$queryRawUnsafe<{ n: bigint | number }[]>(
-      `SELECT count(*) AS n FROM sync_stage_products WHERE job_id = $1`,
+      `SELECT count(*) AS n FROM sync_stage.products WHERE job_id = $1`,
       this.jobId,
     );
     return Number(r[0]?.n ?? 0);
@@ -252,12 +254,12 @@ export class PgStaging implements Staging {
         }[]
       >(
         `SELECT p.pid, p.data,
-           (SELECT array_agg(v.data) FROM sync_stage_variants v WHERE v.job_id = p.job_id AND v.pid = p.pid) AS variants,
+           (SELECT array_agg(v.data) FROM sync_stage.variants v WHERE v.job_id = p.job_id AND v.pid = p.pid) AS variants,
            c.collections, c.chandles, c.ctitles
-         FROM sync_stage_products p
+         FROM sync_stage.products p
          LEFT JOIN LATERAL (
            SELECT array_agg(data) AS collections, array_agg(handle) AS chandles, array_agg(title) AS ctitles
-           FROM sync_stage_collections c WHERE c.job_id = p.job_id AND c.pid = p.pid
+           FROM sync_stage.collections c WHERE c.job_id = p.job_id AND c.pid = p.pid
          ) c ON true
          WHERE p.job_id = $1 AND p.pid > $2
          ORDER BY p.pid
@@ -289,7 +291,7 @@ export class PgStaging implements Staging {
     this.v = [];
     this.c = [];
     await ensureStagingTables(this.db);
-    for (const t of ["sync_stage_products", "sync_stage_variants", "sync_stage_collections"]) {
+    for (const t of ["sync_stage.products", "sync_stage.variants", "sync_stage.collections"]) {
       await this.db.$executeRawUnsafe(`DELETE FROM ${t} WHERE job_id = $1`, this.jobId);
     }
   }

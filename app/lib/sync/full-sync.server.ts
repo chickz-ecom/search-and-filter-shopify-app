@@ -9,6 +9,7 @@ import {
   nextVersion,
   productAlias,
   productCollection,
+  scopedKeyCollections,
   synonymSetName,
 } from "../search/names";
 import type { ContentDoc } from "../search/product-doc";
@@ -135,6 +136,15 @@ export async function runFullSync(
       : [];
     const secondaryLocales = shop.locales.filter((l) => l !== shop.primaryLocale);
 
+    // Scoped search key của shop (D6/6.1): search-api chỉ đọc được collection của shop này.
+    if (!shop.searchKeyScoped && "createSearchOnlyKey" in engine) {
+      const value = await (
+        engine as unknown as { createSearchOnlyKey(c: string[], d: string): Promise<string> }
+      )
+        .createSearchOnlyKey(scopedKeyCollections(shopId), `search ${shop.domain}`)
+        .catch(() => null);
+      if (value) await updateProgress(db, shopId, { searchKeyScoped: value });
+    }
     // Synonym/curation set phải tồn tại trước khi collection tham chiếu tới.
     await pushMerchToEngine(db, engine, shopId);
     await engine.createCollection(

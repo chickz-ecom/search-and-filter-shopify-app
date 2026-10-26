@@ -1,0 +1,6 @@
+{
+  "name": "search-api",
+  "private": true,
+  "type": "module",
+  "description": "Public storefront search API (D9). Dùng chung code app/lib; bundle bằng scripts/build-search-api.mjs."
+}

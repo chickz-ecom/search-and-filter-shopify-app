@@ -54,3 +54,9 @@ export function nextVersion(current: string | null): number {
   const m = current ? /_v(\d+)$/.exec(current) : null;
   return m ? Number(m[1]) + 1 : 1;
 }
+
+/** Pattern collection cho scoped search key của shop (Typesense so khớp nguyên tên → không lẫn shop có id là tiền tố). */
+export function scopedKeyCollections(shopId: string): string[] {
+  assertShopId(shopId);
+  return [`p_${shopId}`, `p_${shopId}_v.*`, `c_${shopId}`, `c_${shopId}_v.*`];
+}

@@ -62,8 +62,10 @@ model Shop {
   lastSyncedUpdatedAt DateTime?
   productCount        Int       @default(0)
   indexedCount        Int       @default(0)
-  // Storefront access token (server-side best-selling, task 1.12) — chỉ lưu, không lộ ra client
+  // Không dùng (best-selling dùng private token qua unauthenticated.storefront, Nhật ký 1.12)
   storefrontToken     String?
+  // Domain storefront (primary + web presence theo market) → CORS của search-api
+  storefrontDomains   String[]  @default([])
   // Feature flags: { fixedMarketPrices?: boolean, headless?: boolean }
   features            Json      @default("{}")
   onboardingDismissed Boolean   @default(false)

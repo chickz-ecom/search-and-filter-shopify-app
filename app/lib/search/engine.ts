@@ -70,6 +70,8 @@ export type SearchParams = {
   dropTokensThreshold?: number;
   typoTokensThreshold?: number;
   enableOverrides?: boolean;
+  /** Tag curation (rule `tags`) — trang collection gửi `col_{id}`. Typesense 30: tham số `curation_tags` (override_tags bị bỏ qua — đã đo). */
+  curationTags?: string[];
   synonymSets?: string[];
   stopwords?: string;
   highlightFields?: string[];

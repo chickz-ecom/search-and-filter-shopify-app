@@ -92,6 +92,7 @@ export function toTypesenseSearchParams(p: SearchParams): Json {
   if (p.dropTokensThreshold !== undefined) out.drop_tokens_threshold = p.dropTokensThreshold;
   if (p.typoTokensThreshold !== undefined) out.typo_tokens_threshold = p.typoTokensThreshold;
   if (p.enableOverrides !== undefined) out.enable_overrides = p.enableOverrides;
+  if (p.curationTags?.length) out.curation_tags = p.curationTags.join(",");
   if (p.synonymSets?.length) out.synonym_sets = p.synonymSets.join(",");
   if (p.stopwords) out.stopwords = p.stopwords;
   if (p.highlightFields?.length) out.highlight_fields = p.highlightFields.join(",");
