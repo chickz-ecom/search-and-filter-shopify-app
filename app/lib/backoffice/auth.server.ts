@@ -104,9 +104,19 @@ export async function createAgent(
 
 type SessionData = { agentId: string; ver: number };
 let storage: ReturnType<typeof createCookieSessionStorage<SessionData>> | null = null;
+let warnedShortSecret = false;
 function sessions() {
   const secret = env().ADMIN_SESSION_SECRET;
-  if (!secret || secret.length < 32) return null;
+  if (!secret || secret.length < 32) {
+    // Có đặt nhưng quá ngắn → /admin vẫn 404; báo rõ một lần thay vì để người dùng đoán.
+    if (secret && !warnedShortSecret) {
+      warnedShortSecret = true;
+      console.warn(
+        `[backoffice] ADMIN_SESSION_SECRET has ${secret.length} characters; it needs at least 32, so /admin is off. Generate one with: openssl rand -base64 48`,
+      );
+    }
+    return null;
+  }
   storage ??= createCookieSessionStorage<SessionData>({
     cookie: {
       name: "__sa_admin",
