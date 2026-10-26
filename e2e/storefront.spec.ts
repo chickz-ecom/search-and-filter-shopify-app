@@ -158,3 +158,29 @@ test.describe("fallback (2.11)", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("fallback: network failures", () => {
+  test("search API unreachable (aborted) → native grid stays, no JS errors", async ({ page }) => {
+    const errors = jsErrors(page);
+    await page.route("**/apps/search/v1/**", (route) => route.abort("connectionrefused"));
+    await page.goto("/search.html?q=tee");
+    await page.waitForTimeout(500);
+    await expect(page.locator("[data-native-results] li")).toHaveCount(2);
+    expect(errors).toEqual([]);
+  });
+
+  test("Storefront API failing → amounts hidden ('View price'), never a wrong currency", async ({
+    page,
+  }) => {
+    await mockApi(page);
+    await page.unroute("**/api/2026-10/graphql.json");
+    await page.route("**/api/2026-10/graphql.json", (route) =>
+      route.fulfill({ status: 500, body: "{}" }),
+    );
+    await page.goto("/search.html?currency=EUR&q=");
+    const block = page.locator(".sa-block");
+    await expect(block.locator(".sa-card").first()).toBeVisible();
+    await expect(block.locator(".sa-card__price").first()).toHaveText("View price");
+    await expect(block.locator(".sa-card__price", { hasText: "$" })).toHaveCount(0);
+  });
+});
