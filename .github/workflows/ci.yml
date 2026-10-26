@@ -28,7 +28,7 @@ jobs:
           TYPESENSE_API_KEY: dev-typesense-key
         ports: ["8108:8108"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -69,7 +69,7 @@ jobs:
     # Cần secret SHOPIFY_CLI_PARTNERS_TOKEN (xem docs/HUMAN_TODO.md)
     if: ${{ github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
