@@ -564,7 +564,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 3.7 Analytics (thêm sort usage).
 - [x] 3.8 **Trang Developers:** public key, endpoint, snippet mẫu, link docs.
 - [x] 3.9 Plans (managed pricing).
-- [ ] 3.10 Kiểm tra mobile, hai giao diện admin, Web Vitals của admin.
+- [x] 3.10 Kiểm tra mobile, hai giao diện admin, Web Vitals của admin.
 
 ### Phase 4 — Tài liệu cho developer (song song Phase 3, khoảng 1 tuần)
 - [ ] 4.1 `docs/developers/`: quickstart, tham chiếu SDK (tạo tự động từ `.d.ts`), DOM events, template, OpenAPI cho JSON API, changelog.
@@ -680,3 +680,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 3.7 Analytics: KPI 7/30/90 ngày so với kỳ trước, top query (searches/CTR/add-to-cart/doanh thu, bỏ query rỗng), query không có kết quả kèm nút Thêm synonym/redirect (?new=), filter usage (nhãn filter theo locale) và sort usage (tỉ lệ). Sửa race rollup: shop bị xoá giữa chừng (FK P2003) không làm hỏng cả lượt. Polaris v2.0 VALID.
 - 2026-10-26: 3.8 Developers: shop/public key/endpoint (copy), snippet SDK theme + template ghi đè + curl headless, link docs (DEVELOPER_DOCS_URL, HUMAN_TODO I5). Headless giờ cần gói ≥ Pro + merchant bật tường minh (mặc định tắt) + origin trong danh sách (nếu có; server-to-server không bị ảnh hưởng) — headlessDecision dùng chung search-api, lỗi 403 headless_not_in_plan/headless_disabled/headless_origin_not_allowed. Polaris v2.0 VALID.
 - 2026-10-26: 3.9 Plans (Shopify App Pricing): Partner API activeSubscription (query đã validate, inline + test khớp file) → shop.plan, purge ngữ cảnh search-api khi đổi; không có hợp đồng = Free; job đêm refresh-plans (App Pricing không có webhook); Shop.shopifyGid lưu lúc cài/refresh. Trang Plans: gói hiện tại, s-progress số sản phẩm/hạn mức, gia hạn/dùng thử/đổi gói chờ, lưới 6 gói, nút mở trang chọn gói Shopify host (_top). Vượt hạn mức = banner info, search vẫn chạy (không gây áp lực). VERIFY endpoint Partner API + URL trang chọn gói (HUMAN_TODO J).
+- 2026-10-26: 3.10 Mobile + Web Vitals admin: e2e/admin/render.tsx render 11 trang × en/vi (dữ liệu dài) với Polaris CDN; e2e/admin.spec.ts trên Desktop Chrome + Pixel 7: không tràn ngang, CLS < 0.1, LCP ≤ 2.5 s. Phát hiện và sửa CLS 0.28 ở Appearance (auto-fit làm editor chiếm cả hàng khi cột preview chưa parse xong → auto-fill giữ sẵn cột). Kết quả: desktop CLS p75 0.000 (max 0.061), LCP p75 372 ms; mobile CLS 0, LCP p75 356 ms. Field vitals: shopify.webVitals.onReport → /app/vitals (3.1). Hai giao diện admin thật: HUMAN_TODO I1.

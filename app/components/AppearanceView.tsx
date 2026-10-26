@@ -26,6 +26,12 @@ export type AppearanceViewProps = {
 type TemplateName = "product-card" | "suggest-item" | "empty";
 const COLORS = ["accent", "text", "muted", "border", "background", "sale"] as const;
 const TEMPLATES: TemplateName[] = ["product-card", "suggest-item", "empty"];
+const GRID = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(min(480px, 100%), 1fr))",
+  gap: "var(--s-space-base, 16px)",
+  alignItems: "start",
+} as const;
 const value = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 const checked = (e: Event) => (e.currentTarget as HTMLInputElement).checked;
 const num = (e: Event, fallback: number) => {
@@ -73,7 +79,9 @@ export function AppearanceView(p: AppearanceViewProps) {
           <s-paragraph>{t("appearance.fixErrors")}</s-paragraph>
         </s-banner>
       )}
-      <s-grid gridTemplateColumns="repeat(auto-fit, minmax(320px, 1fr))" gap="base">
+      {/* Lưới CSS thường + auto-fill (giữ sẵn cột thứ hai): HTML SSR được parse dần, lúc cột preview chưa tới thì
+          auto-fit sẽ cho editor chiếm cả hàng rồi co lại một nửa → CLS 0.28 (đo ở e2e/admin.spec.ts, task 3.10). */}
+      <div style={GRID}>
         <s-stack direction="block" gap="base">
           <s-section heading={t("appearance.style.heading")}>
             <s-stack direction="block" gap="base">
@@ -199,7 +207,7 @@ export function AppearanceView(p: AppearanceViewProps) {
             />
           </s-stack>
         </s-section>
-      </s-grid>
+      </div>
     </s-page>
   );
 }
