@@ -9,8 +9,8 @@ describe("i18n", () => {
   });
 
   it("interpolates variables", () => {
-    expect(translate("vi", "sync.indexing", { indexed: 5, total: 10 })).toBe(
-      "Đang dựng chỉ mục tìm kiếm: 5/10 sản phẩm",
+    expect(translate("vi", "sync.indexed", { indexed: 5, total: 10 })).toBe(
+      "Đã index 5/10 sản phẩm",
     );
   });
 

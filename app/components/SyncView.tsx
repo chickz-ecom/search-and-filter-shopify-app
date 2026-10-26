@@ -1,5 +1,5 @@
 import type { Locale, MessageKey } from "../i18n";
-import { syncStatusText } from "./sync-text";
+import { syncStatusText, syncStepDetail } from "./sync-text";
 import { translator } from "../i18n";
 import type { SyncStatus } from "../lib/sync/status.server";
 
@@ -44,6 +44,8 @@ const jobTone = {
   FAILED: "critical",
   CANCELLED: "neutral",
 } as const;
+
+const stepTone = { done: "success", active: "info", waiting: "neutral" } as const;
 
 export function SyncView({
   locale,
@@ -96,6 +98,27 @@ export function SyncView({
               max={100}
               accessibilityLabel={t("sync.state.RUNNING")}
             />
+          )}
+          {status.steps && (
+            <s-stack direction="block" gap="small-200">
+              {status.steps.map((step) => (
+                <s-stack
+                  key={step.key}
+                  direction="inline"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  gap="small-200"
+                >
+                  <s-text>{t(`sync.step.${step.key}` as MessageKey)}</s-text>
+                  <s-stack direction="inline" gap="small-200" alignItems="center">
+                    <s-text color="subdued">{syncStepDetail(t, step, locale)}</s-text>
+                    <s-badge tone={stepTone[step.state]}>
+                      {t(`sync.step.state.${step.state}` as MessageKey)}
+                    </s-badge>
+                  </s-stack>
+                </s-stack>
+              ))}
+            </s-stack>
           )}
           <s-paragraph>
             {t("sync.lastFull")}: {formatDate(status.lastFullSyncAt, locale) ?? t("common.never")} ·{" "}

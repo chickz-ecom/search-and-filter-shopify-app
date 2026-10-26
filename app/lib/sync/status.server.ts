@@ -1,5 +1,6 @@
 import type { Db } from "../shop/shop.server";
 import type { SyncPhase, SyncProgress } from "./progress";
+import { syncSteps, type SyncStep } from "./steps";
 
 // Trạng thái sync cho merchant (mục 5.5): lần sync cuối, đã index / tổng, job đang chạy, lỗi + cách sửa.
 
@@ -10,8 +11,8 @@ export type SyncStatus = {
   percent: number;
   /** Giai đoạn đang chạy (chỉ khi RUNNING) + số dòng đã tải từ Shopify ở giai đoạn fetch. */
   phase: SyncPhase | null;
-  /** Số sản phẩm đã tải từ Shopify (giai đoạn fetch), so với productCount. */
-  fetchedProducts: number | null;
+  /** Từng bước của lượt đang chạy (null khi không chạy). */
+  steps: SyncStep[] | null;
   lastFullSyncAt: string | null;
   lastIncrementalAt: string | null;
   running: { id: string; type: string; startedAt: string } | null;
@@ -41,7 +42,7 @@ export async function getSyncStatus(db: Db, shopId: string): Promise<SyncStatus>
             ? 100
             : 0,
     phase: progress?.phase ?? null,
-    fetchedProducts: progress?.products ?? null,
+    steps: progress ? syncSteps(progress, running?.type, { indexed, total }) : null,
     lastFullSyncAt: shop.lastFullSyncAt?.toISOString() ?? null,
     lastIncrementalAt: shop.lastIncrementalAt?.toISOString() ?? null,
     running: running

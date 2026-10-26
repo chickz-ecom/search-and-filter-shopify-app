@@ -3,8 +3,13 @@
 //   prepare 0–5 · fetch 5–70 (bulk xong / tổng bulk) · index 70–98 (đã ghi / tổng) · finalize 98–100 (swap alias)
 
 export type SyncPhase = "prepare" | "fetch" | "index" | "finalize";
-/** `products`: số sản phẩm đã tải từ Shopify (giai đoạn fetch), so với Shop.productCount. */
-export type SyncProgress = { phase: SyncPhase; percent: number; products?: number };
+export type BulkKind = "products" | "variants" | "collections";
+/** `bulks`: từng loại dữ liệu đang tải (gộp các shard): số dòng + xong chưa — cho danh sách bước trang Sync. */
+export type SyncProgress = {
+  phase: SyncPhase;
+  percent: number;
+  bulks?: Partial<Record<BulkKind, { n: number; done: boolean }>>;
+};
 
 export const fetchPercent = (done: number, total: number) => 5 + 65 * (total ? done / total : 1);
 
@@ -16,7 +21,7 @@ export function fetchProgress(
   bulks: Map<string, { objects: number; done: boolean }>,
   catalogCount: number,
   totalBulks = bulks.size,
-): { products: number; percent: number } {
+): Pick<SyncProgress, "percent" | "bulks"> {
   const product = [...bulks].filter(([name]) => name.startsWith("products"));
   const perShard = Math.max(1, catalogCount / Math.max(1, product.length));
   let done = 0;
@@ -24,11 +29,14 @@ export function fetchProgress(
     if (b.done) done += 1;
     else if (name.startsWith("products")) done += Math.min(0.99, b.objects / perShard);
   }
-  const products = Math.min(
-    catalogCount,
-    product.reduce((n, [, b]) => n + b.objects, 0),
-  );
-  return { products, percent: fetchPercent(done, totalBulks) };
+  const kinds: SyncProgress["bulks"] = {};
+  for (const [name, b] of bulks) {
+    const kind = name.split("#")[0] as BulkKind;
+    const cur = kinds[kind];
+    kinds[kind] = { n: (cur?.n ?? 0) + b.objects, done: (cur?.done ?? true) && b.done };
+  }
+  if (kinds.products) kinds.products.n = Math.min(catalogCount, kinds.products.n);
+  return { percent: fetchPercent(done, totalBulks), bulks: kinds };
 }
 
 export const indexPercent = (n: number, total: number, from = 70, to = 98) =>

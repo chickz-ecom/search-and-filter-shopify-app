@@ -14,7 +14,7 @@ const base: HomeViewProps = {
     indexedCount: 10,
     percent: 100,
     phase: null,
-    fetchedProducts: null,
+    steps: null,
     lastFullSyncAt: null,
     lastIncrementalAt: null,
     running: null,

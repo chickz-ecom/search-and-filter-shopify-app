@@ -32,7 +32,7 @@ const status = {
   indexedCount: 12_034,
   percent: 42,
   phase: null,
-  fetchedProducts: null,
+  steps: null,
   lastFullSyncAt: "2026-10-25T03:00:00Z",
   lastIncrementalAt: "2026-10-26T09:12:00Z",
   running: null,
