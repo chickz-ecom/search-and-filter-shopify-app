@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { typesenseUp } from "../../../test/services";
+import { defaultSearchSettings } from "../config/search-settings";
 import { buildProductSchema } from "./index-schema";
+import { buildTextQuery } from "./query/text-query";
 import { curationSetName, productAlias, productCollection, synonymSetName } from "./names";
 import type { ProductDoc } from "./product-doc";
 import { TypesenseEngine } from "./typesense-engine";
@@ -130,6 +132,24 @@ describe.skipIf(!up)("TypesenseEngine (live)", () => {
         ?.values.map((v) => v.value)
         .sort(),
     ).toEqual(["M", "S"]);
+  });
+
+  it("re-ranks immediately when field weights change (no re-index)", async () => {
+    const ctx = { locale: "en", primaryLocale: "en", indexedLocales: [], mode: "search" as const };
+    const s = defaultSearchSettings();
+    const run = async () =>
+      (await engine.search<ProductDoc>(alias, { q: "Zorblax", ...buildTextQuery(s, ctx) })).hits.map(
+        (h) => h.document.id,
+      );
+    await engine.importDocuments(v1, [
+      doc("w1", { title: "Zorblax runner", vendor: "Other" }),
+      doc("w2", { title: "Plain runner", vendor: "Zorblax" }),
+    ]);
+    expect(await run()).toEqual(["w1", "w2"]);
+    s.fields.find((f) => f.key === "title")!.weight = 1;
+    s.fields.find((f) => f.key === "vendor")!.weight = 10;
+    expect(await run()).toEqual(["w2", "w1"]);
+    await engine.deleteDocuments(v1, ["w1", "w2"]);
   });
 
   it("applies synonym sets", async () => {

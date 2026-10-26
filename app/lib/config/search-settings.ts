@@ -19,7 +19,7 @@ export const SearchSettingsSchema = z
     minWordLengthFor1Typo: z.number().int().min(1).max(20),
     minWordLengthFor2Typo: z.number().int().min(1).max(30),
     prioritizeExactMatch: z.boolean(),
-    matchMode: z.enum(["max_score", "sum_score"]),
+    matchMode: z.enum(["max_weight", "max_score", "sum_score"]),
     showOutOfStock: z.enum(["SHOW", "HIDE", "PUSH_DOWN"]),
     excludeTags: z.array(z.string().min(1).max(255)).max(100),
     variantAsProduct: z.boolean(),
@@ -65,7 +65,8 @@ export function defaultSearchSettings(): SearchSettingsConfig {
     minWordLengthFor1Typo: 4,
     minWordLengthFor2Typo: 7,
     prioritizeExactMatch: true,
-    matchMode: "max_score",
+    // max_weight: trọng số quyết định thứ hạng (max_score chỉ dùng trọng số để tie-break — đã đo, Nhật ký 2026-10-26).
+    matchMode: "max_weight",
     showOutOfStock: "PUSH_DOWN",
     excludeTags: [],
     variantAsProduct: false,

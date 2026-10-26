@@ -136,7 +136,7 @@ model SearchSettings {
   minWordLengthFor1Typo Int            @default(4)
   minWordLengthFor2Typo Int            @default(7)
   prioritizeExactMatch  Boolean        @default(true)
-  matchMode             String         @default("max_score")
+  matchMode             String         @default("max_weight")
   showOutOfStock        OutOfStockMode @default(PUSH_DOWN)
   excludeTags           String[]       @default([])
   variantAsProduct      Boolean        @default(false)

@@ -509,11 +509,11 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 ### Phase 2 — Search API, Currency, SDK và Storefront (2–3 tuần)
 - [ ] 2.1 `services/search-api`: `/suggest`, `/search`, `/collection`, `/config`, `/events`; scoped key; rate limit; cache; 503 khi engine lỗi.
   - DoD: 200 RPS, p95 < 120ms.
-- [ ] 2.2 **Query builder từ `SearchSettings.fields`** (`query_by`, `query_by_weights` map 1–10 → 0–127, `num_typos`, `prefix` theo từng trường).
+- [x] 2.2 **Query builder từ `SearchSettings.fields`** (`query_by`, `query_by_weights` map 1–10 → 0–127, `num_typos`, `prefix` theo từng trường).
   - DoD: unit test; đổi trọng số trong DB → thứ hạng đổi ngay mà không re-index.
-- [ ] 2.3 **Sort builder từ `SortOption` / `SortDefault`** (≤ 3 trường, đẩy hết hàng xuống, tie-break, `manual` theo collection).
+- [x] 2.3 **Sort builder từ `SortOption` / `SortDefault`** (≤ 3 trường, đẩy hết hàng xuống, tie-break, `manual` theo collection).
   - DoD: test cho từng key trong bảng 4.4.
-- [ ] 2.4 Bộ dịch filter (`filter.p.*` / `filter.v.*` ↔ `filter_by`), facet count và min/max giá.
+- [x] 2.4 Bộ dịch filter (`filter.p.*` / `filter.v.*` ↔ `filter_by`), facet count và min/max giá.
 - [ ] 2.5 Merchandising: synonym, stop word, redirect, override, boost.
 - [ ] 2.6 **`packages/storefront-sdk`**: client, state đồng bộ URL, event bus, DOM events, template engine tối giản (không `eval`, có escape HTML), `mount`, `formatMoney`.
   - DoD: ≤ 8 KB gzip; có unit test; có type `.d.ts` công khai.
@@ -624,3 +624,6 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 0.5 xong: docs/adr/0001–0016 (D1–D16) + README index.
 - 2026-10-26: 1.2 xong: SearchEngine interface + TypesenseEngine (Typesense 30: synonym_sets/curation_sets thay synonyms/overrides theo collection), schema dựng từ config với field động pos_.*, opt_.*, price_min_.* và metafield có kiểu; integration test chạy với Typesense thật (alias swap, curation pin/hide, export).
 - 2026-10-26: 1.1 xong: GraphqlExecutor theo leaky bucket (extensions.cost.throttleStatus), chờ trước query đắt, retry THROTTLED/429/5xx có backoff, giới hạn song song; adapter cho admin.graphql (GraphqlQueryError) và fetch trực tiếp. 11 unit test.
+- 2026-10-26: 2.2 xong: buildTextQuery (query_by/weights 1–10→0–127/num_typos/prefix theo trường, bản dịch đứng trước, bỏ field chưa index). ĐO THỰC TẾ: text_match_type=max_score chỉ dùng trọng số để tie-break (exact match field ngắn lấn át) → đổi mặc định matchMode sang max_weight (migration). Live test: đổi trọng số → thứ hạng đảo ngay, không re-index.
+- 2026-10-26: 2.3 xong: buildSortBy ≤ 3 trường (_eval đẩy hết hàng, sort chính, tie-break), missing_values: last cho pos_/best_selling/price_min_{cc}/mf; resolveSortKey theo SortDefault + sortOrder của collection; test từng key bảng 4.4.
+- 2026-10-26: 2.4 xong: filter translator dùng đúng tham số native filter.p.*/filter.v.* (URL dùng chung cho fallback), filter_by có escape, giá đổi minor units theo exponent currency, facet disjunctive + min/max giá.

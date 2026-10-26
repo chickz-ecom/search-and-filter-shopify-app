@@ -1,0 +1,16 @@
+query IncrementalProductCollectionsByIds($ids: [ID!]!) {
+  nodes(ids: $ids) {
+    id
+    ... on Product {
+      collections(first: 50) {
+        nodes {
+          id
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+}

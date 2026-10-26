@@ -1,0 +1,26 @@
+query IncrementalVariantsByProductIds($query: String!, $cursor: String) {
+  productVariants(first: 250, after: $cursor, query: $query) {
+    nodes {
+      id
+      product {
+        id
+      }
+      title
+      sku
+      barcode
+      price
+      compareAtPrice
+      availableForSale
+      inventoryQuantity
+      position
+      selectedOptions {
+        name
+        value
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

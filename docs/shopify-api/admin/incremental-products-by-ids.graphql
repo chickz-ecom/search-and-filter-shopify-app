@@ -60,11 +60,7 @@ query IncrementalProductsByIds($ids: [ID!]!, $onlineStorePublicationId: ID!) {
           id
           title
           sku
-          barcodes(first: 1) {
-            nodes {
-              value
-            }
-          }
+          barcode
           price
           compareAtPrice
           availableForSale
@@ -80,7 +76,7 @@ query IncrementalProductsByIds($ids: [ID!]!, $onlineStorePublicationId: ID!) {
           endCursor
         }
       }
-      collections(first: 250) {
+      collections(first: 50) {
         nodes {
           id
         }

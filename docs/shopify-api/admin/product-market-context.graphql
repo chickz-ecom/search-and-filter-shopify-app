@@ -1,0 +1,18 @@
+query ProductMarketContext($id: ID!, $country: CountryCode!) {
+  product(id: $id) {
+    id
+    publishedInContext(context: { country: $country })
+    contextualPricing(context: { country: $country }) {
+      priceRange {
+        minVariantPrice {
+          amount
+          currencyCode
+        }
+        maxVariantPrice {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+query VariantBarcodes($id: ID!) {
+  productVariant(id: $id) {
+    id
+    barcodes(first: 20) {
+      nodes {
+        value
+        type
+      }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+query ActiveSubscription($appId: ID!, $shopId: ID!) {
+  activeSubscription(appId: $appId, shopId: $shopId) {
+    billingPeriod
+    cancelAtEndOfCycle
+    trialEndsAt
+    legacySubscriptionId
+    currentBillingCycle {
+      startTime
+      endTime
+    }
+    items {
+      handle
+      description
+    }
+    pendingUpdate {
+      billingPeriod
+      items {
+        handle
+      }
+    }
+  }
+}
