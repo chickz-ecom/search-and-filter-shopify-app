@@ -334,11 +334,14 @@ export class SearchPage {
 }
 
 if (typeof window !== "undefined") {
-  const start = () =>
-    window.SearchApp?.registerWidget(
-      "search-page",
-      (el, o, sdk) => void new SearchPage(el, o as Opts, sdk),
-    );
+  // "results" là bí danh được tài liệu hoá (docs/developers, mục 6.4e) của widget trang kết quả đầy đủ.
+  const start = () => {
+    for (const type of ["search-page", "results"])
+      window.SearchApp?.registerWidget(
+        type,
+        (el, o, sdk) => void new SearchPage(el, o as Opts, sdk),
+      );
+  };
   if (window.SearchApp) start();
   else document.addEventListener("searchapp:ready", start, { once: true });
 }

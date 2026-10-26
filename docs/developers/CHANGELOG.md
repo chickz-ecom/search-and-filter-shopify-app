@@ -1,0 +1,15 @@
+# Changelog
+
+All notable changes to the storefront SDK (`window.SearchApp`) and the `/v1` API. The format follows [Keep a Changelog](https://keepachangelog.com); versions follow [semver](https://semver.org).
+
+Deprecations are announced here at least 90 days before removal.
+
+## [1.0.0] — 2026-10-26
+
+### Added
+- `window.SearchApp` SDK v1: `ready`, `search`, `suggest`, `collection`, `getConfig`, `formatMoney`, `track`, `state`, `on`/`off`, `mount`, `registerWidget`, `render`.
+- DOM events `searchapp:ready`, `searchapp:before-search` (cancelable), `searchapp:results`, `searchapp:render`, `searchapp:filters-change`, `searchapp:sort-change`, `searchapp:error`.
+- Templates `product-card`, `suggest-item` and `empty`, with a safe template engine (`if`/`unless`/`each`, filters `img_url`, `money`, `upcase`, `downcase`, `truncate`, `default`, `url_encode`, `size`).
+- Declarative mounting with `data-searchapp-mount="results"` (alias of `search-page`).
+- Market prices: product prices are localized through the Storefront API, with `priceReady: false` when a price can't be confirmed.
+- JSON API `/v1/search`, `/v1/collection`, `/v1/suggest`, `/v1/config`, `/v1/events`. Headless access from the Pro plan, opt-in per shop, with optional allowed origins.

@@ -371,11 +371,16 @@ describe.skipIf(!up)("search-api (2.1)", () => {
       method: "POST",
       headers: { ...origin, "Content-Type": "text/plain" },
       body: JSON.stringify({
-        events: [{ type: "click", query: "tee", productId: "1", position: 1 }],
+        events: [
+          { type: "click", query: "tee", productId: "1", position: 1 },
+          // Lượt search chỉ do search-api đếm: client gửi lên bị bỏ qua.
+          { type: "search", query: "spoofed-term", results: 0 },
+        ],
       }),
     });
     expect(res.status).toBe(204);
     const counters = await testRedis().hgetall(countersKey(shopId, dayKey()));
+    expect(counters["s|spoofed-term"]).toBeUndefined();
     expect(Number(counters["c|tee"])).toBeGreaterThanOrEqual(1);
     expect(Number(counters["s|tee"])).toBeGreaterThanOrEqual(1);
   });

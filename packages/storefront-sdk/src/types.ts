@@ -1,54 +1,62 @@
 // Hợp đồng công khai SDK v1 (D16). Đổi chữ ký nào → cập nhật docs/developers/ + CHANGELOG; chỉ break ở major.
+// JSDoc viết tiếng Anh: docs/developers/sdk-reference.md được sinh từ đây (npm run docs:sdk).
 
-/** Context do app embed in sẵn bằng Liquid (snippet sa-config). */
+/** Storefront context printed by the app embed (Liquid snippet `sa-config`). */
 export interface SearchAppContext {
   shop: string;
   publicKey: string;
-  /** Gốc API: app proxy same-origin (vd. "/apps/search") hoặc URL search-api. */
+  /** API base: the same-origin app proxy (for example `/apps/search`) or the search API URL. */
   apiBase: string;
-  /** true khi apiBase là app proxy (không cần gửi shop/key). */
+  /** `true` when `apiBase` is the app proxy (no `shop`/`key` parameters needed). */
   proxy?: boolean;
   country: string;
   language: string;
-  /** Currency khách đang xem (cart.currency.iso_code). */
+  /** Currency the shopper is browsing in (`cart.currency.iso_code`). */
   currency: string;
-  /** Currency gốc của shop. */
+  /** The shop's base currency. */
   shopCurrency: string;
-  /** Mẫu tiền của theme cho currency khách đang xem, vd. "${{amount}}". */
+  /** The theme's money format for the shopper's currency, for example `${{amount}}`. */
   moneyFormat: string;
   moneyWithCurrencyFormat?: string;
   locale: string;
   pageType?: string;
   collection?: { id: string; handle: string } | null;
   searchTerms?: string;
-  /** Storefront API (giá theo market — D15). */
+  /** Storefront API settings used for market pricing. */
   storefront?: { endpoint?: string; version?: string };
-  /** Đường dẫn trang search của theme (routes.search_url). */
+  /** The theme's search page path (`routes.search_url`). */
   searchUrl?: string;
-  /** URL stylesheet của widget (dropdown instant nạp lười, không chặn render). */
+  /** Widget stylesheet URL (loaded lazily by the instant search dropdown, never render-blocking). */
   cssUrl?: string;
 }
 
 export type FilterValue = string[] | { min?: number; max?: number } | boolean;
-/** Filter đã chọn theo id filter (cấu hình ở admin). Khoảng giá tính theo currency khách đang xem. */
+/** Selected filters keyed by filter id (configured in the app admin). Price ranges use the shopper's currency. */
 export type Filters = Record<string, FilterValue>;
 
+/** Parameters for `search()`. */
 export interface SearchParams {
+  /** Search terms. Empty returns all products (useful with filters). */
   q?: string;
+  /** Selected filters, keyed by filter id from `getConfig().filters`. */
   filters?: Filters;
+  /** Sort key from `sort_options`, for example `price_asc`. Defaults to the shop's default sort. */
   sort?: string;
+  /** 1-based page number. */
   page?: number;
+  /** Products per page (max 48). */
   perPage?: number;
-  /** Chỉ lấy một số field sản phẩm để response nhẹ hơn. */
+  /** Only return these product fields, for a lighter response. */
   fields?: string[];
 }
 
+/** Parameters for `collection()`. `q` narrows results within the collection. */
 export interface CollectionParams extends Omit<SearchParams, "q"> {
   q?: string;
 }
 
 export interface Money {
-  /** Đơn vị nhỏ nhất (cent). */
+  /** Amount in minor units (cents). */
   amount: number;
   currency: string;
 }
@@ -65,12 +73,12 @@ export interface Product {
   image_alt?: string;
   image_2?: string;
   available: boolean;
-  /** Giá đã localize theo market của khách (minor units của `currency`). */
+  /** Price localized to the shopper's market, in minor units of `currency`. */
   price_min: number;
   price_max: number;
   compare_at_max?: number;
   currency: string;
-  /** Chuỗi đã format theo moneyFormat của theme; null khi không lấy được giá đúng ("Xem giá"). */
+  /** Price formatted with the theme's money format; `null` when the correct price isn't available (show "View price"). */
   price: string | null;
   compare_at_price: string | null;
   on_sale: boolean;
@@ -86,7 +94,7 @@ export interface Product {
     options: string[];
   }[];
   badges: string[];
-  /** false khi chưa chắc giá đúng currency (lỗi Storefront API) → UI hiện "Xem giá". */
+  /** `false` when the price couldn't be confirmed in the shopper's currency; the default UI then shows "View price". */
   priceReady: boolean;
 }
 
@@ -112,7 +120,7 @@ export interface RangeFacet {
   label: string;
   type: "range";
   param: string;
-  /** Đã quy đổi sang currency khách đang xem (đơn vị chính). */
+  /** Converted to the shopper's currency, in major units. */
   min: number;
   max: number;
   selected?: { min?: number; max?: number };
@@ -127,9 +135,12 @@ export interface SortOption {
   label: string;
 }
 
+/** Result of `search()` and `collection()`. Prices are already localized to the shopper's market. */
 export interface SearchResponse {
   query: string;
+  /** Set when the merchant configured a redirect for this query; navigate there instead of rendering. */
   redirect: string | null;
+  /** Total matching products. */
   total: number;
   page: number;
   per_page: number;
@@ -137,12 +148,15 @@ export interface SearchResponse {
   sort: string;
   sort_options: SortOption[];
   products: Product[];
+  /** Facets with counts (list facets) or min/max (range facets), in the merchant's configured order. */
   facets: Facet[];
   applied_filters: Filters;
+  /** Currency of `price_min` / `price_max` on products. */
   currency: string;
   collection?: { id: string; handle: string };
 }
 
+/** Result of `suggest()` for instant search. */
 export interface SuggestResponse {
   query: string;
   products: Product[];
@@ -176,7 +190,7 @@ export interface PublicConfig {
   filters: { default: PublicFilter[]; search: PublicFilter[] };
   texts: Record<string, string>;
   appearance: Record<string, unknown>;
-  /** CSS custom properties (--sa-*) chỉnh ở admin → Appearance. */
+  /** CSS custom properties (`--sa-*`) set in the app admin under Appearance. */
   cssVars?: Record<string, string>;
   showVendor?: boolean;
   templates: Record<string, string>;
@@ -185,6 +199,7 @@ export interface PublicConfig {
   adjustedCountries: string[];
 }
 
+/** Search state mirrored in the URL using Shopify's native parameters (`q`, `filter.p.*`, `filter.v.*`, `sort_by`, `page`). */
 export interface UrlState {
   q?: string;
   filters: Filters;
@@ -192,44 +207,68 @@ export interface UrlState {
   page?: number;
 }
 
+/**
+ * Events for `on()` / `off()`. Each is also dispatched on `document` as a `CustomEvent` named `searchapp:<event>`
+ * with `:` replaced by `-` (for example `searchapp:filters-change`), with the payload in `detail`.
+ */
 export type SearchAppEvent =
   "ready" | "before-search" | "results" | "render" | "filters:change" | "sort:change" | "error";
 
+/** Options for `mount()`. Extra keys are passed to the widget (for example `perPage`, `collection`). */
 export interface MountOptions {
+  /** Widget type: built-in `search-page` (alias `results`), `instant`, or a type added with `registerWidget()`. */
   type: "results" | "filters" | "sort" | "pagination" | "instant" | string;
-  /** Selector hoặc phần tử <template> ghi đè (data-searchapp="product-card"…). */
+  /** Selector or `<template>` element that overrides the default markup (`data-searchapp="product-card"`, …). */
   template?: string | HTMLTemplateElement;
   [option: string]: unknown;
 }
 
+/** Handle returned by a widget factory. */
 export interface Widget {
   update?(res: SearchResponse): void;
   destroy?(): void;
 }
 
+/** Creates a widget inside `el`. Register it with `registerWidget()`. */
 export type WidgetFactory = (
   el: HTMLElement,
   options: MountOptions,
   sdk: SearchAppSDK,
 ) => Widget | void;
 
+/** The global `window.SearchApp` object (SDK v1). */
 export interface SearchAppSDK {
+  /** SDK version (semver). */
   readonly version: string;
+  /** Storefront context from the app embed. */
   readonly context: SearchAppContext;
+  /** Resolves once the SDK has loaded. Safe to call before the SDK script loads (the app embed provides a stub). */
   ready(): Promise<SearchAppSDK>;
+  /** Searches products with the merchant's relevance, synonyms, merchandising rules and market prices. */
   search(params?: SearchParams): Promise<SearchResponse>;
+  /** Instant search suggestions: products, collections, pages, articles and query suggestions. */
   suggest(q: string, options?: { limit?: number }): Promise<SuggestResponse>;
+  /** Filters and sorts products within a collection (by handle). */
   collection(handle: string, params?: CollectionParams): Promise<SearchResponse>;
+  /** Public configuration: filters, sort options, texts and appearance. Cached for the page. */
   getConfig(): Promise<PublicConfig>;
+  /** Formats minor units with the theme's money format. Defaults to the shopper's currency. */
   formatMoney(minorUnits: number, currency?: string): string;
+  /** Records an anonymous analytics event for search insights. */
   track(type: "click" | "add_to_cart" | "filter" | "sort", data: Record<string, unknown>): void;
+  /** Reads and writes the search state in the URL. `set()` pushes a history entry unless `replace` is true. */
   state: {
     get(): UrlState;
     set(next: Partial<UrlState>, options?: { replace?: boolean }): void;
   };
+  /** Subscribes to an event. Returns an unsubscribe function. */
   on(event: SearchAppEvent, handler: (payload: unknown) => void): () => void;
+  /** Removes a handler added with `on()`. */
   off(event: SearchAppEvent, handler: (payload: unknown) => void): void;
+  /** Mounts a widget into an element or selector. Waits if the widget type isn't registered yet. */
   mount(el: HTMLElement | string, options: MountOptions): Widget | void;
+  /** Adds a widget type that `mount()` and `data-searchapp-mount` can use. */
   registerWidget(type: string, factory: WidgetFactory): void;
+  /** Renders a template with the SDK's safe template engine (all output is HTML-escaped). */
   render(template: string, data: unknown): string;
 }

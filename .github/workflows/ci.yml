@@ -41,6 +41,8 @@ jobs:
       - run: npm run format:check
       # Bundle storefront trước test: contract test của theme extension kiểm tra asset tồn tại; vượt ngân sách gzip → fail.
       - run: npm run build:storefront
+      # docs/developers/sdk-reference.md sinh từ .d.ts — fail nếu quên `npm run docs:sdk`
+      - run: node scripts/gen-sdk-docs.mjs --check
       - run: npm test
         env:
           CI: "true"

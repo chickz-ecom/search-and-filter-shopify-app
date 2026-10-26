@@ -1,0 +1,392 @@
+openapi: 3.1.0
+info:
+  title: Search & Filter Storefront API
+  version: 1.0.0
+  description: |
+    JSON API behind the theme widgets and `window.SearchApp`. Use it from headless storefronts
+    (Pro plan and above, opt-in in the app's Developers page). Prices are in the shop's base
+    currency, in minor units. Breaking changes ship only in a new major path (`/v2`).
+servers:
+  - url: https://{endpoint}
+    variables:
+      endpoint:
+        default: search.example.com
+        description: The API endpoint shown in the app's Developers page.
+security:
+  - shopKey: []
+paths:
+  /v1/search:
+    get:
+      operationId: search
+      summary: Search products
+      parameters:
+        - $ref: "#/components/parameters/shop"
+        - $ref: "#/components/parameters/key"
+        - { name: q, in: query, schema: { type: string }, description: Search terms. Empty returns all products. }
+        - $ref: "#/components/parameters/filters"
+        - $ref: "#/components/parameters/sort"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/locale"
+        - $ref: "#/components/parameters/country"
+        - $ref: "#/components/parameters/fields"
+      responses:
+        "200":
+          description: Results
+          headers: { Cache-Control: { $ref: "#/components/headers/CacheControl" } }
+          content: { application/json: { schema: { $ref: "#/components/schemas/SearchResponse" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/collection:
+    get:
+      operationId: collection
+      summary: Filter and sort products in a collection
+      parameters:
+        - $ref: "#/components/parameters/shop"
+        - $ref: "#/components/parameters/key"
+        - { name: collection, in: query, required: true, schema: { type: string }, description: Collection handle or numeric id. }
+        - { name: q, in: query, schema: { type: string }, description: Optional terms to narrow results within the collection. }
+        - $ref: "#/components/parameters/filters"
+        - $ref: "#/components/parameters/sort"
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/per_page"
+        - $ref: "#/components/parameters/locale"
+        - $ref: "#/components/parameters/country"
+        - $ref: "#/components/parameters/fields"
+      responses:
+        "200":
+          description: Results
+          headers: { Cache-Control: { $ref: "#/components/headers/CacheControl" } }
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SearchResponse"
+                  - type: object
+                    required: [collection]
+                    properties:
+                      collection:
+                        type: object
+                        required: [id, handle]
+                        properties: { id: { type: string }, handle: { type: string } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/suggest:
+    get:
+      operationId: suggest
+      summary: Instant search suggestions
+      parameters:
+        - $ref: "#/components/parameters/shop"
+        - $ref: "#/components/parameters/key"
+        - { name: q, in: query, required: true, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 10, default: 6 }, description: Maximum products. }
+        - $ref: "#/components/parameters/locale"
+        - $ref: "#/components/parameters/country"
+      responses:
+        "200":
+          description: Suggestions
+          headers: { Cache-Control: { $ref: "#/components/headers/CacheControl" } }
+          content: { application/json: { schema: { $ref: "#/components/schemas/SuggestResponse" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "503": { $ref: "#/components/responses/Error" }
+  /v1/config:
+    get:
+      operationId: config
+      summary: Public configuration (filters, sort options, texts)
+      parameters:
+        - $ref: "#/components/parameters/shop"
+        - $ref: "#/components/parameters/key"
+        - $ref: "#/components/parameters/locale"
+      responses:
+        "200":
+          description: Configuration
+          content: { application/json: { schema: { $ref: "#/components/schemas/PublicConfig" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+  /v1/events:
+    post:
+      operationId: events
+      summary: Report anonymous analytics events
+      description: Accepts `application/json` or `text/plain` (for `navigator.sendBeacon`). At most 50 events per request. Not subject to the headless plan check.
+      parameters:
+        - $ref: "#/components/parameters/shop"
+        - $ref: "#/components/parameters/key"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  maxItems: 50
+                  items: { $ref: "#/components/schemas/AnalyticsEvent" }
+      responses:
+        "204": { description: Recorded }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+components:
+  securitySchemes:
+    shopKey:
+      type: apiKey
+      in: query
+      name: key
+      description: Public key from the app's Developers page, sent together with `shop`. Not a secret.
+  parameters:
+    shop:
+      { name: shop, in: query, required: true, schema: { type: string, pattern: '^[a-z0-9][a-z0-9-]*\.myshopify\.com$' }, description: The shop's .myshopify.com domain. }
+    key:
+      { name: key, in: query, required: true, schema: { type: string }, description: Public key. }
+    filters:
+      name: filters
+      in: query
+      description: |
+        JSON object keyed by filter id from `/v1/config`. Values: list of strings, `{min,max}` (price in shop
+        currency, major units) or `true` for toggles. Shopify's native parameters (`filter.p.vendor`,
+        `filter.v.price.gte`) are accepted instead.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Filters" }
+    sort:
+      { name: sort, in: query, schema: { type: string }, description: Sort key from `sort_options` (alias `sort_by`). Defaults to the merchant's default sort. }
+    page:
+      { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    per_page:
+      { name: per_page, in: query, schema: { type: integer, minimum: 1, maximum: 48, default: 24 } }
+    locale:
+      { name: locale, in: query, schema: { type: string }, description: "Language for titles, labels and texts (for example `fr`). Defaults to the shop's primary locale." }
+    country:
+      { name: country, in: query, schema: { type: string, minLength: 2, maxLength: 2 }, description: Shopper's country (ISO 3166-1 alpha-2) for markets with fixed price lists. }
+    fields:
+      { name: fields, in: query, schema: { type: string }, description: Comma-separated product fields to return, for lighter responses. }
+  headers:
+    CacheControl:
+      schema: { type: string, example: "public, max-age=30, stale-while-revalidate=300" }
+  responses:
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+    RateLimited:
+      description: Too many requests
+      headers:
+        Retry-After: { schema: { type: integer }, description: Seconds to wait. }
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_shop
+            - invalid_key
+            - unknown_shop
+            - unknown_collection
+            - collection_required
+            - headless_not_in_plan
+            - headless_disabled
+            - headless_origin_not_allowed
+            - rate_limited
+            - engine_unavailable
+            - invalid_body
+            - internal_error
+        message: { type: string }
+    Filters:
+      type: object
+      additionalProperties:
+        oneOf:
+          - type: array
+            items: { type: string }
+            maxItems: 50
+          - type: object
+            properties: { min: { type: number }, max: { type: number } }
+          - type: boolean
+    Product:
+      type: object
+      description: Fields can be limited with `fields`.
+      properties:
+        id: { type: string }
+        gid: { type: string, example: gid://shopify/Product/123 }
+        handle: { type: string }
+        url: { type: string, example: /products/red-dress }
+        title: { type: string }
+        vendor: { type: string }
+        product_type: { type: string }
+        image: { type: string }
+        image_alt: { type: string }
+        image_2: { type: string }
+        available: { type: boolean }
+        price_min: { type: integer, description: Minor units of `currency`. }
+        price_max: { type: integer }
+        compare_at_max: { type: integer }
+        discount_pct: { type: integer }
+        on_sale: { type: boolean }
+        currency: { type: string }
+        tags: { type: array, items: { type: string } }
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              title: { type: string }
+              sku: { type: string }
+              price: { type: integer }
+              compare_at: { type: integer }
+              available: { type: boolean }
+              options: { type: array, items: { type: string } }
+        badges: { type: array, items: { type: string, examples: [sale, sold_out] } }
+    FacetValue:
+      type: object
+      required: [value, count, selected]
+      properties:
+        value: { type: string }
+        label: { type: string }
+        count: { type: integer }
+        selected: { type: boolean }
+    ListFacet:
+      type: object
+      required: [key, label, type, param, values, collapsed, showCount]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        type: { type: string, enum: [checkbox, radio, swatch, toggle] }
+        param: { type: string, description: "Native URL parameter, for example `filter.p.vendor`." }
+        values: { type: array, items: { $ref: "#/components/schemas/FacetValue" } }
+        collapsed: { type: boolean }
+        showCount: { type: boolean }
+    RangeFacet:
+      type: object
+      required: [key, label, type, param, min, max, collapsed]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        type: { type: string, const: range }
+        param: { type: string }
+        min: { type: number, description: Minor units for price, raw value for numeric metafields. }
+        max: { type: number }
+        selected: { type: object, properties: { min: { type: number }, max: { type: number } } }
+        currency: { type: string }
+        collapsed: { type: boolean }
+    SortOption:
+      type: object
+      required: [key, label]
+      properties: { key: { type: string }, label: { type: string } }
+    SearchResponse:
+      type: object
+      required: [query, redirect, total, page, per_page, sort, sort_options, products, facets, applied_filters, currency]
+      properties:
+        query: { type: string }
+        corrected_query: { type: [string, "null"] }
+        redirect: { type: [string, "null"], description: Navigate here instead of rendering results. }
+        total: { type: integer }
+        page: { type: integer }
+        per_page: { type: integer }
+        sort: { type: string }
+        sort_options: { type: array, items: { $ref: "#/components/schemas/SortOption" } }
+        products: { type: array, items: { $ref: "#/components/schemas/Product" } }
+        facets:
+          type: array
+          items: { oneOf: [{ $ref: "#/components/schemas/ListFacet" }, { $ref: "#/components/schemas/RangeFacet" }] }
+        applied_filters: { $ref: "#/components/schemas/Filters" }
+        currency: { type: string, description: Shop base currency. }
+        took_ms: { type: number }
+    SuggestResponse:
+      type: object
+      required: [query, products, collections, pages, articles, suggestions, total_products, currency]
+      properties:
+        query: { type: string }
+        products: { type: array, items: { $ref: "#/components/schemas/Product" } }
+        collections:
+          type: array
+          items: { type: object, properties: { title: { type: string }, url: { type: string }, handle: { type: string } } }
+        pages:
+          type: array
+          items: { type: object, properties: { title: { type: string }, url: { type: string } } }
+        articles:
+          type: array
+          items: { type: object, properties: { title: { type: string }, url: { type: string } } }
+        suggestions: { type: array, items: { type: string } }
+        total_products: { type: integer }
+        currency: { type: string }
+    PublicFilter:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        type: { type: string, enum: [checkbox, radio, swatch, range, toggle] }
+        source: { type: string }
+        param: { type: string }
+        collapsed: { type: boolean }
+        showCount: { type: boolean }
+    PublicConfig:
+      type: object
+      properties:
+        version: { type: string }
+        locale: { type: string }
+        shop:
+          type: object
+          properties:
+            currency: { type: string }
+            primaryLocale: { type: string }
+            locales: { type: array, items: { type: string } }
+        sortOptions: { type: array, items: { $ref: "#/components/schemas/SortOption" } }
+        sortDefaults: { type: object, properties: { search: { type: string } } }
+        filters:
+          type: object
+          properties:
+            default: { type: array, items: { $ref: "#/components/schemas/PublicFilter" } }
+            search: { type: array, items: { $ref: "#/components/schemas/PublicFilter" } }
+        texts: { type: object, additionalProperties: { type: string } }
+        cssVars: { type: object, additionalProperties: { type: string } }
+        templates: { type: object, additionalProperties: { type: string } }
+    AnalyticsEvent:
+      oneOf:
+        - type: object
+          required: [type, productId]
+          properties:
+            type: { const: click }
+            query: { type: string }
+            productId: { type: string }
+            position: { type: integer }
+        - type: object
+          required: [type, productId]
+          properties:
+            type: { const: add_to_cart }
+            query: { type: string }
+            productId: { type: string }
+            revenue: { type: number, description: Shop currency, major units. }
+        - type: object
+          required: [type]
+          properties:
+            type: { const: purchase }
+            query: { type: string }
+            revenue: { type: number }
+        - type: object
+          required: [type, key, value]
+          properties:
+            type: { const: filter }
+            key: { type: string }
+            value: { type: string }
+        - type: object
+          required: [type, key]
+          properties:
+            type: { const: sort }
+            key: { type: string }

@@ -24,6 +24,8 @@ import { executeSearch, filtersForScope } from "../../../app/lib/search-service/
 import { executeSuggest } from "../../../app/lib/search-service/suggest.server";
 import type { Db } from "../../../app/lib/shop/shop.server";
 
+const CLIENT_EVENTS = new Set<string>(["click", "add_to_cart", "purchase", "filter", "sort"]);
+
 const HEADLESS_ERRORS = {
   not_in_plan: "Headless API requires the Pro plan or higher",
   disabled: "Turn on headless access in the app's Developers page",
@@ -262,7 +264,7 @@ export function createSearchApi(deps: SearchApiDeps) {
   app.get("/v1/collection", async (c) => {
     const ctx = c.get("ctx");
     const ref = (c.req.query("collection") ?? "").slice(0, 255);
-    if (!ref) return c.json({ error: "collection required" }, 400);
+    if (!ref) return c.json({ error: "collection_required" }, 400);
     const ckey = `${ctx.shop.domain}|${ref}`;
     let col = collectionCache.get(ckey);
     if (col === undefined) {
@@ -289,9 +291,10 @@ export function createSearchApi(deps: SearchApiDeps) {
     let events: AnalyticsEvent[] = [];
     try {
       const body = JSON.parse(raw) as { events?: AnalyticsEvent[] };
+      // "search" chỉ do search-api tự đếm — client gửi lên sẽ làm phồng số liệu.
       events = (body.events ?? [])
         .slice(0, 50)
-        .filter((e) => e && typeof e === "object" && "type" in e);
+        .filter((e) => e && typeof e === "object" && CLIENT_EVENTS.has(e.type));
     } catch {
       return c.json({ error: "invalid_body" }, 400);
     }

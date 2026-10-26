@@ -29,7 +29,9 @@
     "build:sdk-types": "tsc -p packages/storefront-sdk/tsconfig.build.json",
     "build:search-api": "node scripts/build-search-api.mjs",
     "lighthouse:compare": "node scripts/lighthouse-compare.mjs --runs 3 --budget 5",
-    "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss"
+    "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss",
+    "docs:sdk": "npm run build:sdk-types && node scripts/gen-sdk-docs.mjs",
+    "docs:sdk:check": "npm run build:sdk-types && node scripts/gen-sdk-docs.mjs --check"
   },
   "type": "module",
   "engines": {
@@ -87,7 +89,8 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "yaml": "^2.9.1"
   },
   "workspaces": {
     "packages": [
