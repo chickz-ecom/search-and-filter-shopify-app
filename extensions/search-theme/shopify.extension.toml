@@ -1,0 +1,3 @@
+# Theme app extension (D10): 1 app embed + 2 app block. Không dùng ScriptTag, không ghi Asset API.
+name = "search-theme"
+type = "theme"

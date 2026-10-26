@@ -1,0 +1,19 @@
+{%- comment -%} Thẻ sản phẩm native (fallback + SEO, D11). Giá do Liquid in theo market của khách. {%- endcomment -%}
+<li class="sa-card">
+  <a class="sa-card__link" href="{{ product.url }}">
+    <div class="sa-card__media">
+      {%- if product.featured_image -%}
+        {{ product.featured_image | image_url: width: 400 | image_tag: loading: 'lazy', width: 400, height: 400, alt: product.featured_image.alt }}
+      {%- endif -%}
+      {%- unless product.available -%}<span class="sa-badge">{{ 'searchapp.sold_out' | t }}</span>{%- endunless -%}
+    </div>
+    <div class="sa-card__info">
+      <p class="sa-card__vendor">{{ product.vendor | escape }}</p>
+      <h3 class="sa-card__title">{{ product.title | escape }}</h3>
+      <p class="sa-card__price">
+        {%- if product.compare_at_price > product.price -%}<s>{{ product.compare_at_price | money }}</s> {% endif -%}
+        <span>{{ product.price | money }}</span>
+      </p>
+    </div>
+  </a>
+</li>

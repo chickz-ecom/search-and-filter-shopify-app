@@ -1,0 +1,7 @@
+{
+  "searchapp": {
+    "sold_out": "Hết hàng",
+    "pagination": "Phân trang",
+    "no_results": "Không có kết quả cho “{{ terms }}”"
+  }
+}

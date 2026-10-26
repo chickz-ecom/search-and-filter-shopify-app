@@ -1,0 +1,80 @@
+{% render 'sa-config',
+  api_mode: block.settings.api_mode,
+  proxy_path: block.settings.proxy_path,
+  storefront_endpoint: block.settings.storefront_endpoint
+%}
+<script src="{{ 'searchapp-sdk.js' | asset_url }}" defer></script>
+<script>
+  (function () {
+    var instant = {{ block.settings.instant | json }};
+    var selector = {{ block.settings.input_selector | default: '' | json }} || 'form[action*="/search"] input[name="q"]';
+    var results = {{ 'searchapp-results.js' | asset_url | json }};
+    var instantSrc = {{ 'searchapp-instant.js' | asset_url | json }};
+    function load(src) {
+      if (document.querySelector('script[src="' + src + '"]')) return;
+      var s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      document.head.appendChild(s);
+    }
+    // Instant search nạp lười khi khách focus ô search lần đầu (mục 7.1).
+    if (instant) {
+      document.addEventListener('focusin', function onFocus(e) {
+        var t = e.target;
+        if (t && t.matches && t.matches(selector)) {
+          t.setAttribute('data-searchapp-instant', '');
+          document.removeEventListener('focusin', onFocus, true);
+          load(instantSrc);
+        }
+      }, true);
+    }
+    // Section tuỳ biến dùng data-searchapp-mount (mục 6.4e) → nạp widget kết quả.
+    document.addEventListener('DOMContentLoaded', function () {
+      if (document.querySelector('[data-searchapp-mount]')) load(results);
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Search & Filter",
+  "target": "body",
+  "stylesheet": "searchapp.css",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "instant",
+      "label": "Instant search dropdown",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "input_selector",
+      "label": "Search input selector",
+      "info": "Leave blank to attach to the theme's search form."
+    },
+    {
+      "type": "select",
+      "id": "api_mode",
+      "label": "Connection",
+      "options": [
+        { "value": "proxy", "label": "Store domain (app proxy)" },
+        { "value": "direct", "label": "Search API (CDN)" }
+      ],
+      "default": "proxy"
+    },
+    {
+      "type": "text",
+      "id": "proxy_path",
+      "label": "App proxy path",
+      "default": "/apps/search"
+    },
+    {
+      "type": "text",
+      "id": "storefront_endpoint",
+      "label": "Storefront API endpoint (advanced)",
+      "info": "Leave blank to use your myshopify.com domain."
+    }
+  ]
+}
+{% endschema %}

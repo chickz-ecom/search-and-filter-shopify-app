@@ -18,6 +18,14 @@ describe.skipIf(!up)("onShopAuthenticated", () => {
       { locale: "fr", primary: false, published: false },
     ],
   });
+  fake.handlers.CurrentAppInstallation = () => ({
+    currentAppInstallation: { id: "gid://shopify/AppInstallation/1" },
+  });
+  const metafieldCalls: unknown[] = [];
+  fake.handlers.SetAppConfigMetafields = (v) => {
+    metafieldCalls.push(v.metafields);
+    return { metafieldsSet: { metafields: [], userErrors: [] } };
+  };
   const ex = new GraphqlExecutor(fake.transport, instantClock());
 
   afterAll(async () => {
@@ -26,8 +34,31 @@ describe.skipIf(!up)("onShopAuthenticated", () => {
 
   it("creates the shop with defaults and enqueues the first full sync once", async () => {
     const enqueueFullSync = vi.fn(async () => undefined);
-    const r = await onShopAuthenticated(domain, { db: testDb(), ex, enqueueFullSync });
+    const r = await onShopAuthenticated(domain, {
+      db: testDb(),
+      ex,
+      enqueueFullSync,
+      apiUrl: "https://search.example",
+    });
     expect(r).toMatchObject({ created: true, enqueued: true });
+    // App-data metafield cho chế độ direct của app embed.
+    expect(metafieldCalls[0]).toEqual([
+      {
+        ownerId: "gid://shopify/AppInstallation/1",
+        namespace: "searchapp",
+        key: "public_key",
+        type: "single_line_text_field",
+        value: r.shop.publicKey,
+      },
+      {
+        ownerId: "gid://shopify/AppInstallation/1",
+        namespace: "searchapp",
+        key: "api_url",
+        type: "single_line_text_field",
+        value: "https://search.example",
+      },
+    ]);
+
     expect(r.shop).toMatchObject({
       currency: "EUR",
       primaryLocale: "de",

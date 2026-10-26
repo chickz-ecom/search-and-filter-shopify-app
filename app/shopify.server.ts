@@ -24,6 +24,7 @@ const shopify = shopifyApp({
       await onShopAuthenticated(session.shop, {
         db: prisma,
         ex: new GraphqlExecutor(adminContextTransport(admin)),
+        apiUrl: process.env.SEARCH_API_PUBLIC_URL,
         enqueueFullSync: (shopId, reason) =>
           enqueueSync({ type: "full", shopId, reason }, { jobId: `full-${shopId}-${Date.now()}` }),
       });

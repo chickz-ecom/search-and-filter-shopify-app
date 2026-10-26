@@ -1,0 +1,37 @@
+{%- comment -%}
+  Context cho window.SearchApp (mục 6.2). Giá hiển thị lấy từ Storefront API theo country/language này (D15).
+  api_mode "proxy": gọi same-origin qua app proxy (không cần public key); "direct": gọi search-api (CDN) bằng public key.
+{%- endcomment -%}
+{%- liquid
+  assign api_mode = api_mode | default: 'proxy'
+  assign proxy_path = proxy_path | default: '/apps/search'
+  assign public_key = app.metafields.searchapp.public_key.value
+  assign api_url = app.metafields.searchapp.api_url.value
+  if api_mode == 'direct' and public_key != blank and api_url != blank
+    assign use_proxy = false
+    assign api_base = api_url
+  else
+    assign use_proxy = true
+    assign api_base = proxy_path
+  endif
+-%}
+<script id="searchapp-config" type="application/json">
+  {
+    "shop": {{ shop.permanent_domain | json }},
+    "publicKey": {{ public_key | default: '' | json }},
+    "apiBase": {{ api_base | json }},
+    "proxy": {{ use_proxy | json }},
+    "country": {{ localization.country.iso_code | json }},
+    "language": {{ request.locale.iso_code | json }},
+    "currency": {{ cart.currency.iso_code | json }},
+    "shopCurrency": {{ shop.currency | json }},
+    "moneyFormat": {{ shop.money_format | json }},
+    "moneyWithCurrencyFormat": {{ shop.money_with_currency_format | json }},
+    "locale": {{ request.locale.iso_code | json }},
+    "pageType": {{ request.page_type | json }},
+    "searchUrl": {{ routes.search_url | json }},
+    "searchTerms": {{ search.terms | default: '' | json }},
+    "collection": {% if collection %}{"id": {{ collection.id | json }}, "handle": {{ collection.handle | json }}}{% else %}null{% endif %},
+    "storefront": {"endpoint": {{ storefront_endpoint | default: '' | json }}, "version": "2026-10"}
+  }
+</script>

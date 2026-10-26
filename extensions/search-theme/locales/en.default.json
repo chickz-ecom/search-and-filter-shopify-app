@@ -1,0 +1,7 @@
+{
+  "searchapp": {
+    "sold_out": "Sold out",
+    "pagination": "Pagination",
+    "no_results": "No results for “{{ terms }}”"
+  }
+}

@@ -65,3 +65,9 @@
 - [ ] F4. (2.8) Bật flag `fixedMarketPrices` cho shop (Shop.features) → chạy full sync; xác nhận bulk variants chấp nhận alias
       `cp_VN: contextualPricing(context:{country: VN})` (nếu bulk báo lỗi field: chuyển pass này sang query phân trang
       thường theo lô 100 variant) và `price_min_vn` khớp giá trang sản phẩm khi xem từ VN.
+
+## G. Theme extension trên dev store (Horizon)
+- [ ] G1. `shopify app dev` → Theme editor → App embeds → bật "Search & Filter". Thêm block "Search results" vào template
+      search và "Collection filters" vào template collection (deep link: `…/admin/themes/current/editor?template=search&addAppBlockId={client_id}/search-results&target=mainSection`).
+      Kiểm tra: tắt JS → vẫn thấy kết quả native; bật lại → widget hydrate, filter/sort/phân trang đổi URL đúng kiểu `filter.p.*`.
+- [ ] G2. Đổi app embed sang "Search API (CDN)" sau khi deploy search-api → xác nhận đọc được `app.metafields.searchapp.public_key`.

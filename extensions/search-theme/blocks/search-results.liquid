@@ -1,0 +1,72 @@
+{%- comment -%}
+  App block "Search results" (mục 7.2). Liquid in sẵn kết quả native (SEO + fallback, D11); widget search-page hydrate
+  trong vùng block. Engine lỗi → kết quả native vẫn hiển thị.
+{%- endcomment -%}
+<div
+  class="sa-block"
+  data-searchapp-mount="search-page"
+  data-mode="search"
+  data-per-page="{{ block.settings.per_page }}"
+  data-columns="{{ block.settings.columns }}"
+  data-filter-position="{{ block.settings.filter_position }}"
+  data-show-sort="{{ block.settings.show_sort }}"
+  data-default-sort="{{ block.settings.default_sort }}"
+  {{ block.shopify_attributes }}
+>
+  {%- paginate search.results by block.settings.per_page -%}
+    {%- if search.performed and search.results_count > 0 -%}
+      <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns }}" data-native-results>
+        {%- for item in search.results -%}
+          {%- if item.object_type == 'product' -%}
+            {% render 'sa-native-card', product: item %}
+          {%- endif -%}
+        {%- endfor -%}
+      </ul>
+      {%- if paginate.pages > 1 -%}
+        <nav class="sa-pagination" aria-label="{{ 'searchapp.pagination' | t }}">{{ paginate | default_pagination }}</nav>
+      {%- endif -%}
+    {%- elsif search.performed -%}
+      <div class="sa-empty"><p class="sa-empty__title">{{ 'searchapp.no_results' | t: terms: search.terms }}</p></div>
+    {%- endif -%}
+  {%- endpaginate -%}
+</div>
+
+{% schema %}
+{
+  "name": "Search results",
+  "target": "content",
+  "javascript": "searchapp-results.js",
+  "enabled_on": { "templates": ["search"] },
+  "settings": [
+    { "type": "range", "id": "columns", "label": "Columns", "min": 2, "max": 6, "step": 1, "default": 4 },
+    { "type": "range", "id": "per_page", "label": "Products per page", "min": 12, "max": 48, "step": 4, "default": 24 },
+    {
+      "type": "select",
+      "id": "filter_position",
+      "label": "Filter position",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "top", "label": "Top" },
+        { "value": "drawer", "label": "Drawer" }
+      ],
+      "default": "left"
+    },
+    { "type": "checkbox", "id": "show_sort", "label": "Show sort dropdown", "default": true },
+    {
+      "type": "select",
+      "id": "default_sort",
+      "label": "Default sort",
+      "info": "Leave on 'App setting' to use the sort chosen in the app.",
+      "options": [
+        { "value": "", "label": "App setting" },
+        { "value": "relevance", "label": "Relevance" },
+        { "value": "best_selling", "label": "Best selling" },
+        { "value": "price_asc", "label": "Price, low to high" },
+        { "value": "price_desc", "label": "Price, high to low" },
+        { "value": "created_desc", "label": "Newest" }
+      ],
+      "default": ""
+    }
+  ]
+}
+{% endschema %}

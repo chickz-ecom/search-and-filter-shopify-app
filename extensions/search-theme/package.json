@@ -1,0 +1,5 @@
+{
+  "name": "search-theme",
+  "private": true,
+  "description": "Theme app extension. Asset JS được build từ packages/* bằng `npm run build:storefront`."
+}
