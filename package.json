@@ -4,7 +4,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "npm run build:storefront && shopify app dev",
-    "dev:tiep": "npm run build:storefront && shopify app dev --tunnel-url https://search.tiepdo.online:3460",
+    "dev:tiep": "npm run build:storefront && shopify app dev --tunnel-url https://search.tiepdo.online:3460 --store-password 'okok'",
     "dev:stag": "npm run build:storefront && dotenv -e .env.stag -- shopify app dev --config staging --tunnel-url https://search.tiepdo.online:3460",
     "deploy:stag": "npm run build:storefront && shopify app deploy --config staging",
     "worker:stag": "node --env-file=.env.stag --import tsx workers/index.ts",
