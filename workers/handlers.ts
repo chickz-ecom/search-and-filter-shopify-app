@@ -8,6 +8,8 @@ import {
   type SyncJobData,
 } from "../app/lib/queue/queue.server";
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
+import { getEngine } from "../app/lib/search";
+import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
 import { runChecksum } from "../app/lib/sync/checksum.server";
 import { syncCollection } from "../app/lib/sync/collections.server";
 import { runDelta } from "../app/lib/sync/delta.server";
@@ -112,6 +114,10 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
         await release();
       }
     }
+    case "uninstall":
+      return uninstallShop(data.shopId, { db: prisma, redis: redis() });
+    case "redact":
+      return redactShop(data.shopDomain, { db: prisma, engine: getEngine(), redis: redis() });
     default:
       return { skipped: `unhandled:${data.type}` };
   }
@@ -199,6 +205,8 @@ export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
       );
       return { shops: shops.length };
     }
+    case "tick-cleanup":
+      return cleanup({ db: prisma, engine: getEngine(), redis: redis() });
     default:
       return { skipped: `unhandled:${job.data.type}` };
   }
