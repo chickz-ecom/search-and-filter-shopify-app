@@ -34,7 +34,8 @@ const config = {
   ],
   sortDefaults: { search: "relevance" },
   filters: {
-    default: [],
+    default: [] as unknown[],
+
     search: [
       {
         id: "availability",
