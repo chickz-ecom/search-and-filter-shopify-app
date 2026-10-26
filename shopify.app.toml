@@ -1,10 +1,10 @@
 # Cấu hình app (task 0.4). Cú pháp đã đối chiếu: docs/shopify-api/config-extensions.md.
 # client_id / application_url được điền bởi `shopify app config link` (docs/HUMAN_TODO.md A2).
 name = "Search & Filter"
-client_id = ""
+client_id = "4a4355de2edba5dd96bbe75e840deb55"
 application_url = "https://example.com"
 embedded = true
-handle = "search-filter"
+handle = "smart-search-filter"
 
 [build]
 automatically_update_urls_on_dev = true
