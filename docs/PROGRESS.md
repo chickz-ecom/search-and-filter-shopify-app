@@ -4,12 +4,12 @@
 > Tiếp tục: `cat docs/PROGRESS.md && git log --oneline -20 && grep -n "\[ \]\|\[~\]" docs/02-PLAN.md | head`
 
 ## Hiện tại
-- Phase: 1 — Index và Sync
-- Task: 1.5 (full sync + alias swap + early results + tiến độ)
+- Phase: 2 — Search API, Currency, SDK, Storefront
+- Task: 2.1 (services/search-api)
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
-- Phase 1: 1.1 executor throttle, 1.2 SearchEngine/Typesense, 1.3 bulk runner + staging + benchmark, 1.4 mapper.
+- Phase 1: 1.1–1.14 xong (xem tổng kết bên dưới).
 - Phase 2 (logic thuần, làm sớm vì không phụ thuộc Shopify): 2.2 query builder, 2.3 sort builder, 2.4 filter/facet.
 
 ## Bị chặn / `[~]`
@@ -33,6 +33,15 @@
 ## Môi trường
 - node v22.23.4 · npm 10.9.9 · Shopify CLI 4.9.4 (chưa đăng nhập) · Docker 24.0.7 · git 2.50.1
 
+## Tổng kết Phase 1 (2026-10-26)
+- Sync đủ 4 lớp: full sync (bulk phẳng song song + shard + lượt sớm + alias swap), incremental (webhook/Events → debounce → nodes(ids) theo lô, đột biến → delta bulk), delta 5 phút theo watermark, checksum đêm (chỉ sửa phần lệch). Không full re-index hằng đêm.
+- DoD phase (bằng test tích hợp với Postgres/Redis/Typesense thật + Shopify giả lập):
+  - Sửa sản phẩm → search đổi: 3,2 s (webhook → BullMQ → worker → Typesense; debounce 3 s) ≪ 60 s.
+  - 1.000 sự kiện dồn dập (có trùng lặp): không mất, index đủ trong 3,5 s.
+  - Re-index không downtime: alias swap, collection cũ xoá sau swap; lệch > 2% giữ alias cũ.
+- Benchmark phía app (chưa gồm thời gian Shopify chạy bulk): 30k sp 4,0 s (RAM) / 7,6 s (PG); 100k 25,8 s heap ≤ 256 MB; checksum 30k 0,9 s, 0 lần ghi.
+- BFS liên quan: chỉ GraphQL 2026-10; 3 compliance webhook, HMAC sai → 401; shop/redact xoá sạch (engine + DB + Redis).
+- Việc cần store thật: HUMAN_TODO D1–D7 (fixture thật, benchmark bulk, Events smart collection, CSV 30k, best-selling).
+
 ## Bước tiếp theo
-- 1.5: hạ tầng queue (Redis/BullMQ), Shop service + afterAuth, full sync job (alias swap, early results, tiến độ).
-- Sau đó 1.6 → 1.14 theo thứ tự.
+- Phase 2: 2.1 search-api (Hono) dùng query/sort/filter builder đã có (2.2–2.4), rồi 2.5 merch, 2.6 SDK, 2.7 pricing...
