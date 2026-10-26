@@ -1,0 +1,17 @@
+mutation OrderWebhookCreate($topic: WebhookSubscriptionTopic!, $uri: String!) {
+  webhookSubscriptionCreate(topic: $topic, webhookSubscription: { uri: $uri, format: JSON }) {
+    webhookSubscription { id topic uri }
+    userErrors { field message }
+  }
+}
+query OrderWebhooks {
+  webhookSubscriptions(first: 20, topics: [ORDERS_CREATE, ORDERS_UPDATED, ORDERS_CANCELLED]) {
+    nodes { id topic uri }
+  }
+}
+mutation OrderWebhookDelete($id: ID!) {
+  webhookSubscriptionDelete(id: $id) {
+    deletedWebhookSubscriptionId
+    userErrors { field message }
+  }
+}

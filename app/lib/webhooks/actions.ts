@@ -12,6 +12,8 @@ export type WebhookAction =
       sortOrder?: string | null;
     }
   | { kind: "inventory"; inventoryItemIds: string[] }
+  /** Đơn hàng (task 2.15): chỉ lấy id — payload có dữ liệu khách hàng, không lưu, không chuyển tiếp. */
+  | { kind: "order"; orderGid: string }
   | { kind: "shop-refresh"; what: ("markets" | "locales" | "shop")[] }
   | { kind: "bulk-finished"; bulkId: string; status: string }
   | { kind: "uninstall" }
@@ -62,6 +64,10 @@ export function webhookActions(topic: string, payload: Record<string, unknown>):
         ? [{ kind: "bulk-finished", bulkId, status: String(payload.status ?? "") }]
         : [];
     }
+    case "orders/create":
+    case "orders/updated":
+    case "orders/cancelled":
+      return id ? [{ kind: "order", orderGid: `gid://shopify/Order/${id}` }] : [];
     case "app/uninstalled":
       return [{ kind: "uninstall" }];
     case "shop/redact":

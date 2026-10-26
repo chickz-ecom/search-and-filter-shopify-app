@@ -23,6 +23,13 @@ import {
 } from "../app/lib/sync/best-selling.server";
 import { runChecksum } from "../app/lib/sync/checksum.server";
 import { refreshStoreContent } from "../app/lib/sync/content.server";
+import { orderToLines, type RankMetric } from "../app/lib/sync/order-ranking";
+import {
+  fetchOrder,
+  loadInitialOrders,
+  refreshOrderRanks,
+  replaceOrderLines,
+} from "../app/lib/sync/order-ranking.server";
 import { unauthenticated } from "../app/shopify.server";
 import { syncCollection } from "../app/lib/sync/collections.server";
 import { runDelta } from "../app/lib/sync/delta.server";
@@ -136,12 +143,49 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
     case "best-selling": {
       const domain = await shopDomain(data.shopId);
       if (!domain) return { skipped: "uninstalled" };
+      // Nguồn "orders" (task 2.15): hạng tính từ OrderLine, không hỏi Storefront.
+      const bs = await bestSellingSettings(data.shopId);
+      if (bs.source === "orders")
+        return refreshOrderRanks(prisma, getEngine(), data.shopId, bs.metric);
       const transport = async (q: string, v: Record<string, unknown>) => {
         const { storefront } = await unauthenticated.storefront(domain);
         return storefrontContextTransport(storefront)(q, v);
       };
       const order = await fetchBestSellingOrder(transport);
       return applyBestSellingRanks(getEngine(), data.shopId, order);
+    }
+    case "order": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      if ((await bestSellingSettings(data.shopId)).source !== "orders")
+        return { skipped: "source" };
+      const order = await fetchOrder(workerDeps(domain).ex, data.orderGid);
+      const orderId = data.orderGid.split("/").pop()!;
+      await replaceOrderLines(prisma, data.shopId, orderId, order ? orderToLines(order) : []);
+      // Gộp hạng theo khung 15 phút: nhiều đơn trong khung → một lần tính, chạy cuối khung (DoD ≤ 15 phút).
+      const bucket = Math.floor(Date.now() / ORDER_RANK_WINDOW_MS);
+      await getSyncQueue().add(
+        "order-ranks",
+        { type: "order-ranks", shopId: data.shopId },
+        {
+          jobId: `order-ranks-${data.shopId}-${bucket}`,
+          delay: (bucket + 1) * ORDER_RANK_WINDOW_MS - Date.now(),
+        },
+      );
+      return { lines: order ? orderToLines(order).length : 0 };
+    }
+    case "orders-initial": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      const d = workerDeps(domain);
+      const r = await loadInitialOrders(prisma, d.runner, data.shopId);
+      const bs = await bestSellingSettings(data.shopId);
+      return { ...r, ...(await refreshOrderRanks(prisma, getEngine(), data.shopId, bs.metric)) };
+    }
+    case "order-ranks": {
+      const bs = await bestSellingSettings(data.shopId);
+      if (bs.source !== "orders") return { skipped: "source" };
+      return refreshOrderRanks(prisma, getEngine(), data.shopId, bs.metric);
     }
     case "shop-refresh": {
       const domain = await shopDomain(data.shopId);
@@ -196,6 +240,18 @@ async function scheduleIncremental(shopId: string, delayMs: number) {
 }
 
 export const DELTA_INTERVAL_MS = 5 * 60_000;
+export const ORDER_RANK_WINDOW_MS = 15 * 60_000;
+
+async function bestSellingSettings(shopId: string) {
+  const s = await prisma.searchSettings.findUnique({
+    where: { shopId },
+    select: { bestSellingSource: true, bestSellingMetric: true },
+  });
+  return {
+    source: s?.bestSellingSource ?? "storefront",
+    metric: (s?.bestSellingMetric ?? "quantity") as RankMetric,
+  };
+}
 
 export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
   const q = getSyncQueue();

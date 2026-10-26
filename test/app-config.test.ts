@@ -27,7 +27,11 @@ describe("shopify.app.toml", () => {
         "read_customer_events",
       ].sort(),
     );
-    expect(toml.access_scopes.optional_scopes).toEqual(["read_content", "read_online_store_pages"]);
+    expect(toml.access_scopes.optional_scopes).toEqual([
+      "read_content",
+      "read_online_store_pages",
+      "read_orders",
+    ]);
     expect(scopes).not.toContain("read_orders"); // D13: không cần Protected Customer Data
   });
 

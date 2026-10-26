@@ -14,7 +14,9 @@ include_config_on_deploy = true
 # Managed install (không use_legacy_install_flow). Chỉ đọc dữ liệu sản phẩm → Protected Customer Data Level 0 (D13).
 # Pages/articles cho autocomplete chỉ xin khi merchant bật (Search → kiểu tìm kiếm) qua shopify.scopes.request.
 # Validator 2026-10 (docs/shopify-api/admin/online-store-content.graphql): pages/articles cần read_content + read_online_store_pages.
-optional_scopes = ["read_content", "read_online_store_pages"]
+# read_orders (task 2.15, D17): xếp hạng bán chạy theo đơn 60 ngày — chỉ khi merchant bật ở trang Sorting.
+# Cần Protected Customer Data Level 1 (HUMAN_TODO P1); app không đọc trường khách hàng nào.
+optional_scopes = ["read_content", "read_online_store_pages", "read_orders"]
 scopes = "read_products,read_inventory,read_translations,read_locales,read_markets,unauthenticated_read_product_listings,write_app_proxy,write_pixels,read_customer_events"
 
 [auth]

@@ -46,4 +46,29 @@ describe("SortingView (3.3)", () => {
     expect(html).not.toContain("Material (custom.material)");
     expect(html).toContain('label="Summer"');
   });
+
+  it("best-selling source: explains the order permission, and shows status + metric when on (2.15)", () => {
+    const off = renderToStaticMarkup(
+      <SortingView
+        {...base}
+        bestSelling={{ source: "storefront", metric: "quantity", computedAt: null, orders: 0 }}
+      />,
+    );
+    expect(off).toContain("Rank by orders from the last 60 days");
+    expect(off).toContain("never customer details");
+    const on = renderToStaticMarkup(
+      <SortingView
+        {...base}
+        bestSelling={{
+          source: "orders",
+          metric: "revenue",
+          computedAt: "2026-10-26T09:30:00Z",
+          orders: 812,
+        }}
+      />,
+    );
+    expect(on).toContain("from 812 orders");
+    expect(on).toMatch(/<s-select[^>]*label="Rank by"[^>]*value="revenue"/);
+    expect(on).toContain("Switch back to Shopify&#x27;s ranking");
+  });
 });

@@ -90,6 +90,15 @@ export async function dispatchWebhook(
           inventoryItemIds: a.inventoryItemIds,
         });
         break;
+      case "order":
+        // Gộp các lần cập nhật cùng đơn trong 10 s (orders/updated bắn nhiều lần khi hoàn tiền, chỉnh sửa).
+        await sink.sync(
+          { type: "order", shopId: shop.id, orderGid: a.orderGid },
+          {
+            jobId: `order-${shop.id}-${a.orderGid.split("/").pop()}-${Math.floor(Date.now() / 10_000)}`,
+          },
+        );
+        break;
       case "shop-refresh":
         await sink.sync(
           { type: "shop-refresh", shopId: shop.id, what: a.what },

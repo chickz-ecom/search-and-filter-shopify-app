@@ -1,0 +1,16 @@
+query OrderLines($id: ID!, $cursor: String) {
+  order(id: $id) {
+    id
+    createdAt
+    cancelledAt
+    test
+    lineItems(first: 250, after: $cursor) {
+      nodes {
+        currentQuantity
+        product { id }
+        discountedTotalSet { shopMoney { amount currencyCode } }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}

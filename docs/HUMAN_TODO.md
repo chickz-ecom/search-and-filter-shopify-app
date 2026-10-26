@@ -158,3 +158,12 @@
 - [ ] O2. Soát lại `docs/ops/bfs-checklist.md` cột "Still to confirm on a real store" (I1, G3, field Web Vitals 28 ngày).
 - [ ] O3. Partner Dashboard → Distribution → Shopify App Store: nhập listing (`docs/app-store/listing.json`), ảnh,
       privacy policy URL, hướng dẫn test; nộp review. Sau khi được duyệt và đạt 50 lượt cài net + 5 review → đăng ký BFS.
+
+## P. Bán chạy theo đơn (task 2.15, D17)
+- [ ] P1. Partner Dashboard → API access → Protected customer data: xin **Level 1** (chỉ đơn hàng, không trường khách
+      hàng) cho optional scope `read_orders`; mô tả theo `docs/adr/0017-order-based-best-selling.md` và privacy policy.
+- [ ] P2. Trên dev store có đơn: Sorting → "Rank by orders" → cấp quyền → kiểm tra webhook ORDERS_* được tạo
+      (`webhookSubscriptions`), job orders-initial chạy bulk thật (VERIFY cú pháp `created_at:>='…'` và việc bỏ đơn test),
+      tạo đơn mới → hạng đổi ≤ 15 phút; "Switch back" → webhook bị gỡ, OrderLine rỗng, scope bị revoke.
+- [ ] P3. VERIFY validator liệt kê `read_orders, read_marketplace_orders, …` cho query đơn — xác nhận `read_orders` đủ
+      cho đơn Online Store/POS thông thường.

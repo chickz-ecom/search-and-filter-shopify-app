@@ -1,4 +1,5 @@
 import { purgeShopConfig } from "../search-service/context.server";
+import { pruneOrderLines } from "../sync/order-ranking.server";
 import type { Redis } from "ioredis";
 import type { SearchEngine } from "../search/engine";
 import {
@@ -97,6 +98,7 @@ export async function cleanup(
     deps.db.analyticsDaily.deleteMany({ where: { date: { lt: retention } } }),
     deps.db.analyticsUsageDaily.deleteMany({ where: { date: { lt: retention } } }),
   ]);
+  const orderLines = await pruneOrderLines(deps.db, now);
   const stale = await deps.db.shop.findMany({
     where: { uninstalledAt: { lt: week } },
     select: { domain: true },
@@ -105,6 +107,7 @@ export async function cleanup(
   return {
     receipts: receipts.count,
     analyticsRows: daily.count + usage.count,
+    orderLines: orderLines.deleted,
     redacted: stale.length,
   };
 }

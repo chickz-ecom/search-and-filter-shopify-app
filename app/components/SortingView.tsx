@@ -26,6 +26,20 @@ export type SortingViewProps = {
   errors: Record<string, string>;
   onSave: (form: SortingForm) => void;
   onPickCollections: () => Promise<{ id: string; title: string }[]>;
+  /** Nguồn xếp hạng bán chạy (task 2.15). */
+  bestSelling?: BestSellingInfo;
+  busy?: boolean;
+  onBestSelling?: (next: {
+    source: "storefront" | "orders";
+    metric: BestSellingInfo["metric"];
+  }) => void;
+};
+
+export type BestSellingInfo = {
+  source: "storefront" | "orders";
+  metric: "quantity" | "orders" | "revenue";
+  computedAt: string | null;
+  orders: number;
 };
 
 const SORTABLE_MF = new Set(["number_integer", "number_decimal", "rating", "date", "date_time"]);
@@ -283,6 +297,71 @@ export function SortingView(p: SortingViewProps) {
           </s-select>
         </s-stack>
       </s-section>
+
+      {p.bestSelling && (
+        <s-section heading={t("sorting.bs.heading")}>
+          <s-stack direction="block" gap="base">
+            <s-paragraph color="subdued">
+              {t(
+                p.bestSelling.source === "orders"
+                  ? "sorting.bs.orders.desc"
+                  : "sorting.bs.storefront.desc",
+              )}
+            </s-paragraph>
+            {p.bestSelling.source === "orders" ? (
+              <>
+                <s-text>
+                  {p.bestSelling.computedAt
+                    ? t("sorting.bs.status", {
+                        date: new Date(p.bestSelling.computedAt).toLocaleString(
+                          p.locale === "vi" ? "vi-VN" : "en-US",
+                          { dateStyle: "medium", timeStyle: "short" },
+                        ),
+                        n: p.bestSelling.orders,
+                      })
+                    : t("sorting.bs.pending")}
+                </s-text>
+                <s-select
+                  label={t("sorting.bs.metric")}
+                  value={p.bestSelling.metric}
+                  disabled={p.busy}
+                  onChange={(e) =>
+                    p.onBestSelling?.({
+                      source: "orders",
+                      metric: value(e) as BestSellingInfo["metric"],
+                    })
+                  }
+                >
+                  <s-option value="quantity">{t("sorting.bs.metric.quantity")}</s-option>
+                  <s-option value="orders">{t("sorting.bs.metric.orders")}</s-option>
+                  <s-option value="revenue">{t("sorting.bs.metric.revenue")}</s-option>
+                </s-select>
+                <s-button
+                  variant="tertiary"
+                  disabled={p.busy}
+                  onClick={() =>
+                    p.onBestSelling?.({ source: "storefront", metric: p.bestSelling!.metric })
+                  }
+                >
+                  {t("sorting.bs.useShopify")}
+                </s-button>
+              </>
+            ) : (
+              <s-stack direction="block" gap="small-200">
+                <s-paragraph color="subdued">{t("sorting.bs.privacy")}</s-paragraph>
+                <s-button
+                  disabled={p.busy}
+                  onClick={() =>
+                    p.onBestSelling?.({ source: "orders", metric: p.bestSelling!.metric })
+                  }
+                >
+                  {t("sorting.bs.useOrders")}
+                </s-button>
+              </s-stack>
+            )}
+          </s-stack>
+        </s-section>
+      )}
 
       <s-section heading={t("sorting.overrides.heading")}>
         <s-button

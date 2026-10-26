@@ -38,6 +38,8 @@ export const SearchSettingsSchema = z
     semanticSearch: z.boolean(),
     semanticStrictness: z.enum(SEMANTIC_STRICTNESS),
     queryUnderstanding: z.boolean(),
+    bestSellingSource: z.enum(["storefront", "orders"]),
+    bestSellingMetric: z.enum(["quantity", "orders", "revenue"]),
   })
   .superRefine((s, ctx) => {
     if (s.minWordLengthFor2Typo < s.minWordLengthFor1Typo) {
@@ -88,5 +90,7 @@ export function defaultSearchSettings(): SearchSettingsConfig {
     semanticSearch: false,
     semanticStrictness: "balanced",
     queryUnderstanding: false,
+    bestSellingSource: "storefront",
+    bestSellingMetric: "quantity",
   };
 }

@@ -24,6 +24,9 @@ export type SyncJobData =
   | { type: "inventory"; shopId: string; inventoryItemIds: string[] }
   | { type: "delta"; shopId: string }
   | { type: "content"; shopId: string }
+  | { type: "order"; shopId: string; orderGid: string }
+  | { type: "orders-initial"; shopId: string }
+  | { type: "order-ranks"; shopId: string }
   | { type: "checksum"; shopId: string }
   | { type: "shop-refresh"; shopId: string; what: ("markets" | "locales" | "shop")[] }
   | { type: "best-selling"; shopId: string }

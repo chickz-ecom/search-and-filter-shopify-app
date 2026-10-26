@@ -18,5 +18,6 @@
 | D14 | API version 2026-10 một chỗ | [0014-api-version-2026-10.md](0014-api-version-2026-10.md) |
 | D15 | Giá hiển thị từ Storefront API (1 request/trang) | [0015-storefront-api-pricing.md](0015-storefront-api-pricing.md) |
 | D16 | Storefront SDK công khai `window.SearchApp` | [0016-public-storefront-sdk.md](0016-public-storefront-sdk.md) |
+| D17 | Bán chạy theo đơn 60 ngày (optional `read_orders`) | [0017-order-based-best-selling.md](0017-order-based-best-selling.md) |
 
 Đổi quyết định: thêm ADR mới (Superseded), cập nhật bảng D-x trong 02-PLAN.md và Nhật ký.

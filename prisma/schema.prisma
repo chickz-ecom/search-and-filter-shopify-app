@@ -39,45 +39,48 @@ enum SyncState {
 }
 
 model Shop {
-  id                  String    @id @default(cuid())
-  domain              String    @unique
-  plan                String    @default("free")
+  id                    String    @id @default(cuid())
+  domain                String    @unique
+  plan                  String    @default("free")
   // gid://shopify/Shop/… — Partner API activeSubscription (Shopify App Pricing) cần shopId
-  shopifyGid          String?
+  shopifyGid            String?
   // Lần cuối đối chiếu gói với Partner API
-  planCheckedAt       DateTime?
-  installedAt         DateTime  @default(now())
-  uninstalledAt       DateTime?
-  publicKey           String    @unique
+  planCheckedAt         DateTime?
+  // Xếp hạng bán chạy theo đơn (task 2.15): lần tính cuối và số đơn đã dùng
+  bestSellingComputedAt DateTime?
+  bestSellingOrders     Int       @default(0)
+  installedAt           DateTime  @default(now())
+  uninstalledAt         DateTime?
+  publicKey             String    @unique
   // Cấu hình index
-  currency            String    @default("USD")
-  primaryLocale       String    @default("en")
-  locales             String[]  @default([])
+  currency              String    @default("USD")
+  primaryLocale         String    @default("en")
+  locales               String[]  @default([])
   // Markets: [{ handle, countries[], currency, hasFixedPrices }]
-  markets             Json      @default("[]")
+  markets               Json      @default("[]")
   // Engine
-  searchKeyScoped     String?
-  indexAlias          String
-  indexVersion        Int       @default(0)
+  searchKeyScoped       String?
+  indexAlias            String
+  indexVersion          Int       @default(0)
   // Sync
-  syncState           SyncState @default(IDLE)
-  lastFullSyncAt      DateTime?
-  lastIncrementalAt   DateTime?
-  lastSyncedUpdatedAt DateTime?
-  productCount        Int       @default(0)
-  indexedCount        Int       @default(0)
+  syncState             SyncState @default(IDLE)
+  lastFullSyncAt        DateTime?
+  lastIncrementalAt     DateTime?
+  lastSyncedUpdatedAt   DateTime?
+  productCount          Int       @default(0)
+  indexedCount          Int       @default(0)
   // Không dùng (best-selling dùng private token qua unauthenticated.storefront, Nhật ký 1.12)
-  storefrontToken     String?
+  storefrontToken       String?
   // Domain storefront (primary + web presence theo market) → CORS của search-api
-  storefrontDomains   String[]  @default([])
+  storefrontDomains     String[]  @default([])
   // Feature flags: { fixedMarketPrices?: boolean, headless?: boolean }
-  features            Json      @default("{}")
-  onboardingDismissed Boolean   @default(false)
+  features              Json      @default("{}")
+  onboardingDismissed   Boolean   @default(false)
   // Checklist Home (BFS 4.2.x): { search?: iso, sorting?: iso, filters?: iso, preview?: iso }
-  onboarding          Json      @default("{}")
+  onboarding            Json      @default("{}")
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   syncJobs       SyncJob[]
   searchSettings SearchSettings?
@@ -91,6 +94,23 @@ model Shop {
   appearance     Appearance?
   analytics      AnalyticsDaily[]
   usage          AnalyticsUsageDaily[]
+  orderLines     OrderLine[]
+}
+
+// Dòng đơn hàng rút gọn cho xếp hạng bán chạy (task 2.15, D17): CHỈ id + số lượng + doanh thu dòng, không có dữ liệu
+// khách hàng. Giữ 60 ngày (job đêm xoá), xoá hết khi tắt nguồn "orders" hoặc shop/redact (cascade).
+model OrderLine {
+  shopId    String
+  orderId   String
+  productId String
+  qty       Int
+  revenue   Decimal  @default(0) @db.Decimal(14, 2)
+  createdAt DateTime
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@id([shopId, orderId, productId])
+  @@index([shopId, createdAt])
 }
 
 enum SyncJobType {
@@ -159,6 +179,10 @@ model SearchSettings {
   semanticStrictness    String         @default("balanced")
   // Hiểu truy vấn (task 5.2): "váy đỏ dưới 500k" → filter. Mọi gói, mặc định tắt.
   queryUnderstanding    Boolean        @default(false)
+  // Nguồn xếp hạng bán chạy (task 2.15, D17): "storefront" (BEST_SELLING của Shopify) | "orders" (đơn 60 ngày)
+  bestSellingSource     String         @default("storefront")
+  // "quantity" | "orders" | "revenue" (chỉ khi nguồn = orders)
+  bestSellingMetric     String         @default("quantity")
   updatedAt             DateTime       @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -266,10 +290,10 @@ model MerchRule {
 }
 
 model StopWord {
-  id     String  @id @default(cuid())
+  id     String @id @default(cuid())
   shopId String
   word   String
-  locale String  @default("en")
+  locale String @default("en")
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
