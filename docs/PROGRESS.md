@@ -4,14 +4,15 @@
 > Tiếp tục: `cat docs/PROGRESS.md && git log --oneline -20 && grep -n "\[ \]\|\[~\]" docs/02-PLAN.md | head`
 
 ## Hiện tại
-- Phase: 4 — Tài liệu cho developer
-- Task: 4.1 (docs/developers: quickstart, SDK reference từ .d.ts, events, template, OpenAPI, changelog)
+- Phase: 6 — Hardening và Launch
+- Task: 6.1 (observability: độ trễ sync, độ sâu queue, p95 search, tỷ lệ lỗi giá Storefront)
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
 - Phase 1: 1.1–1.14 xong (xem tổng kết bên dưới).
 - Phase 2: 2.1 search-api (load test 204 RPS, p99 78 ms), 2.2–2.4 builders, 2.5 merch, 2.6 SDK (5,97 KB gzip), 2.7 pricing Storefront API, 2.8 phương án B.
 - Phase 3: 3.1–3.10 xong (xem tổng kết bên dưới).
+- Phase 4: 4.1–4.3 xong. Phase 5: 5.1–5.3 xong (xem tổng kết bên dưới).
 - Mẫu làm việc: dùng `scratchpad/check.sh` (prettier+typecheck+lint+test) trước mọi commit; `scratchpad/rep.py` để sửa file (báo lỗi nếu không tìm thấy chuỗi).
 
 
@@ -71,7 +72,21 @@
   không pattern gây áp lực, tính năng ngoài gói disable kèm giải thích.
 - Còn thiếu so với nav mục 8: trang Help (support/FAQ) → làm cùng 6.5 (listing). Kiểm tra trên admin thật: HUMAN_TODO I1–I5, J1–J3.
 
+## Tổng kết Phase 4 (2026-10-26)
+- docs/developers: README (semver + deprecate ≥ 90 ngày), quickstart 4 mức, sdk-reference SINH từ .d.ts (CI --check), events,
+  templates, headless, openapi.yaml 3.1 (test hợp đồng route/mã lỗi/$ref), CHANGELOG, 3 section mẫu (Theme Check sạch, E2E liquidjs).
+- Contract SDK: snapshot v1.json + phân loại breaking/addition; đã chứng minh fail khi xoá field; dùng thật ở 5.2 (bump 1.1.0).
+- Phát hiện quan trọng: section theme chạy TRƯỚC app embed (phải chờ DOMContentLoaded); searchapp-results.js từng vượt 10 000 B
+  (Theme Check AssetSizeAppBlockJavaScript) → es2020 + tách template; ngân sách raw + Theme Check vào build/CI.
+
+## Tổng kết Phase 5 (2026-10-26)
+- 5.1 AI search hybrid (Typesense auto-embedding, gói Pro+, merchant bật, độ chặt → distance_threshold). 2.000 sp/4 s, query 3–5 ms.
+- 5.2 Hiểu truy vấn bằng luật (giá en/vi + giá trị facet có thật), mọi gói, mặc định tắt; filter đưa lên URL để khách bỏ được;
+  "Search for … instead". SDK 1.1.0.
+- 5.3 Gợi ý synonym từ zero-result (dấu/khoảng trắng/số nhiều/chính tả/nghĩa), kiểm chứng có sản phẩm, merchant duyệt.
+- Model embedding phải có sẵn trên Typesense (máy dev: tải tay vào /data/models; HUMAN_TODO K1).
+
 ## Bước tiếp theo
-- Phase 4: 4.1 docs/developers → 4.2 ba section mẫu → 4.3 contract test .d.ts. Sau đó Phase 5 (AI, tuỳ chọn) và Phase 6.
+- Phase 6: 6.1 observability → 6.2 load test ×10 + HA/backup → 6.3 bảo mật → 6.4 deploy → 6.5 hồ sơ App Store (+ trang Help) → 6.6 BFS.
 - Mẫu UI admin: component thuần trong app/components/*View.tsx (validate MCP polaris-app-home v2.0 + test SSR), route chỉ loader/action.
 
