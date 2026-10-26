@@ -71,6 +71,8 @@ export type MapOptions = {
   translations?: Record<string, ProductTranslation>;
   /** Phương án B: country → giá min (minor units, currency của market). */
   marketPrices?: Record<string, number>;
+  /** Task 1.13: khi tổng vị trí thủ công vượt ngân sách, chỉ lưu pos_ cho N vị trí đầu mỗi collection. */
+  posCap?: number;
 };
 
 const DEFAULT_OPTION_NAMES = new Set(["Title"]);
@@ -270,7 +272,9 @@ export function mapProduct(p: ProductNode, variants: VariantNode[], opts: MapOpt
     doc.collections.push(c.id);
     doc.collection_handles.push(c.handle);
     doc.collection_titles.push(c.title);
-    if (c.manual && c.position !== undefined) doc[`pos_${c.id}`] = c.position;
+    if (c.manual && c.position !== undefined && (!opts.posCap || c.position <= opts.posCap)) {
+      doc[`pos_${c.id}`] = c.position;
+    }
   }
 
   opts.metafields.forEach((m, i) => {

@@ -192,3 +192,23 @@ describe("helpers", () => {
     expect(parseMetafieldValue("abc", "number_integer")).toBeUndefined();
   });
 });
+
+describe("pos cap (1.13)", () => {
+  it("drops positions beyond the cap when the shop is over the pos_ budget", async () => {
+    const { computePosCap } = await import("./pipeline");
+    expect(computePosCap([500_000, 400_000])).toBeUndefined();
+    expect(computePosCap([900_000, 200_000])).toBe(250);
+    const d = mapProduct(products[0], [], {
+      currency: "USD",
+      metafields: [],
+      collections: [
+        { id: "1", handle: "a", title: "A", manual: true, position: 10 },
+        { id: "2", handle: "b", title: "B", manual: true, position: 900 },
+      ],
+      posCap: 250,
+    });
+    expect(d.pos_1).toBe(10);
+    expect(d.pos_2).toBeUndefined();
+    expect(d.collections).toEqual(["1", "2"]);
+  });
+});

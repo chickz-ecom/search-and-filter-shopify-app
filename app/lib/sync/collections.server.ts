@@ -163,6 +163,8 @@ export async function syncCollection(
   const ordered = await fetchCollectionOrdered(deps.ex, cid);
   if (!ordered) return syncCollection(shopId, { collectionId: cid, deleted: true }, deps);
   const manual = ordered.sortOrder === "MANUAL";
+  const shop = await deps.db.shop.findUnique({ where: { id: shopId }, select: { features: true } });
+  const posCap = (shop?.features as { posCap?: number | null } | null)?.posCap ?? undefined;
   const info = { id: cid, handle: ordered.handle, title: ordered.title };
   const position = new Map(ordered.productIds.map((id, i) => [id, i + 1]));
 
@@ -199,7 +201,11 @@ export async function syncCollection(
     const updates = [
       ...leaving.map((d) => without(d, cid)),
       ...[...staying, ...joiningDocs].map((d) =>
-        withMember(d, info, manual ? position.get(d.id)! : null),
+        withMember(
+          d,
+          info,
+          manual && (!posCap || position.get(d.id)! <= posCap) ? position.get(d.id)! : null,
+        ),
       ),
     ];
     const r = await deps.engine.updateDocuments(t, updates);

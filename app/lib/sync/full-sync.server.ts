@@ -20,7 +20,13 @@ import { currentRanks } from "./best-selling.server";
 import { BulkRunner, catalogStats, planShards } from "./bulk-runner";
 import { mapProduct, type ProductNode } from "./mapper";
 import { fetchProductMetafieldDefinitions, resolveMetafieldSpecs } from "./metafields.server";
-import { assembleDocs, buildFullSyncSpecs, importInBatches, type CollectionInfo } from "./pipeline";
+import {
+  assembleDocs,
+  buildFullSyncSpecs,
+  computePosCap,
+  importInBatches,
+  type CollectionInfo,
+} from "./pipeline";
 import { earlyProductsQuery, PRODUCT_FILTER } from "./queries";
 import { MemoryStaging, MEMORY_STAGING_MAX_PRODUCTS, PgStaging, type Staging } from "./staging";
 
@@ -154,6 +160,7 @@ export async function runFullSync(
       : catalog.count <= MEMORY_STAGING_MAX_PRODUCTS;
     staging = useMemory ? new MemoryStaging() : new PgStaging(db, job.id);
     const collections: CollectionInfo[] = [];
+    const manualSizes = new Map<string, number>();
     const shards = planShards(catalog.count, catalog.oldest, catalog.newest);
     const bulkPromise = runner.run(
       buildFullSyncSpecs({ staging, metafields, shards, onCollection: (c) => collections.push(c) }),
@@ -172,6 +179,14 @@ export async function runFullSync(
     }));
 
     const staged = await staging.count();
+    const posCap = computePosCap([...manualSizes.values()]);
+    stats.manualPositions = [...manualSizes.values()].reduce((a, b) => a + b, 0);
+    stats.posCap = posCap ?? null;
+    const features = {
+      ...((shop.features as Record<string, unknown>) ?? {}),
+      posCap: posCap ?? null,
+    };
+    await updateProgress(db, shopId, { features: features as Prisma.InputJsonValue });
     // Re-index: giữ best_selling_rank đang có (lượt đêm cập nhật lại sau).
     const bestSelling = current
       ? await currentRanks(engine, current).catch(() => new Map<string, number>())
@@ -180,7 +195,7 @@ export async function runFullSync(
     const imported = await importInBatches(
       engine,
       name,
-      assembleDocs(staging, { currency: shop.currency, metafields, bestSelling }),
+      assembleDocs(staging, { currency: shop.currency, metafields, bestSelling, posCap }),
       {
         onProgress: (n) => {
           if (clock.now() - lastProgress > 2000) {

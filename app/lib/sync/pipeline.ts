@@ -22,6 +22,20 @@ type CollectionRow = {
   __parentId?: string;
 };
 
+/** Task 1.13 (đo ở Nhật ký): ~75 byte RAM Typesense mỗi vị trí pos_. Ngân sách mỗi shop. */
+export const POS_BUDGET = 1_000_000;
+export const POS_CAP = 250;
+
+/** Tổng vị trí thủ công vượt ngân sách → giới hạn mỗi collection N vị trí đầu. */
+export function computePosCap(
+  manualSizes: number[],
+  budget = POS_BUDGET,
+  cap = POS_CAP,
+): number | undefined {
+  const total = manualSizes.reduce((s, n) => s + n, 0);
+  return total > budget ? cap : undefined;
+}
+
 export type CollectionInfo = {
   id: string;
   handle: string;
@@ -34,6 +48,8 @@ export type FullSyncSpecInput = {
   staging: Staging;
   /** Nhận từng collection (cho index c_{shopId} và thứ tự sortOrder). */
   onCollection?: (c: CollectionInfo) => void;
+  /** Đếm thành viên của collection MANUAL (tính ngân sách pos_, task 1.13). */
+  manualSizes?: Map<string, number>;
   metafields: MetafieldSpec[];
   /** Filter shard theo created_at; [undefined] = không shard. */
   shards: (string | undefined)[];
@@ -57,13 +73,14 @@ export function buildFullSyncSpecs(input: FullSyncSpecInput): BulkSpec<never>[] 
       onRow: ((row: VariantNode) => staging.addVariant(row)) as never,
     });
   });
-  specs.push(collectionsSpec(staging, input.onCollection));
+  specs.push(collectionsSpec(staging, input.onCollection, input.manualSizes));
   return specs;
 }
 
 export function collectionsSpec(
   staging: Staging,
   onCollection?: (c: CollectionInfo) => void,
+  manualSizes?: Map<string, number>,
 ): BulkSpec<never> {
   const collections = new Map<
     string,
@@ -74,6 +91,7 @@ export function collectionsSpec(
     const c = collections.get(row.__parentId!);
     if (!c) return false;
     c.next += 1;
+    if (c.manual && manualSizes) manualSizes.set(c.id, c.next);
     staging.addCollection(row.id, {
       id: c.id,
       handle: c.handle,
@@ -136,6 +154,7 @@ export async function* assembleDocs(
       bestSellingRank: opts.bestSelling?.get(id),
       translations: opts.translations?.get(id),
       marketPrices: opts.marketPrices?.get(id),
+      posCap: opts.posCap,
     });
   }
 }
