@@ -3,7 +3,12 @@ import type { SearchEngine } from "../search/engine";
 import type { MetafieldSpec } from "../search/index-schema";
 import { productAlias } from "../search/names";
 import type { ProductDoc } from "../search/product-doc";
-import { loadShopConfig, requiredMetafields, type Db } from "../shop/shop.server";
+import {
+  fixedPriceCountries,
+  loadShopConfig,
+  requiredMetafields,
+  type Db,
+} from "../shop/shop.server";
 import type { GraphqlExecutor } from "../shopify/graphql";
 import { fullSyncTargetKey } from "./full-sync.server";
 import {
@@ -21,7 +26,7 @@ import {
   COST,
   PRODUCT_COLLECTIONS_BY_IDS_QUERY,
   productsCoreByIdsQuery,
-  VARIANTS_BY_PRODUCT_IDS_QUERY,
+  variantsByProductIdsQuery,
 } from "./queries";
 
 // Incremental (task 1.7, mục 5.2): gom ID → nodes(ids:) theo lô → upsert / xoá. Lấy bản mới nhất nên
@@ -81,7 +86,11 @@ async function fetchCore(ex: GraphqlExecutor, gids: string[], metafields: Metafi
   return out;
 }
 
-async function fetchVariants(ex: GraphqlExecutor, productIds: string[]) {
+async function fetchVariants(
+  ex: GraphqlExecutor,
+  productIds: string[],
+  priceCountries: string[] = [],
+) {
   const out = new Map<string, VariantNode[]>();
   let cursor: string | null = null;
   const query = `product_ids:${productIds.join(",")}`;
@@ -93,7 +102,7 @@ async function fetchVariants(ex: GraphqlExecutor, productIds: string[]) {
       };
     };
     const d: R = await ex.query<R>(
-      VARIANTS_BY_PRODUCT_IDS_QUERY,
+      variantsByProductIdsQuery(priceCountries),
       { query, cursor },
       { estimatedCost: COST.variantsPage },
     );
@@ -178,12 +187,13 @@ export async function refreshProducts(
   shopId: string,
   productIds: string[],
   deps: IncrementalDeps,
-  ctx?: { currency: string; metafields: MetafieldSpec[] },
+  ctx?: { currency: string; metafields: MetafieldSpec[]; priceCountries?: string[] },
 ): Promise<RefreshResult> {
   if (!productIds.length) return { upserted: 0, deleted: 0 };
   const shop = await deps.db.shop.findUniqueOrThrow({ where: { id: shopId } });
   const metafields = ctx?.metafields ?? (await shopMetafields(deps.db, deps.ex, shopId));
   const currency = ctx?.currency ?? shop.currency;
+  const priceCountries = ctx?.priceCountries ?? fixedPriceCountries(shop);
   const targets = await writeTargets(shopId, deps);
   const result: RefreshResult = { upserted: 0, deleted: 0 };
 
@@ -194,7 +204,10 @@ export async function refreshProducts(
     const remove = part.filter((id) => !keep.includes(productGid(id)));
     const keepIds = keep.map(gidToId);
     const [variants, collections] = keep.length
-      ? await Promise.all([fetchVariants(deps.ex, keepIds), fetchCollections(deps.ex, keep)])
+      ? await Promise.all([
+          fetchVariants(deps.ex, keepIds, priceCountries),
+          fetchCollections(deps.ex, keep),
+        ])
       : [new Map<string, VariantNode[]>(), new Map<string, CollectionMembership[]>()];
 
     const docs = await withCarryOver(
@@ -205,6 +218,7 @@ export async function refreshProducts(
           currency,
           metafields,
           collections: collections.get(g) ?? [],
+          priceCountries,
         }),
       ),
     );

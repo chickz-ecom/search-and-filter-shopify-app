@@ -62,8 +62,22 @@ const VARIANT_FIELDS = `id
         position
         selectedOptions { name value }`;
 
+/**
+ * Phương án B (task 2.8, sau flag fixedMarketPrices): giá cuối của variant cho country có price list cố định.
+ * VERIFY: contextualPricing dùng được bên trong bulk (schema hợp lệ; docs không nói rõ) — HUMAN_TODO F4.
+ */
+export function contextualPricingAliases(countries: string[]): string {
+  return countries
+    .filter((c) => /^[A-Z]{2}$/.test(c))
+    .map(
+      (c) =>
+        `cp_${c}: contextualPricing(context: { country: ${c} }) { price { amount currencyCode } compareAtPrice { amount currencyCode } }`,
+    )
+    .join("\n        ");
+}
+
 /** (b) Bulk phẳng: productVariants ở top-level, có product { id } để join theo ID. */
-export function bulkVariantsQuery(extraFilter?: string): string {
+export function bulkVariantsQuery(extraFilter?: string, priceCountries: string[] = []): string {
   const base = "product_status:active AND published_status:published";
   const q = extraFilter ? `${base} AND ${extraFilter}` : base;
   return `{
@@ -71,6 +85,7 @@ export function bulkVariantsQuery(extraFilter?: string): string {
     edges {
       node {
         ${VARIANT_FIELDS}
+        ${contextualPricingAliases(priceCountries)}
       }
     }
   }
@@ -101,14 +116,14 @@ export function bulkCollectionsQuery(): string {
 }
 
 /** Cấu hình so sánh benchmark 1.3: một query lồng (product → variants, collections). Không dùng trong production. */
-export function bulkNestedQuery(metafields: MetafieldRef[]): string {
+export function bulkNestedQuery(metafields: MetafieldRef[], priceCountries: string[] = []): string {
   return `{
   products(query: ${JSON.stringify(PRODUCT_FILTER)}) {
     edges {
       node {
         ${PRODUCT_CORE_FIELDS}
         ${metafieldAliases(metafields)}
-        variants { edges { node { ${VARIANT_FIELDS.replace("product { id }", "")} } } }
+        variants { edges { node { ${VARIANT_FIELDS.replace("product { id }", "")} ${contextualPricingAliases(priceCountries)} } } }
         collections { edges { node { id handle title sortOrder } } }
       }
     }
@@ -172,14 +187,19 @@ export function earlyProductsQuery(metafields: MetafieldRef[]): string {
 }`;
 }
 
-export const VARIANTS_BY_PRODUCT_IDS_QUERY = `query VariantsByProductIds($query: String!, $cursor: String) {
-  productVariants(first: 250, after: $cursor, query: $query) {
+export function variantsByProductIdsQuery(priceCountries: string[] = []): string {
+  return `query VariantsByProductIds($query: String!, $cursor: String) {
+  productVariants(first: ${priceCountries.length ? 100 : 250}, after: $cursor, query: $query) {
     nodes {
         ${VARIANT_FIELDS}
+        ${contextualPricingAliases(priceCountries)}
     }
     pageInfo { hasNextPage endCursor }
   }
 }`;
+}
+
+export const VARIANTS_BY_PRODUCT_IDS_QUERY = variantsByProductIdsQuery();
 
 /** ≈ 53 điểm/sản phẩm → tối đa 18 ID mỗi request. */
 export const PRODUCT_COLLECTIONS_BY_IDS_QUERY = `query ProductCollectionsByIds($ids: [ID!]!) {

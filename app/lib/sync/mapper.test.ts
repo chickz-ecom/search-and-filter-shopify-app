@@ -212,3 +212,24 @@ describe("pos cap (1.13)", () => {
     expect(d.collections).toEqual(["1", "2"]);
   });
 });
+
+describe("fixed market prices (2.8)", () => {
+  it("computes price_min_{cc} from contextualPricing aliases (market currency, minor units)", () => {
+    const vs = byProduct(products[0].id).map((v, i) => ({
+      ...v,
+      cp_VN: {
+        price: { amount: i === 0 ? "450000" : "390000", currencyCode: "VND" },
+        compareAtPrice: null,
+      },
+      cp_JP: null,
+    }));
+    const d = mapProduct(products[0], vs as never, {
+      currency: "USD",
+      metafields: [],
+      priceCountries: ["VN", "JP"],
+    });
+    expect(d.price_min_vn).toBe(390000);
+    expect(d.price_min_jp).toBeUndefined();
+    expect(d.price_min).toBe(1900); // giá gốc không đổi
+  });
+});

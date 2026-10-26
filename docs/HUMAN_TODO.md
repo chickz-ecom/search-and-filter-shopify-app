@@ -62,3 +62,6 @@
 - [ ] F3. (DoD 2.7) Tạo 3 market: USD gốc, EUR quy đổi tự động, VND có price list giá cố định. So giá trên kết quả search,
       collection và autocomplete với trang sản phẩm của theme (phải khớp 100%); DevTools → Network: đúng 1 request
       `graphql.json` mỗi lần tải trang kết quả; sản phẩm không publish ở market bị ẩn; filter giá chạy ở EUR.
+- [ ] F4. (2.8) Bật flag `fixedMarketPrices` cho shop (Shop.features) → chạy full sync; xác nhận bulk variants chấp nhận alias
+      `cp_VN: contextualPricing(context:{country: VN})` (nếu bulk báo lỗi field: chuyển pass này sang query phân trang
+      thường theo lô 100 variant) và `price_min_vn` khớp giá trang sản phẩm khi xem từ VN.

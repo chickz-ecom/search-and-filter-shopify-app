@@ -53,6 +53,8 @@ export type FullSyncSpecInput = {
   metafields: MetafieldSpec[];
   /** Filter shard theo created_at; [undefined] = không shard. */
   shards: (string | undefined)[];
+  /** Phương án B: country có price list cố định (alias contextualPricing trong bulk variants). */
+  priceCountries?: string[];
 };
 
 /** Tạo danh sách bulk: products × shards, variants × shards, collections (grouped). */
@@ -69,7 +71,7 @@ export function buildFullSyncSpecs(input: FullSyncSpecInput): BulkSpec<never>[] 
   shards.forEach((filter, i) => {
     specs.push({
       name: shards.length > 1 ? `variants#${i + 1}` : "variants",
-      query: bulkVariantsQuery(filter),
+      query: bulkVariantsQuery(filter, input.priceCountries),
       onRow: ((row: VariantNode) => staging.addVariant(row)) as never,
     });
   });
@@ -155,6 +157,7 @@ export async function* assembleDocs(
       translations: opts.translations?.get(id),
       marketPrices: opts.marketPrices?.get(id),
       posCap: opts.posCap,
+      priceCountries: opts.priceCountries,
     });
   }
 }
@@ -211,10 +214,14 @@ export async function importInBatches(
 }
 
 /** Bulk lồng một query (chỉ cho benchmark so sánh): dòng con có __parentId = product. */
-export function nestedSpec(staging: Staging, metafields: MetafieldSpec[]): BulkSpec<never> {
+export function nestedSpec(
+  staging: Staging,
+  metafields: MetafieldSpec[],
+  priceCountries: string[] = [],
+): BulkSpec<never> {
   return {
     name: "nested",
-    query: bulkNestedQuery(metafields),
+    query: bulkNestedQuery(metafields, priceCountries),
     onRow: ((row: Record<string, unknown> & { id: string; __parentId?: string }) => {
       if (!row.__parentId) return staging.putProduct(row as unknown as ProductNode);
       if (row.id.includes("/ProductVariant/")) {

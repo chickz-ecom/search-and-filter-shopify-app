@@ -45,6 +45,8 @@ export type VariantNode = {
   inventoryQuantity: number | null;
   position: number;
   selectedOptions: { name: string; value: string }[];
+  /** Phương án B: alias cp_{CC} → giá cuối theo country (currency của market). */
+  [alias: `cp_${string}`]: { price: Money; compareAtPrice: Money } | null | undefined;
 };
 
 export type CollectionMembership = {
@@ -73,6 +75,8 @@ export type MapOptions = {
   marketPrices?: Record<string, number>;
   /** Task 1.13: khi tổng vị trí thủ công vượt ngân sách, chỉ lưu pos_ cho N vị trí đầu mỗi collection. */
   posCap?: number;
+  /** Phương án B: country có price list cố định → price_min_{cc} từ alias cp_{CC} của variant. */
+  priceCountries?: string[];
 };
 
 const DEFAULT_OPTION_NAMES = new Set(["Title"]);
@@ -293,7 +297,15 @@ export function mapProduct(p: ProductNode, variants: VariantNode[], opts: MapOpt
     if (t.tags?.length) doc[`tags_${s}`] = t.tags;
   }
 
-  for (const [country, price] of Object.entries(opts.marketPrices ?? {})) {
+  const market: Record<string, number> = { ...(opts.marketPrices ?? {}) };
+  for (const c of opts.priceCountries ?? []) {
+    const prices = sorted
+      .map((v) => v[`cp_${c}`]?.price)
+      .filter((m): m is NonNullable<Money> => Boolean(m))
+      .map((m) => toMinorUnits(m.amount, m.currencyCode));
+    if (prices.length) market[c] = Math.min(...prices);
+  }
+  for (const [country, price] of Object.entries(market)) {
     doc[`price_min_${country.toLowerCase()}`] = price;
   }
   return doc;

@@ -240,3 +240,17 @@ export type MarketInfo = {
 export function shopMarkets(shop: Pick<Shop, "markets">): MarketInfo[] {
   return Array.isArray(shop.markets) ? (shop.markets as unknown as MarketInfo[]) : [];
 }
+
+/** Phương án B: country có price list cố định, chỉ khi bật flag fixedMarketPrices (tối đa 10 để giữ query nhẹ). */
+export function fixedPriceCountries(shop: Pick<Shop, "features" | "markets">): string[] {
+  if (!shopFeatures(shop).fixedMarketPrices) return [];
+  return [
+    ...new Set(
+      shopMarkets(shop)
+        .filter((m) => m.hasFixedPrices)
+        .flatMap((m) => m.countries),
+    ),
+  ]
+    .sort()
+    .slice(0, 10);
+}

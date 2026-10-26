@@ -14,7 +14,12 @@ import {
 } from "../search/names";
 import type { ContentDoc } from "../search/product-doc";
 import { pushMerchToEngine } from "../merch/engine-sync.server";
-import { loadShopConfig, requiredMetafields, type Db } from "../shop/shop.server";
+import {
+  fixedPriceCountries,
+  loadShopConfig,
+  requiredMetafields,
+  type Db,
+} from "../shop/shop.server";
 import { rkey } from "../redis.server";
 import { realClock, type Clock, type GraphqlExecutor } from "../shopify/graphql";
 import { currentRanks } from "./best-selling.server";
@@ -172,8 +177,17 @@ export async function runFullSync(
     const collections: CollectionInfo[] = [];
     const manualSizes = new Map<string, number>();
     const shards = planShards(catalog.count, catalog.oldest, catalog.newest);
+    const priceCountries = fixedPriceCountries(shop);
+    stats.priceCountries = priceCountries;
     const bulkPromise = runner.run(
-      buildFullSyncSpecs({ staging, metafields, shards, onCollection: (c) => collections.push(c) }),
+      buildFullSyncSpecs({
+        staging,
+        metafields,
+        shards,
+        priceCountries,
+        manualSizes,
+        onCollection: (c) => collections.push(c),
+      }),
     );
     const earlyPromise =
       firstSync && deps.earlyResults !== false
@@ -205,7 +219,13 @@ export async function runFullSync(
     const imported = await importInBatches(
       engine,
       name,
-      assembleDocs(staging, { currency: shop.currency, metafields, bestSelling, posCap }),
+      assembleDocs(staging, {
+        currency: shop.currency,
+        metafields,
+        bestSelling,
+        posCap,
+        priceCountries,
+      }),
       {
         onProgress: (n) => {
           if (clock.now() - lastProgress > 2000) {

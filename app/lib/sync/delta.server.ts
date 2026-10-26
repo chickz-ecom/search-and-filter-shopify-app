@@ -1,7 +1,7 @@
 import type { Redis } from "ioredis";
 import type { SearchEngine } from "../search/engine";
 import type { MetafieldSpec } from "../search/index-schema";
-import type { Db } from "../shop/shop.server";
+import { fixedPriceCountries, type Db } from "../shop/shop.server";
 import type { GraphqlExecutor } from "../shopify/graphql";
 import type { BulkRunner } from "./bulk-runner";
 import { importInBatches, assembleDocs, nestedSpec } from "./pipeline";
@@ -76,15 +76,21 @@ export async function runDeltaBulk(
   const shop = await deps.db.shop.findUniqueOrThrow({ where: { id: shopId } });
   const mfs = metafields ?? (await shopMetafields(deps.db, deps.ex, shopId));
   const staging = new MemoryStaging();
-  const spec = nestedSpec(staging, mfs);
+  const priceCountries = fixedPriceCountries(shop);
+  const spec = nestedSpec(staging, mfs, priceCountries);
   spec.query = spec.query.replace(
     JSON.stringify(PRODUCT_FILTER),
     JSON.stringify(`${PRODUCT_FILTER} AND ${sinceFilter(since)}`),
   );
   await deps.runner.run([spec]);
   const docs = [];
-  for await (const d of assembleDocs(staging, { currency: shop.currency, metafields: mfs }))
+  for await (const d of assembleDocs(staging, {
+    currency: shop.currency,
+    metafields: mfs,
+    priceCountries,
+  }))
     docs.push(d);
+
   const targets = await writeTargets(shopId, deps);
   const merged = await withCarryOver(deps.engine, targets[0], docs);
   for (const t of targets) await importInBatches(deps.engine, t, merged);

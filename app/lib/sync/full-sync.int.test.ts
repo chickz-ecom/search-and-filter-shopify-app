@@ -111,6 +111,8 @@ describe.skipIf(!up)("runFullSync (1.5, live Postgres + Typesense)", () => {
     expect(shop.lastSyncedUpdatedAt).toBeTruthy();
     const job = await testDb().syncJob.findFirstOrThrow({ where: { shopId } });
     expect(job.status).toBe("SUCCEEDED");
+    // Collection 501 (MANUAL) có 3 thành viên trong bulk → tính vào ngân sách pos_ (task 1.13).
+    expect(job.stats).toMatchObject({ manualPositions: 3, posCap: null });
     expect(fake.maxRunning).toBe(3);
   });
 
