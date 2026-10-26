@@ -63,6 +63,7 @@ export async function saveSearchSettings(
       relevanceTieBreak: s.relevanceTieBreak,
       semanticSearch: s.semanticSearch,
       semanticStrictness: s.semanticStrictness,
+      queryUnderstanding: s.queryUnderstanding,
     },
     create: {
       shopId: shop.id,
@@ -73,6 +74,7 @@ export async function saveSearchSettings(
       matchMode: s.matchMode,
       semanticSearch: s.semanticSearch,
       semanticStrictness: s.semanticStrictness,
+      queryUnderstanding: s.queryUnderstanding,
     },
   });
   const reindex = before !== schemaKey(await loadShopConfig(db, shop.id));

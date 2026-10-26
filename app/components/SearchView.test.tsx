@@ -22,7 +22,7 @@ describe("SearchView (3.2)", () => {
   it("renders the field table with toggles, weights, typo/prefix and the save bar", () => {
     const html = renderToStaticMarkup(<SearchView {...base} />);
     expect(html).toContain("<ui-save-bar");
-    expect(html.match(/<s-switch/g)?.length).toBe(11); // 10 field + AI search
+    expect(html.match(/<s-switch/g)?.length).toBe(12); // 10 field + understand + AI search
     expect(html).toContain("Weight (1–10)");
     expect(html).toContain("Restore defaults");
     expect(html).toContain("Material (custom.material)");
@@ -60,6 +60,8 @@ describe("SearchView (3.2)", () => {
   it("AI search: explains the plan below Pro; on Pro shows strictness when on", () => {
     const off = renderToStaticMarkup(<SearchView {...base} />);
     expect(off).toContain("AI search is included from the Pro plan");
+    // Hiểu từ khoá có ở mọi gói (luật, không tốn tài nguyên).
+    expect(off).toMatch(/<s-switch[^>]*label="Turn words into filters"(?![^>]*disabled)[^>]*>/);
     expect(off).toMatch(/<s-switch[^>]*label="Match by meaning"[^>]*disabled/);
     const on = renderToStaticMarkup(
       <SearchView {...base} semanticEntitled initial={{ ...base.initial, semanticSearch: true }} />,

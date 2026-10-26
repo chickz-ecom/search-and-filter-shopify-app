@@ -157,6 +157,8 @@ model SearchSettings {
   semanticSearch        Boolean        @default(false)
   // "strict" | "balanced" | "broad" → ngưỡng khoảng cách vector
   semanticStrictness    String         @default("balanced")
+  // Hiểu truy vấn (task 5.2): "váy đỏ dưới 500k" → filter. Mọi gói, mặc định tắt.
+  queryUnderstanding    Boolean        @default(false)
   updatedAt             DateTime       @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)

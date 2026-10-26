@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "surface": {
     "SearchAppContext": {
       "kind": "interface",
@@ -406,6 +406,10 @@
         "collection": {
           "type": "{ id: string; handle: string }",
           "optional": true
+        },
+        "interpreted": {
+          "type": "{ query: string; original: string; filters: Filters }",
+          "optional": true
         }
       }
     },
@@ -557,6 +561,14 @@
         },
         "page": {
           "type": "number",
+          "optional": true
+        },
+        "original": {
+          "type": "string",
+          "optional": true
+        },
+        "literal": {
+          "type": "boolean",
           "optional": true
         }
       }

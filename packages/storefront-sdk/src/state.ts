@@ -12,6 +12,9 @@ export function readState(search: string, filters: PublicFilter[]): UrlState {
   if (sort) out.sort = sort;
   const page = Number(p.get("page"));
   if (page > 1) out.page = page;
+  const original = p.get("sa_orig");
+  if (original) out.original = original;
+  if (p.get("sa_literal") === "1") out.literal = true;
   for (const f of filters) {
     if (f.type === "range") {
       const min = p.get(`${f.param}.gte`);
@@ -40,7 +43,7 @@ export function writeState(state: UrlState, filters: PublicFilter[], base: strin
     p.delete(`${f.param}.gte`);
     p.delete(`${f.param}.lte`);
   }
-  ["q", "sort_by", "page"].forEach((k) => p.delete(k));
+  ["q", "sort_by", "page", "sa_orig", "sa_literal"].forEach((k) => p.delete(k));
   if (state.q) p.set("q", state.q);
   for (const f of filters) {
     const v = (state.filters as Filters)[f.id];
@@ -55,6 +58,8 @@ export function writeState(state: UrlState, filters: PublicFilter[], base: strin
   }
   if (state.sort) p.set("sort_by", state.sort);
   if (state.page && state.page > 1) p.set("page", String(state.page));
+  if (state.original) p.set("sa_orig", state.original);
+  if (state.literal) p.set("sa_literal", "1");
   const s = p.toString();
   return s ? `?${s}` : "";
 }

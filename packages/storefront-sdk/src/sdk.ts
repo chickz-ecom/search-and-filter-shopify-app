@@ -22,7 +22,7 @@ import type {
   WidgetFactory,
 } from "./types";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
 
 type RawResponse = Omit<SearchResponse, "products" | "pages"> & { products: ApiProduct[] };
 
@@ -142,6 +142,9 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
     const detail = { params: { ...params } };
     if (!bus.emit("before-search", detail, true)) throw new Error("search cancelled");
     const p = detail.params;
+    const url = sdk.state.get();
+    // Tìm theo URL (q trùng q trên URL): hiểu truy vấn (5.2) có thể ghi lại URL; "Tìm đúng cụm" → understand=0.
+    const fromUrl = path === "search" && (p.q ?? "") === (url.q ?? "");
     try {
       const raw = await client.get<RawResponse>(path, {
         q: p.q,
@@ -151,7 +154,23 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
         per_page: p.perPage,
         fields: p.fields?.join(","),
         filters: await toApiFilters(p.filters),
+        currency: ctx.currency,
+        understand: fromUrl && url.literal ? 0 : undefined,
       });
+      if (raw.interpreted && fromUrl && win) {
+        // Đưa filter đã hiểu lên URL (không phát event: kết quả này đã tính với chúng) → khách bỏ được như filter thường.
+        const next = {
+          ...url,
+          q: raw.interpreted.query,
+          filters: { ...raw.interpreted.filters, ...url.filters },
+          original: raw.interpreted.original,
+        };
+        win.history.replaceState(
+          { searchapp: true },
+          "",
+          win.location.pathname + writeState(next, lastFilters, win.location.search),
+        );
+      }
       const res = await localize(raw);
       bus.emit("results", res);
       return res;
@@ -215,6 +234,11 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
         if (!win) return;
         const cur = sdk.state.get();
         const merged: UrlState = { ...cur, ...next, filters: next.filters ?? cur.filters };
+        // Khách đổi từ khoá → bỏ ghi chú "đã hiểu" / chế độ tìm đúng cụm của từ khoá cũ.
+        if (next.q !== undefined && next.q !== cur.q && next.original === undefined) {
+          delete merged.original;
+          delete merged.literal;
+        }
         const url = win.location.pathname + writeState(merged, lastFilters, win.location.search);
         win.history[options.replace ? "replaceState" : "pushState"]({ searchapp: true }, "", url);
         if (next.filters) bus.emit("filters:change", merged.filters);

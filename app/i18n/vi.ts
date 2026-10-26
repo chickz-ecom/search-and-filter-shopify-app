@@ -296,6 +296,12 @@ export const vi: Record<MessageKey, string> = {
   "search.ai.balanced": "Cân bằng (khuyên dùng)",
   "search.ai.broad": "Rộng: gồm cả sản phẩm liên quan lỏng",
   "search.try.byMeaning": "Khớp theo nghĩa",
+  "appearance.text.interpreted": "Thông báo bộ lọc lấy từ từ khoá",
+  "appearance.text.searchInstead": "Liên kết tìm đúng cụm ({q} = từ khoá)",
+  "search.understand.toggle": "Chuyển từ khoá thành bộ lọc",
+  "search.understand.details":
+    "Ví dụ “váy đỏ dưới 500k” sẽ tìm “váy” kèm màu Đỏ và giới hạn giá. Khách thấy thông báo và có thể tìm đúng cụm đã gõ. Dùng thương hiệu, giá trị option và giá trong bộ lọc của bạn.",
+  "search.understand.heading": "Hiểu từ khoá",
   "sorting.title": "Sắp xếp",
   "sorting.options.heading": "Kiểu sắp xếp",
   "sorting.options.desc": "Chọn kiểu sắp xếp khách được thấy, đổi tên và thứ tự hiển thị.",

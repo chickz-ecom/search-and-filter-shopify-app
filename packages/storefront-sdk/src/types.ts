@@ -154,6 +154,11 @@ export interface SearchResponse {
   /** Currency of `price_min` / `price_max` on products. */
   currency: string;
   collection?: { id: string; handle: string };
+  /**
+   * Set when the merchant turned on query understanding and words in the search became filters: `query` is what
+   * was searched, `filters` were added (prices in `currency`). The SDK writes both to the URL so shoppers can remove them.
+   */
+  interpreted?: { query: string; original: string; filters: Filters };
 }
 
 /** Result of `suggest()` for instant search. */
@@ -205,6 +210,10 @@ export interface UrlState {
   filters: Filters;
   sort?: string;
   page?: number;
+  /** What the shopper typed, when the app turned words like "red" or "under $50" into filters (`sa_orig`). */
+  original?: string;
+  /** Search the exact words, without turning them into filters (`sa_literal=1`). */
+  literal?: boolean;
 }
 
 /**

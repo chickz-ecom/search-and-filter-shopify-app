@@ -69,6 +69,14 @@ describe("URL state (native Shopify params)", () => {
     expect(readState(out, filters)).toEqual({ q: "dress", sort: "price_asc", filters: s.filters });
   });
 
+  it("carries the original query and literal flag (query understanding)", () => {
+    const s = readState("?q=dress&sa_orig=red+dress&sa_literal=1", filters);
+    expect(s).toMatchObject({ q: "dress", original: "red dress", literal: true });
+    expect(
+      writeState({ q: "dress", filters: {}, original: "red dress" }, filters, "?sa_literal=1"),
+    ).toBe("?q=dress&sa_orig=red+dress");
+  });
+
   it("removes cleared filters", () => {
     expect(writeState({ filters: {} }, filters, "?filter.p.vendor=Nike&q=x")).toBe("");
   });

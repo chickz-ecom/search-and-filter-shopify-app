@@ -48,6 +48,10 @@ describe("SDK public API contract", () => {
       "SDK API additions: add a CHANGELOG entry, bump the minor version, run npm run sdk:snapshot",
     ).toEqual([]);
     expect(snap.version).toBe(pkg.version);
+    // Hằng số VERSION runtime (window.SearchApp.version) phải khớp package.json.
+    expect(readFileSync("packages/storefront-sdk/src/sdk.ts", "utf8")).toContain(
+      `VERSION = "${pkg.version}"`,
+    );
     expect(readFileSync("docs/developers/CHANGELOG.md", "utf8")).toContain(`## [${pkg.version}]`);
   });
 });

@@ -266,4 +266,77 @@ describe("SearchApp SDK", () => {
       "&lt;b&gt; $5.00",
     );
   });
+
+  it("query understanding: writes the interpreted query + filters to the URL without a reload event", async () => {
+    let seen: URL | undefined;
+    const fetchImpl = api((u) => {
+      seen = u;
+      return {
+        query: "dress",
+        redirect: null,
+        total: 3,
+        page: 1,
+        per_page: 24,
+        sort: "relevance",
+        sort_options: [],
+        products: [product("1", 1999)],
+        facets: [],
+        applied_filters: {},
+        currency: "USD",
+        interpreted: {
+          query: "dress",
+          original: "nike dress under $50",
+          filters: { vendor: ["Nike"], price: { max: 50 } },
+        },
+      };
+    });
+    const w = win("?q=nike+dress+under+%2450");
+    const sdk = createSDK(ctx, { fetch: fetchImpl, win: w });
+    const changed = vi.fn();
+    sdk.on("filters:change", changed);
+    const res = await sdk.search();
+    expect(seen?.searchParams.get("currency")).toBe("USD");
+    expect(seen?.searchParams.has("understand")).toBe(false);
+    expect(res.interpreted?.query).toBe("dress");
+    const url = new URL(
+      `https://x${(w.history.replaceState as ReturnType<typeof vi.fn>).mock.calls[0][2]}`,
+    );
+    expect(url.searchParams.get("q")).toBe("dress");
+    expect(url.searchParams.get("filter.p.vendor")).toBe("Nike");
+    expect(url.searchParams.get("filter.v.price.lte")).toBe("50");
+    expect(url.searchParams.get("sa_orig")).toBe("nike dress under $50");
+    expect(changed).not.toHaveBeenCalled();
+  });
+
+  it("'search instead' (sa_literal=1) asks the API not to interpret; a new query drops the note", async () => {
+    let seen: URL | undefined;
+    const fetchImpl = api((u) => {
+      seen = u;
+      return {
+        query: "x",
+        redirect: null,
+        total: 0,
+        page: 1,
+        per_page: 24,
+        sort: "relevance",
+        sort_options: [],
+        products: [],
+        facets: [],
+        applied_filters: {},
+        currency: "USD",
+      };
+    });
+    const w = win("?q=nike+dress&sa_orig=nike+dress&sa_literal=1");
+    const sdk = createSDK(ctx, { fetch: fetchImpl, win: w });
+    await sdk.search();
+    expect(seen?.searchParams.get("understand")).toBe("0");
+    // search() với từ khoá khác (không theo URL) → không gửi understand=0.
+    await sdk.search({ q: "boots" });
+    expect(seen?.searchParams.has("understand")).toBe(false);
+    sdk.state.set({ q: "boots" });
+    const pushed = (w.history.pushState as ReturnType<typeof vi.fn>).mock.calls[0][2] as string;
+    expect(pushed).toContain("q=boots");
+    expect(pushed).not.toContain("sa_orig");
+    expect(pushed).not.toContain("sa_literal");
+  });
 });

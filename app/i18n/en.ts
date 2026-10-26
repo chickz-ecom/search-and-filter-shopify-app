@@ -297,6 +297,12 @@ export const en = {
   "search.ai.balanced": "Balanced (recommended)",
   "search.ai.broad": "Broad: include loosely related products",
   "search.try.byMeaning": "Matched by meaning",
+  "appearance.text.interpreted": "Filters-from-search notice",
+  "appearance.text.searchInstead": "Search exact words link ({q} = search)",
+  "search.understand.toggle": "Turn words into filters",
+  "search.understand.details":
+    "For example, “red dress under $50” searches “dress” with the Red color and a price limit. Shoppers see a notice and can search their exact words instead. Uses brands, option values and prices from your filters.",
+  "search.understand.heading": "Understand searches",
   "sorting.title": "Sorting",
   "sorting.options.heading": "Sort options",
   "sorting.options.desc": "Choose which sort options shoppers see, rename them and set the order.",

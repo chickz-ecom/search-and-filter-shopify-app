@@ -30,6 +30,14 @@ paths:
         - $ref: "#/components/parameters/locale"
         - $ref: "#/components/parameters/country"
         - $ref: "#/components/parameters/fields"
+        - name: understand
+          in: query
+          schema: { type: string, enum: ["0"] }
+          description: Send `0` to search the exact words, without turning them into filters (see `interpreted`).
+        - name: currency
+          in: query
+          schema: { type: string, minLength: 3, maxLength: 3 }
+          description: Currency the shopper sees. Price words in the query are only understood when it matches the response currency.
       responses:
         "200":
           description: Results
@@ -308,6 +316,17 @@ components:
         applied_filters: { $ref: "#/components/schemas/Filters" }
         currency: { type: string, description: Shop base currency. }
         took_ms: { type: number }
+        interpreted:
+          type: object
+          description: |
+            Present when the merchant turned on query understanding and words in `q` became filters. `query` is what was
+            searched and `filters` were added (prices in `currency`, major units). Show the shopper a way to search the
+            exact words (`understand=0`).
+          required: [query, original, filters]
+          properties:
+            query: { type: string }
+            original: { type: string }
+            filters: { $ref: "#/components/schemas/Filters" }
     SuggestResponse:
       type: object
       required: [query, products, collections, pages, articles, suggestions, total_products, currency]

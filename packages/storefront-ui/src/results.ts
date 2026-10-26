@@ -113,10 +113,12 @@ export class SearchPage {
     const head = `<legend class="sa-facet__title">${esc(f.label)}</legend>`;
     if (f.type === "range") {
       const sel = f.selected ?? {};
+      const input = (n: "min" | "max") =>
+        `<label>${esc(this.t(n))}<input type="number" name="${n}" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f[n]}" value="${sel[n] ?? ""}"></label>`;
       return (
         `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}">` +
-        `<label>${esc(this.t("min"))}<input type="number" name="min" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f.min}" value="${sel.min ?? ""}"></label>` +
-        `<label>${esc(this.t("max"))}<input type="number" name="max" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f.max}" value="${sel.max ?? ""}"></label>` +
+        input("min") +
+        input("max") +
         `<button type="submit" class="sa-btn">${esc(this.t("apply"))}</button></form></fieldset>`
       );
     }
@@ -135,25 +137,32 @@ export class SearchPage {
   }
 
   private chips(res: SearchResponse): string {
+    // Hiểu truy vấn (5.2): báo cho khách + lối tìm đúng cụm đã gõ.
+    const o = this.sdk.state.get().original;
+    const note = o
+      ? `<p class="sa-note">${esc(this.t("interpreted"))} <a href="?q=${encodeURIComponent(o)}&sa_literal=1">${esc(this.t("searchInstead", { q: o }))}</a></p>`
+      : "";
     const out: string[] = [];
+    const chip = (key: string, label: string, value?: string) =>
+      `<button type="button" class="sa-chip" data-remove="${esc(key)}"${value === undefined ? "" : ` data-value="${esc(value)}"`}>${esc(label)} ×</button>`;
     for (const f of res.facets) {
       if (f.type === "range") {
-        if (f.selected && (f.selected.min !== undefined || f.selected.max !== undefined)) {
+        if (f.selected && (f.selected.min !== undefined || f.selected.max !== undefined))
           out.push(
-            `<button type="button" class="sa-chip" data-remove="${esc(f.key)}">${esc(f.label)}: ${f.selected.min ?? f.min}–${f.selected.max ?? f.max} ×</button>`,
+            chip(f.key, `${f.label}: ${f.selected.min ?? f.min}–${f.selected.max ?? f.max}`),
           );
-        }
       } else {
         for (const v of f.values)
           if (v.selected)
-            out.push(
-              `<button type="button" class="sa-chip" data-remove="${esc(f.key)}" data-value="${esc(v.value)}">${esc(f.type === "toggle" ? f.label : (v.label ?? v.value))} ×</button>`,
-            );
+            out.push(chip(f.key, f.type === "toggle" ? f.label : (v.label ?? v.value), v.value));
       }
     }
-    return out.length
-      ? `<div class="sa-chips">${out.join("")}<button type="button" class="sa-chip sa-chip--clear" data-clear="">${esc(this.t("clearAll"))}</button></div>`
-      : "";
+    return (
+      note +
+      (out.length
+        ? `<div class="sa-chips">${out.join("")}<button type="button" class="sa-chip sa-chip--clear" data-clear="">${esc(this.t("clearAll"))}</button></div>`
+        : "")
+    );
   }
 
   private pagination(res: SearchResponse): string {
@@ -239,7 +248,7 @@ export class SearchPage {
       } else if (filters)
         layout.querySelector(".sa-toolbar")!.insertAdjacentHTML("afterend", filters);
       const main = native!.closest(".sa-main")!;
-      main.querySelectorAll(".sa-chips, .sa-pagination").forEach((n) => n.remove());
+      main.querySelectorAll(".sa-note, .sa-chips, .sa-pagination").forEach((n) => n.remove());
       native!.insertAdjacentHTML("beforebegin", this.chips(res));
       native!.insertAdjacentHTML("afterend", this.pagination(res));
     } else {

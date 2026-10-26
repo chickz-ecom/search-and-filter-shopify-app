@@ -42,6 +42,16 @@ filters={"vendor":["Nike","Adidas"],"price":{"min":10,"max":50},"availability":t
 
 Price ranges in `filters` are in the **shop currency, major units** (`10` = $10.00). You can also use Shopify's native URL parameters instead (`filter.p.vendor=Nike&filter.v.price.gte=10`).
 
+### Query understanding
+
+If the merchant turned on **Understand searches**, words like “red” or “under $50” in `q` can become filters. The response then includes `interpreted`:
+
+```json
+"interpreted": { "query": "dress", "original": "red dress under $50", "filters": { "color": ["Red"], "price": { "max": 50 } } }
+```
+
+Show the shopper what happened, and offer to search the exact words with `understand=0`. Send `currency` (the currency the shopper sees) so price words are only interpreted when they match the response currency. Interpretation only applies when it finds results; otherwise you get the literal search.
+
 ### Prices and currency
 
 The API returns prices in the shop's base currency, in minor units (`price_min: 1999` = $19.99), with `currency` set to the shop currency. To show market prices, fetch them from the Storefront API with `@inContext(country:)`, as the theme SDK does. Range facets (`type: "range"`) also use minor units.

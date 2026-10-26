@@ -282,6 +282,15 @@ export function SearchView(p: SearchViewProps) {
         </s-stack>
       </s-section>
 
+      <s-section heading={t("search.understand.heading")}>
+        <s-switch
+          label={t("search.understand.toggle")}
+          details={t("search.understand.details")}
+          checked={s.queryUnderstanding}
+          onChange={(e) => setS({ ...s, queryUnderstanding: checked(e) })}
+        />
+      </s-section>
+
       <s-section heading={t("search.ai.heading")}>
         <s-stack direction="block" gap="base">
           <s-paragraph color="subdued">{t("search.ai.desc")}</s-paragraph>

@@ -37,6 +37,7 @@ export const SearchSettingsSchema = z
     relevanceTieBreak: z.enum(TIE_BREAKS),
     semanticSearch: z.boolean(),
     semanticStrictness: z.enum(SEMANTIC_STRICTNESS),
+    queryUnderstanding: z.boolean(),
   })
   .superRefine((s, ctx) => {
     if (s.minWordLengthFor2Typo < s.minWordLengthFor1Typo) {
@@ -86,5 +87,6 @@ export function defaultSearchSettings(): SearchSettingsConfig {
     relevanceTieBreak: "best_selling",
     semanticSearch: false,
     semanticStrictness: "balanced",
+    queryUnderstanding: false,
   };
 }

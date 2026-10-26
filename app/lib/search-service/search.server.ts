@@ -16,6 +16,8 @@ import { facetFieldFor } from "../config/filters";
 import { sortKeyFromCollectionSortOrder } from "../config/sort-options";
 import { buildTextQuery, normalizeQuery, queryKey } from "../search/query/text-query";
 import { EMBEDDING_FIELD } from "../search/index-schema";
+import { understandQuery } from "../search/query/understand";
+import { facetVocabulary } from "./vocabulary.server";
 import { semanticAllowed } from "../billing/plans";
 import { SEMANTIC_ALPHA, SEMANTIC_DISTANCE } from "../config/search-settings";
 import {
@@ -39,6 +41,10 @@ export type SearchRequest = {
   /** Trang collection. */
   collection?: { id: string; handle: string; sortOrder?: string | null } | null;
   fields?: string[];
+  /** false → không hiểu truy vấn (khách bấm "Tìm đúng cụm …"). */
+  understand?: boolean;
+  /** Currency khách đang xem: khác currency giá của index → không tự hiểu cụm giá. */
+  currency?: string | null;
 };
 
 export type ProductResult = {
@@ -79,6 +85,8 @@ export type SearchResponseBody = {
   currency: string;
   /** Rule merch đã áp (debug cho admin "Thử tìm"). */
   took_ms: number;
+  /** Hiểu truy vấn (5.2): truy vấn đã được tách thành `query` + `filters` (giá theo currency của response). */
+  interpreted?: { query: string; original: string; filters: AppliedFilters };
 };
 
 export const MAX_PER_PAGE = 48;
@@ -274,7 +282,47 @@ export function planSearch(ctx: ShopSearchContext, req: SearchRequest) {
   };
 }
 
+/**
+ * Search + hiểu truy vấn (5.2) khi merchant bật: thử bản đã hiểu (filter của khách được ưu tiên); 0 kết quả → chạy
+ * truy vấn gốc như bình thường. Chỉ trang search (collection đã có ngữ cảnh riêng).
+ */
 export async function executeSearch(
+  ctx: ShopSearchContext,
+  req: SearchRequest,
+  engine: SearchEngine,
+  deps: { vocabulary?: typeof facetVocabulary } = {},
+): Promise<SearchResponseBody> {
+  const q = normalizeQuery(req.q);
+  if (
+    ctx.settings.queryUnderstanding &&
+    req.understand !== false &&
+    !req.collection &&
+    q &&
+    !ctx.redirects[queryKey(q)]
+  ) {
+    const items = filtersForScope(ctx).filter((i) => i.enabled);
+    const { priceCurrency } = planSearch(ctx, req);
+    const price = items.find((i) => i.source === "price");
+    const allowPrice = !req.currency || req.currency.toUpperCase() === priceCurrency;
+    const u = understandQuery(q, {
+      vocab: await (deps.vocabulary ?? facetVocabulary)(ctx, items, engine),
+      priceFilterId: allowPrice ? price?.id : undefined,
+      currency: priceCurrency,
+    });
+    if (u) {
+      const r = await runSearch(
+        ctx,
+        { ...req, q: u.query, filters: { ...u.filters, ...req.filters } },
+        engine,
+      );
+      if (r.total > 0)
+        return { ...r, interpreted: { query: u.query, original: q, filters: u.filters } };
+    }
+  }
+  return runSearch(ctx, req, engine);
+}
+
+async function runSearch(
   ctx: ShopSearchContext,
   req: SearchRequest,
   engine: SearchEngine,

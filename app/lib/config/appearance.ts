@@ -46,6 +46,8 @@ export const TEXT_KEYS = [
   "soldOut",
   "sale",
   "viewPrice",
+  "interpreted",
+  "searchInstead",
 ] as const;
 
 export const TextsSchema = z.record(

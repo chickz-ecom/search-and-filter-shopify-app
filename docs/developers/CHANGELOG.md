@@ -4,6 +4,14 @@ All notable changes to the storefront SDK (`window.SearchApp`) and the `/v1` API
 
 Deprecations are announced here at least 90 days before removal.
 
+## [1.1.0] — 2026-10-26
+
+### Added
+- Query understanding (opt-in by the merchant under **Search → Understand searches**): words like “red” or “under $50” become filters. `SearchResponse.interpreted` describes the change, and the SDK writes the new query and filters to the URL so shoppers can remove them like any other filter.
+- `UrlState.original` (`sa_orig`) and `UrlState.literal` (`sa_literal=1`, search the exact words). The results widget shows a “Search for … instead” link.
+- API: `understand=0` and `currency` parameters on `/v1/search`; `interpreted` in the response.
+- AI search (Pro plan and above, opt-in): results can also match by meaning. No API change.
+
 ## [1.0.0] — 2026-10-26
 
 ### Added

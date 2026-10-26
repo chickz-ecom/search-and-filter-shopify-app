@@ -226,6 +226,8 @@ export function createSearchApi(deps: SearchApiDeps) {
       ?.split(",")
       .map((f) => f.trim())
       .filter(Boolean),
+    understand: c.req.query("understand") !== "0",
+    currency: c.req.query("currency")?.slice(0, 3) ?? null,
   });
 
   app.get("/v1/config", (c) =>
@@ -252,9 +254,11 @@ export function createSearchApi(deps: SearchApiDeps) {
       const ctx = c.get("ctx");
       const req = { ...commonRequest(c), filters: readFilters(c) };
       const body = await executeSearch(ctx, req, c.get("engine"));
-      if (deps.redis && body.query && req.page === 1 && !body.redirect) {
+      const typed = body.interpreted?.original ?? body.query;
+      if (deps.redis && typed && req.page === 1 && !body.redirect) {
+        // Đếm theo từ khoá khách gõ (không phải bản đã hiểu).
         void recordEvents(deps.redis, ctx.shop.id, [
-          { type: "search", query: body.query, results: body.total },
+          { type: "search", query: typed, results: body.total },
         ]).catch(() => undefined);
       }
       return body;

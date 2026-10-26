@@ -199,3 +199,24 @@ test("collection: adopts the native grid when the API returns the same products 
   await block.getByRole("checkbox", { name: /Nike/ }).check();
   await expect(block.locator("[data-native-results]")).toHaveCount(0); // thao tác → vẽ lại bằng widget
 });
+
+test("query understanding: words become removable filters, with a 'search instead' link (5.2)", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto("/search.html?q=nike%20shoes");
+  const block = page.locator(".sa-block");
+  // Mock khớp tiền tố "sho" → 2 sản phẩm, đều của Nike (filter đã hiểu được áp).
+  await expect(block.locator(".sa-card")).toHaveCount(2);
+  await expect(block.locator(".sa-card", { hasNotText: "Nike" })).toHaveCount(0);
+  // URL mang filter đã hiểu → khách bỏ được như filter thường.
+  await expect.poll(() => new URL(page.url()).searchParams.get("filter.p.vendor")).toBe("Nike");
+  expect(new URL(page.url()).searchParams.get("q")).toBe("shoes");
+  await expect(block.locator(".sa-chip", { hasText: "Nike" })).toBeVisible();
+  const instead = block.getByRole("link", { name: "Search for “nike shoes” instead" });
+  await expect(instead).toBeVisible();
+  await instead.click();
+  await expect.poll(() => new URL(page.url()).searchParams.get("sa_literal")).toBe("1");
+  await expect(block.locator(".sa-note")).toHaveCount(0);
+  expect(new URL(page.url()).searchParams.get("q")).toBe("nike shoes");
+});

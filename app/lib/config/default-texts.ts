@@ -25,6 +25,8 @@ export const DEFAULT_TEXTS: Record<"en" | "vi", Record<string, string>> = {
     min: "Min",
     max: "Max",
     inStock: "In stock",
+    interpreted: "Showing results with filters from your search.",
+    searchInstead: "Search for “{q}” instead",
   },
   vi: {
     placeholder: "Tìm sản phẩm",
@@ -50,5 +52,7 @@ export const DEFAULT_TEXTS: Record<"en" | "vi", Record<string, string>> = {
     min: "Thấp nhất",
     max: "Cao nhất",
     inStock: "Còn hàng",
+    interpreted: "Đang hiển thị kết quả kèm bộ lọc lấy từ từ khoá của bạn.",
+    searchInstead: "Tìm đúng cụm “{q}”",
   },
 };

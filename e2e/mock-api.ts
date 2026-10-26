@@ -88,6 +88,8 @@ const config = {
     min: "Min",
     max: "Max",
     inStock: "In stock",
+    interpreted: "Showing results with filters from your search.",
+    searchInstead: "Search for “{q}” instead",
   },
   appearance: {},
   templates: {},
@@ -132,7 +134,7 @@ export async function mockApi(
     const path = url.pathname.split("/v1/")[1];
     if (path === "config") return route.fulfill({ json: config });
     if (path === "events") return route.fulfill({ status: 204 });
-    const q = (url.searchParams.get("q") ?? "").toLowerCase();
+    let q = (url.searchParams.get("q") ?? "").toLowerCase();
     const filters = JSON.parse(url.searchParams.get("filters") ?? "{}") as {
       vendor?: string[];
       price?: { min?: number; max?: number };
@@ -154,6 +156,14 @@ export async function mockApi(
       });
     }
     state.searchCalls++;
+    // Hiểu truy vấn (5.2): "nike shoes" → q "shoes" + vendor Nike, trừ khi khách chọn tìm đúng cụm (understand=0).
+    let interpreted: unknown;
+    if (q === "nike shoes" && url.searchParams.get("understand") !== "0") {
+      interpreted = { query: "shoes", original: "nike shoes", filters: { vendor: ["Nike"] } };
+      q = "shoes";
+      filters.vendor = ["Nike"];
+      list = PRODUCTS.filter((p) => p.title.toLowerCase().includes(q.slice(0, 3)));
+    }
     const facetBase = list;
     if (filters.vendor?.length) list = list.filter((p) => filters.vendor!.includes(p.vendor));
     if (filters.price?.min !== undefined)
@@ -170,6 +180,7 @@ export async function mockApi(
     return route.fulfill({
       json: {
         query: q,
+        interpreted,
         corrected_query: null,
         redirect: null,
         total: list.length,
