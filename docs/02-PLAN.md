@@ -553,7 +553,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
     - Unit và integration test pass.
 
 ### Phase 3 — Admin App Home (2 tuần)
-- [ ] 3.1 Layout, `s-app-nav`, Home (checklist qua `app.extensions()` cùng deep link), card sync, KPI.
+- [x] 3.1 Layout, `s-app-nav`, Home (checklist qua `app.extensions()` cùng deep link), card sync, KPI.
 - [ ] 3.2 **Trang Search:** bảng trường (toggle, trọng số, typo, prefix), thêm metafield, các cài đặt chung, **ô Thử tìm xem trước theo cấu hình chưa lưu**, nút khôi phục mặc định.
   - DoD: Save Bar chạy đúng; đổi trọng số rồi bấm Thử tìm thấy thứ hạng đổi; thêm metafield thì hiện cảnh báo và tự enqueue sync.
 - [ ] 3.3 **Trang Sorting:** toggle, đổi nhãn theo locale, kéo thả thứ tự, sort theo metafield, mặc định cho search và collection, ghi đè theo collection.
@@ -671,3 +671,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: Thêm D17 và task 2.15: best-selling theo order 60 ngày (`read_orders` optional scope, PCD Level 1, chỉ lưu ID và số lượng); Storefront BEST_SELLING làm fallback.
 - 2026-10-26: 2.14 xong (đo trên theme fixture; Horizon thật → HUMAN_TODO G3): scripts/lighthouse-compare.mjs (Lighthouse 13 mobile, gzip như CDN, theme có JS/CSS ở cả 2 bản, median 3 lần, trọng số BFS) + lighthouserc.json + bước CI. Tối ưu sau khi đo: app embed không còn CSS chặn render; trang không phải search/collection không tải gì lúc đầu (SDK + instant nạp khi focus ô search, stub window.SearchApp.ready() giữ hợp đồng v1); /config tải lười; block in sẵn khung layout (toolbar + cột filter giữ chỗ) và widget giữ nguyên grid native khi API trả đúng sản phẩm/thứ tự (không vẽ lại ảnh). KẾT QUẢ: Home 0, Product 0, Collection −1 (TBT +81 ms, JS 11,3 KB gzip) → giảm có trọng số 0,4 điểm (ngưỡng 5). Trước tối ưu: LCP Home/Product +750 ms (mô phỏng).
 - 2026-10-26: Kết thúc Phase 2 — tổng kết ở docs/PROGRESS.md.
+- 2026-10-26: 3.1 xong: layout app.tsx (AppProvider + s-app-nav i18n, link home rel=home; gửi Web Vitals admin → /app/vitals → Redis, p75 28 ngày); Home: checklist 7 bước (embed/block qua shopify.app.extensions() + deep link theme editor, search/sort/filter/preview) có tiến độ, đóng được, nút chính = bước kế tiếp; banner lỗi sync; KPI 7 ngày + xu hướng; card sync. HomeView validate Polaris App Home v2.0 VALID; test SSR. Shop.onboarding (migration).

@@ -82,3 +82,9 @@
       khi TẮT app embed + block (baseline), rồi BẬT; mỗi trang ≥ 3 lần (median):
       `npx -y @lhci/cli@0.15 autorun --config=lighthouserc.json` (sửa URL REPLACE…). Tính giảm có trọng số
       Home 17% · Product 40% · Collection 43%, phải ≤ 5 (BFS ≤ 10). Ghi vào Nhật ký.
+- [ ] C5. Bấm deep link "Bật app embed" ở Home trên dev store: nếu theme editor không tự bật embed với `activateAppId={client_id}/app-embed`,
+      đặt env `SHOPIFY_SEARCH_THEME_ID` = giá trị `SHOPIFY_SEARCH_THEME_ID` trong `.env` do CLI sinh (uuid extension) và thử lại.
+
+## I. Admin trên dev store
+- [ ] I1. Mở app trong admin (cả giao diện admin mới `--feature-preview new_admin_design` và cũ): kiểm tra s-app-nav, Home
+      (checklist đổi trạng thái sau khi bật embed/thêm block — shopify.app.extensions()), Sync, các trang cấu hình; thử trên mobile (Shopify app).
