@@ -1,0 +1,26 @@
+{%- comment -%}
+  Skeleton lúc chờ widget (block có class sa-pending; widget gỡ khi render xong hoặc khi API lỗi).
+  Chỉ CSS, không thêm JS. JS không chạy được → CSS tự ẩn skeleton sau 5s, kết quả native hiện lại.
+  part: 'facets' (cột filter) | 'grid' (lưới thẻ, phủ lên grid native đang ẩn).
+{%- endcomment -%}
+{%- if part == 'facets' -%}
+  {%- for i in (1..4) -%}
+    <div class="sa-skel-facet">
+      <span class="sa-skel sa-skel--title"></span>
+      {%- for j in (1..3) -%}<span class="sa-skel sa-skel--line"></span>{%- endfor -%}
+    </div>
+  {%- endfor -%}
+{%- else -%}
+  {%- assign count = columns | times: 2 -%}
+  {%- if count > per_page -%}{%- assign count = per_page -%}{%- endif -%}
+  <ul class="sa-grid sa-skel-grid" style="--sa-cols: {{ columns | escape }}" aria-hidden="true">
+    {%- for i in (1..count) -%}
+      <li>
+        <span class="sa-skel sa-skel--img"></span>
+        <span class="sa-skel sa-skel--line sa-skel--short"></span>
+        <span class="sa-skel sa-skel--line"></span>
+        <span class="sa-skel sa-skel--line sa-skel--short"></span>
+      </li>
+    {%- endfor -%}
+  </ul>
+{%- endif -%}

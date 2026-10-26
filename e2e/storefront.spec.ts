@@ -108,11 +108,19 @@ test.describe("results page", () => {
     await expect(block.locator(".sa-pagination [aria-current]")).toHaveText("2");
 
     await block.locator('form.sa-range input[name="min"]').fill("20");
-    await block.locator("form.sa-range").getByRole("button", { name: "Apply" }).click();
+    await block.locator('form.sa-range input[name="min"]').press("Enter");
     await expect(page).toHaveURL(/filter\.v\.price\.gte=20/);
 
     await page.goBack();
     await expect(page).not.toHaveURL(/filter\.v\.price\.gte/);
+
+    // Thanh trượt 2 đầu: kéo đầu max sang trái (bàn phím) → lọc price.lte, ô số đi theo.
+    const maxThumb = block.locator('form.sa-range input[type="range"]').nth(1);
+    await maxThumb.focus();
+    await maxThumb.press("ArrowLeft");
+    await expect(page).toHaveURL(/filter\.v\.price\.lte=/);
+    await expect(block.locator('form.sa-range input[name="max"]')).not.toHaveValue("");
+    await page.goBack();
 
     expect(await seriousViolations(page, ".sa-block")).toEqual([]);
     const cls = await page.evaluate(() => (window as unknown as { __cls: number }).__cls);
@@ -126,6 +134,7 @@ test.describe("results page", () => {
     await page.goto("/collection.html");
     await expect(page.locator(".sa-block .sa-card")).toHaveCount(2);
     await expect(page.locator(".sa-block .sa-total")).toHaveText("5 results");
+    await expect(page.locator(".sa-block")).not.toHaveClass(/sa-pending/); // skeleton đã gỡ
   });
 });
 

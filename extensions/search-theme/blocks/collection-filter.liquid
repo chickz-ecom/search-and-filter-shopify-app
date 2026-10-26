@@ -2,7 +2,7 @@
   App block "Collection filters" (mục 7.2). Grid native của collection in bằng Liquid trước (SEO + fallback, D11).
 {%- endcomment -%}
 <div
-  class="sa-block"
+  class="sa-block sa-pending"
   data-searchapp-mount="search-page"
   data-mode="collection"
   data-collection="{{ collection.handle | escape }}"
@@ -15,9 +15,10 @@
 >
   {%- comment -%} Khung layout in sẵn (toolbar + cột filter giữ chỗ) → widget điền vào, grid native không bị di chuyển (CLS/LCP, task 2.14). {%- endcomment -%}
   <div class="sa-layout sa-layout--{{ block.settings.filter_position | escape }}">
-    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: collection.products_count }}</p></div>
-    {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true"></aside>{%- endif -%}
+    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: collection.products_count }}</p>{%- if block.settings.filter_position == 'drawer' -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}{%- if block.settings.show_sort -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}</div>
+    {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true">{% render 'sa-skeleton', part: 'facets' %}</aside>{%- endif -%}
     <div class="sa-main">
+      {% render 'sa-skeleton', part: 'grid', columns: block.settings.columns, per_page: block.settings.per_page %}
   {%- paginate collection.products by block.settings.per_page -%}
     <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns | escape }}" data-native-results>
       {%- for product in collection.products -%}
@@ -36,7 +37,6 @@
 {
   "name": "Collection filters",
   "target": "content",
-  "javascript": "searchapp-results.js",
   "stylesheet": "searchapp.css",
   "enabled_on": { "templates": ["collection"] },
   "settings": [

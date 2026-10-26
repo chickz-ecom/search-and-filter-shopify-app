@@ -19,6 +19,22 @@ afterEach(() => {
   vi.resetModules();
 });
 
+describe("loading skeleton", () => {
+  it("drops the skeleton when the API fails so the native grid shows", async () => {
+    const { SearchPage } = await import("./results");
+    const el = document.createElement("div");
+    el.className = "sa-block sa-pending";
+    const sdk = {
+      getConfig: () => Promise.reject(new Error("HTTP 302")),
+      state: { get: () => ({}) },
+      on: vi.fn(),
+    };
+    new SearchPage(el, { type: "search-page" }, sdk as never);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(el.classList.contains("sa-pending")).toBe(false);
+  });
+});
+
 describe("widget boot order", () => {
   it("results: waits for the real SDK when only the embed stub exists", async () => {
     (window as { SearchApp?: unknown }).SearchApp = stub();

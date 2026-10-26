@@ -19,9 +19,9 @@ export const BUNDLES = [
   {
     entry: "packages/storefront-ui/src/results.ts",
     out: "searchapp-results.js",
+    // Không khai "javascript" trong schema block (app embed nạp khi có [data-searchapp-mount], đúng thứ tự sau SDK)
+    // → không thuộc Theme Check AssetSizeAppBlockJavaScript; chỉ còn ngân sách gzip.
     budget: 10 * 1024,
-    // Khai trong "javascript" của app block → Theme Check AssetSizeAppBlockJavaScript: ≤ 10 000 B (chưa nén).
-    rawBudget: 10_000,
   },
 ];
 // Tổng JS tải lần đầu (SDK + instant, results chỉ tải ở trang có block) ≤ 20 KB gzip.

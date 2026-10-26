@@ -67,7 +67,7 @@ Ngày: 2026-10-26 · Phạm vi: `docs/02-PLAN.md` Phase 0 → 6 (gồm Phase 5 A
 |---|---|---|
 | `searchapp-sdk.js` | 6,35 KB | 8 KB |
 | `searchapp-instant.js` | 2,16 KB | 10 KB |
-| `searchapp-results.js` | 3,94 KB (9 791 B thô) | 10 KB gzip **và** 10 000 B thô (Theme Check app block) |
+| `searchapp-results.js` | 4,27 KB | 10 KB gzip (app embed nạp; không khai trong schema block nên không thuộc giới hạn 10 000 B thô của Theme Check) |
 | JS tải lần đầu (SDK + instant) | **8,51 KB** | 20 KB |
 
 - **Lighthouse** (fixture theme, mobile, trung vị 3 lần, trọng số BFS): giảm **0,4 điểm** (BFS cho phép 10, mục tiêu nội bộ 5).

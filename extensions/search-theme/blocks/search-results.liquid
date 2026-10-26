@@ -3,7 +3,7 @@
   trong vùng block. Engine lỗi → kết quả native vẫn hiển thị.
 {%- endcomment -%}
 <div
-  class="sa-block"
+  class="sa-block sa-pending"
   data-searchapp-mount="search-page"
   data-mode="search"
   data-per-page="{{ block.settings.per_page | escape }}"
@@ -15,9 +15,10 @@
 >
   {%- comment -%} Khung layout in sẵn (toolbar + cột filter giữ chỗ) → widget điền vào, grid native không bị di chuyển (CLS/LCP, task 2.14). {%- endcomment -%}
   <div class="sa-layout sa-layout--{{ block.settings.filter_position | escape }}">
-    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p></div>
-    {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true"></aside>{%- endif -%}
+    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p>{%- if block.settings.filter_position == 'drawer' -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}{%- if block.settings.show_sort -%}<span class="sa-skel sa-skel--pill"></span>{%- endif -%}</div>
+    {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true">{% render 'sa-skeleton', part: 'facets' %}</aside>{%- endif -%}
     <div class="sa-main">
+      {% render 'sa-skeleton', part: 'grid', columns: block.settings.columns, per_page: block.settings.per_page %}
   {%- paginate search.results by block.settings.per_page -%}
     {%- if search.performed and search.results_count > 0 -%}
       <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns | escape }}" data-native-results>
@@ -42,7 +43,6 @@
 {
   "name": "Search results",
   "target": "content",
-  "javascript": "searchapp-results.js",
   "stylesheet": "searchapp.css",
   "enabled_on": { "templates": ["search"] },
   "settings": [

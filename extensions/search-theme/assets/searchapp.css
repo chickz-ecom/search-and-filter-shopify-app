@@ -66,9 +66,133 @@
   margin: 0;
 }
 
-.sa-block.sa-loading {
-  opacity: 0.6;
+/* Đổi filter/sort: làm mờ kết quả + thanh chạy trên đầu; cột filter vẫn bấm được. */
+.sa-main {
+  position: relative;
+}
+.sa-loading .sa-main > * {
+  opacity: 0.45;
+  pointer-events: none;
   transition: opacity 0.15s;
+}
+.sa-loading .sa-main::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, var(--sa-accent), transparent) no-repeat;
+  background-size: 40% 100%;
+  animation: sa-bar 1s linear infinite;
+}
+@keyframes sa-bar {
+  from {
+    background-position: -66% 0;
+  }
+  to {
+    background-position: 166% 0;
+  }
+}
+
+/* Skeleton lần tải đầu (.sa-pending do Liquid đặt, widget gỡ). JS hỏng → sau 5s skeleton ẩn, native hiện lại. */
+.sa-skel {
+  display: block;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.07);
+  animation: sa-gone 0s 5s forwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sa-skel {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.07) 25%,
+      rgba(0, 0, 0, 0.12) 37%,
+      rgba(0, 0, 0, 0.07) 63%
+    );
+    background-size: 400% 100%;
+    animation:
+      sa-shimmer 1.4s ease infinite,
+      sa-gone 0s 5s forwards;
+  }
+}
+@keyframes sa-shimmer {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+@keyframes sa-gone {
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes sa-show {
+  from {
+    visibility: hidden;
+  }
+}
+@keyframes sa-plain {
+  to {
+    color: var(--sa-muted);
+    background: none;
+  }
+}
+.sa-skel--line {
+  height: 0.875em;
+  margin-top: 8px;
+}
+.sa-skel--short {
+  width: 45%;
+}
+.sa-skel--title {
+  height: 1em;
+  width: 55%;
+  margin-bottom: 12px;
+}
+.sa-skel--pill {
+  height: 36px;
+  width: 160px;
+  border-radius: var(--sa-radius);
+}
+.sa-skel--img {
+  aspect-ratio: 1;
+  border-radius: var(--sa-radius);
+}
+.sa-skel-facet {
+  padding-bottom: 12px;
+  min-width: 160px;
+}
+.sa-skel-facet .sa-skel--line {
+  width: 75%;
+}
+/* Phủ lên grid native (đang ẩn) → giữ đúng chiều cao, không giật layout khi widget render. */
+.sa-skel-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.sa-main:not(:has([data-native-results])) .sa-skel-grid {
+  position: static;
+}
+.sa-block:not(.sa-pending) .sa-skel,
+.sa-block:not(.sa-pending) .sa-skel-grid,
+.sa-block:not(.sa-pending) .sa-skel-facet {
+  display: none;
+}
+.sa-pending [data-native-results],
+.sa-pending .sa-main > .sa-pagination {
+  animation: sa-show 0s 5s backwards;
+}
+.sa-pending .sa-total {
+  color: transparent;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.07);
+  animation: sa-plain 0s 5s forwards;
 }
 .sa-layout {
   display: grid;
@@ -140,22 +264,89 @@
   background: var(--sa-swatch);
   border: 1px solid var(--sa-border);
 }
+/* Khoảng giá: thanh trượt 2 đầu (2 input range chồng nhau) + 2 ô số. --lo/--hi do widget cập nhật. */
 .sa-range {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  align-items: end;
 }
 .sa-range label {
   display: flex;
   flex-direction: column;
   font-size: 0.875rem;
+  color: var(--sa-muted);
 }
-.sa-range input {
-  width: 6.5em;
-  padding: 6px;
+.sa-range input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
   border: 1px solid var(--sa-border);
   border-radius: 4px;
+}
+.sa-slider {
+  grid-column: 1 / -1;
+  position: relative;
+  height: 24px;
+  margin-bottom: 4px;
+}
+.sa-slider::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 10px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--sa-border) var(--lo, 0%),
+    var(--sa-accent) var(--lo, 0%),
+    var(--sa-accent) var(--hi, 100%),
+    var(--sa-border) var(--hi, 100%)
+  );
+}
+.sa-slider input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: none;
+  pointer-events: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.sa-slider input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sa-bg);
+  border: 2px solid var(--sa-accent);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.sa-slider input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sa-bg);
+  border: 2px solid var(--sa-accent);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.sa-slider input::-moz-range-track {
+  background: none;
+}
+.sa-slider input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--sa-accent);
+  outline-offset: 2px;
+}
+.sa-slider input:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--sa-accent);
+  outline-offset: 2px;
 }
 .sa-btn {
   padding: 8px 14px;

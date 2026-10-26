@@ -38,6 +38,7 @@ export class SearchPage {
   ) {
     this.perPage = Math.min(48, Number(o.perPage) || 24);
     el.addEventListener("change", (e) => this.onChange(e));
+    el.addEventListener("input", (e) => syncRange(e.target as HTMLInputElement));
     el.addEventListener("click", (e) => this.onClick(e));
     el.addEventListener("submit", (e) => this.onSubmit(e));
     window.addEventListener("popstate", () => this.reload());
@@ -87,8 +88,8 @@ export class SearchPage {
       this.last = res;
       this.render(res);
     } catch {
-      // Engine/API lỗi: giữ kết quả native do Liquid in sẵn (không ném lỗi ra console).
-      this.el.classList.remove("sa-loading");
+      // Engine/API lỗi: bỏ skeleton, giữ kết quả native do Liquid in sẵn (không ném lỗi ra console).
+      this.el.classList.remove("sa-loading", "sa-pending");
     }
   }
 
@@ -112,14 +113,19 @@ export class SearchPage {
   private facet(f: Facet): string {
     const head = `<legend class="sa-facet__title">${esc(f.label)}</legend>`;
     if (f.type === "range") {
+      // Thanh trượt 2 đầu + 2 ô số; thả thanh trượt / đổi ô số / Enter → áp dụng (không cần nút Apply).
       const sel = f.selected ?? {};
+      const bounds = `min="${f.min}" max="${f.max}"`;
+      const thumb = (n: "min" | "max") =>
+        `<input type="range" ${bounds} step="1" value="${sel[n] ?? f[n]}" aria-label="${esc(`${f.label} ${this.t(n)}`)}">`;
       const input = (n: "min" | "max") =>
-        `<label>${esc(this.t(n))}<input type="number" name="${n}" inputmode="decimal" min="${f.min}" max="${f.max}" placeholder="${f[n]}" value="${sel[n] ?? ""}"></label>`;
+        `<label>${esc(this.t(n))}<input type="number" name="${n}" inputmode="decimal" ${bounds} placeholder="${f[n]}" value="${sel[n] ?? ""}"></label>`;
       return (
-        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}">` +
+        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}" data-min="${f.min}" data-max="${f.max}">` +
+        `<div class="sa-slider">${thumb("min")}${thumb("max")}</div>` +
         input("min") +
         input("max") +
-        `<button type="submit" class="sa-btn">${esc(this.t("apply"))}</button></form></fieldset>`
+        `</form></fieldset>`
       );
     }
     const type = f.type === "radio" ? "radio" : "checkbox";
@@ -259,7 +265,8 @@ export class SearchPage {
       if (adopt) this.el.querySelector("[data-sa-slot]")!.replaceWith(native!);
     }
 
-    this.el.classList.remove("sa-loading");
+    this.el.querySelectorAll<HTMLFormElement>(".sa-range").forEach(paintRange);
+    this.el.classList.remove("sa-loading", "sa-pending");
     requestAnimationFrame(() => (this.el.style.minHeight = ""));
   }
 
@@ -295,6 +302,8 @@ export class SearchPage {
       this.sdk.track("sort", { key: t.value });
       return this.apply(this.readFilters(), { sort: t.value });
     }
+    const range = t.closest<HTMLFormElement>(".sa-range");
+    if (range) return range.requestSubmit();
     if (t instanceof HTMLInputElement && (t.type === "checkbox" || t.type === "radio")) {
       if (t.checked) this.sdk.track("filter", { key: t.name, value: t.value });
       this.apply(this.readFilters());
@@ -309,7 +318,13 @@ export class SearchPage {
     const num = (k: string) =>
       data.get(k) === "" || data.get(k) === null ? undefined : Number(data.get(k));
     const filters = this.readFilters();
-    const range = { min: num("min"), max: num("max") };
+    // Trùng biên của facet = không lọc phía đó (kéo về hết cỡ là bỏ filter).
+    const lo = num("min");
+    const hi = num("max");
+    const range = {
+      min: lo !== undefined && lo > Number(form.dataset.min) ? lo : undefined,
+      max: hi !== undefined && hi < Number(form.dataset.max) ? hi : undefined,
+    };
     if (range.min === undefined && range.max === undefined) delete filters[form.dataset.key!];
     else filters[form.dataset.key!] = range;
     this.apply(filters);
@@ -356,6 +371,32 @@ export class SearchPage {
       }
     }
   }
+}
+
+/** Vị trí 2 đầu thanh trượt → biến CSS --lo/--hi (đoạn tô màu giữa 2 đầu). */
+function paintRange(form: HTMLFormElement) {
+  const [lo, hi] = form.querySelectorAll<HTMLInputElement>("input[type=range]");
+  const min = Number(form.dataset.min);
+  const pct = (i: HTMLInputElement) =>
+    `${((Number(i.value) - min) / (Number(form.dataset.max) - min || 1)) * 100}%`;
+  form.style.setProperty("--lo", pct(lo));
+  form.style.setProperty("--hi", pct(hi));
+  // 2 đầu chồng nhau ở mép phải: đưa đầu "min" lên trên, không thì không kéo ra được.
+  lo.style.zIndex = Number(lo.value) >= Number(form.dataset.max) ? "1" : "";
+}
+
+/** Kéo thanh trượt ↔ ô số luôn khớp nhau; 2 đầu không vượt qua nhau. */
+function syncRange(t: HTMLInputElement) {
+  const form = t.closest<HTMLFormElement>(".sa-range");
+  if (!form) return;
+  const [lo, hi, nMin, nMax] = form.querySelectorAll<HTMLInputElement>("input");
+  if (t.type === "range") {
+    if (Number(lo.value) > Number(hi.value)) t.value = (t === lo ? hi : lo).value;
+    nMin.value = lo.value;
+    nMax.value = hi.value;
+  } else
+    (t === nMin ? lo : hi).value = t.value || (t === nMin ? form.dataset.min : form.dataset.max)!;
+  paintRange(form);
 }
 
 if (typeof window !== "undefined") {
