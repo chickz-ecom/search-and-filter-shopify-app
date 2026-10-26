@@ -114,7 +114,12 @@ describe.skipIf(!up)("runReindex", () => {
     });
 
     const s = await testDb().shop.findUniqueOrThrow({ where: { id: shopId } });
-    expect(s).toMatchObject({ syncState: "IDLE", indexVersion: 2, indexedCount: 3 });
+    expect(s).toMatchObject({
+      syncState: "IDLE",
+      indexVersion: 2,
+      indexedCount: 3,
+      syncProgress: null,
+    });
     const jobs = await testDb().syncJob.findMany({ where: { shopId } });
     expect(jobs.map((j) => [j.type, j.status])).toEqual([["REINDEX", "SUCCEEDED"]]);
   });

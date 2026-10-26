@@ -59,7 +59,7 @@ export default function Index() {
   const fetcher = useFetcher<typeof action>();
   const [embed, setEmbed] = useState<EmbedStatus | null>(null);
   // Sync đang chạy → tự cập nhật trạng thái/tiến độ, không cần reload trang.
-  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING");
+  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING", 1500);
 
   useEffect(() => {
     // Chỉ phản ánh theme đang publish; không cần scope (docs/shopify-api/storefront-apphome.md mục 7).

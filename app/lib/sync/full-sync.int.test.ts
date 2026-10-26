@@ -106,6 +106,7 @@ describe.skipIf(!up)("runFullSync (1.5, live Postgres + Typesense)", () => {
       indexVersion: 1,
       productCount: 3,
       indexedCount: 3,
+      syncProgress: null, // tiến độ chỉ có trong lúc chạy
     });
     expect(shop.lastFullSyncAt).toBeTruthy();
     expect(shop.lastSyncedUpdatedAt).toBeTruthy();

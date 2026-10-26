@@ -10,6 +10,8 @@ const base: SyncViewProps = {
     productCount: 10,
     indexedCount: 5,
     percent: 50,
+    phase: null,
+    fetched: null,
     lastFullSyncAt: null,
     lastIncrementalAt: null,
     running: null,
@@ -23,6 +25,21 @@ const base: SyncViewProps = {
 };
 
 describe("SyncView", () => {
+  it("names the running phase: downloading from Shopify with a live item count", () => {
+    const html = renderToStaticMarkup(
+      <SyncView
+        {...base}
+        status={{ ...base.status, phase: "fetch", fetched: 1240, percent: 27 }}
+      />,
+    );
+    expect(html).toContain("Downloading from Shopify: 1240 items · 27%");
+    expect(html).toMatch(/<s-progress[^>]*value="27"/);
+    const queued = renderToStaticMarkup(
+      <SyncView {...base} status={{ ...base.status, state: "QUEUED", percent: 0 }} />,
+    );
+    expect(queued).toContain("waiting for the sync worker");
+  });
+
   it("offers Sync from Shopify and a separate Reindex, both disabled while a sync runs", () => {
     const busy = renderToStaticMarkup(<SyncView {...base} />);
     expect(busy).toContain("Sync from Shopify");
@@ -36,7 +53,7 @@ describe("SyncView", () => {
 
   it("shows x/y progress while indexing and disables Sync now", () => {
     const html = renderToStaticMarkup(<SyncView {...base} />);
-    expect(html).toContain("Indexing: 5/10");
+    expect(html).toContain("Building the search index: 5/10 · 50%");
     expect(html).toContain("<s-progress");
     expect(html).toMatch(/<s-button[^>]*disabled/);
   });

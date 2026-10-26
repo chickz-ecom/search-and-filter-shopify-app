@@ -9,7 +9,9 @@ describe("i18n", () => {
   });
 
   it("interpolates variables", () => {
-    expect(translate("vi", "sync.indexing", { indexed: 5, total: 10 })).toBe("Đang index: 5/10");
+    expect(translate("vi", "sync.indexing", { indexed: 5, total: 10 })).toBe(
+      "Đang dựng chỉ mục tìm kiếm: 5/10",
+    );
   });
 
   it("resolves the admin locale from the URL then Accept-Language", () => {

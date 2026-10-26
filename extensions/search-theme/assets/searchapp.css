@@ -285,7 +285,7 @@
   height: 7px;
   border-right: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
-  transform: translateY(-2px) rotate(45deg);
+  transform: translateY(-2px) translateX(-2px) rotate(45deg);
   transition: transform 0.15s;
 }
 .sa-facet[open] > .sa-facet__title::after {

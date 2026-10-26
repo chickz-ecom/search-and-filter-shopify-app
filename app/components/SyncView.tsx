@@ -1,4 +1,5 @@
 import type { Locale, MessageKey } from "../i18n";
+import { syncStatusText } from "./sync-text";
 import { translator } from "../i18n";
 import type { SyncStatus } from "../lib/sync/status.server";
 
@@ -87,11 +88,7 @@ export function SyncView({
             <s-badge tone={stateTone[status.state]}>
               {t(`sync.state.${status.state}` as MessageKey)}
             </s-badge>
-            <s-text>
-              {status.state === "RUNNING" || status.state === "QUEUED"
-                ? t("sync.indexing", { indexed: status.indexedCount, total: status.productCount })
-                : t("sync.indexed", { indexed: status.indexedCount, total: status.productCount })}
-            </s-text>
+            <s-text>{syncStatusText(t, status)}</s-text>
           </s-stack>
           {(status.state === "RUNNING" || status.state === "QUEUED") && (
             <s-progress

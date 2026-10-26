@@ -1,3 +1,4 @@
+import { syncStatusText } from "./sync-text";
 import { translator, type Locale, type MessageKey } from "../i18n";
 import type { EmbedStatus, ThemeLinks } from "../lib/admin/theme-links";
 import type { Kpis } from "../lib/analytics/kpi.server";
@@ -252,17 +253,7 @@ export function HomeView(p: HomeViewProps) {
             >
               {t(`sync.state.${p.status.state}` as MessageKey)}
             </s-badge>
-            <s-text>
-              {p.status.state === "RUNNING" || p.status.state === "QUEUED"
-                ? t("sync.indexing", {
-                    indexed: p.status.indexedCount,
-                    total: p.status.productCount,
-                  })
-                : t("sync.indexed", {
-                    indexed: p.status.indexedCount,
-                    total: p.status.productCount,
-                  })}
-            </s-text>
+            <s-text>{syncStatusText(t, p.status)}</s-text>
           </s-stack>
           {(p.status.state === "RUNNING" || p.status.state === "QUEUED") && (
             <s-progress

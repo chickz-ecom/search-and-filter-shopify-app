@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Redis } from "ioredis";
 import type { FieldDef, SearchEngine } from "../search/engine";
 import { buildContentSchema, buildProductSchema, EMBEDDING_FIELD } from "../search/index-schema";
@@ -19,6 +19,7 @@ import { env } from "../env.server";
 import { realClock, type Clock } from "../shopify/graphql";
 import { countsAcceptable, fullSyncTargetKey } from "./full-sync.server";
 import { importInBatches } from "./pipeline";
+import { indexPercent, progressReporter } from "./progress";
 
 // Reindex nội bộ (nút "Reindex" trang Sync): dựng lại index từ document ĐANG CÓ trong engine, không gọi Shopify.
 // Dùng khi cần áp schema/cấu hình index hiện tại (synonym/curation set, AI search, ngôn ngữ) hoặc sửa index hỏng.
@@ -61,7 +62,16 @@ export async function runReindex(
   });
   const progress = (data: Prisma.ShopUpdateInput) =>
     db.shop.update({ where: { id: shopId }, data }).catch(() => undefined);
-  await progress({ syncState: "RUNNING", indexedCount: 0 });
+  await progress({
+    syncState: "RUNNING",
+    indexedCount: 0,
+    syncProgress: { phase: "prepare", percent: 0 },
+  });
+  // Reindex không tải từ Shopify: chuẩn bị → dựng index 5–95% → chuyển index.
+  const report = progressReporter(
+    (p) => progress({ syncProgress: p }),
+    () => clock.now(),
+  );
 
   let name: string | null = null;
   let created = false;
@@ -116,13 +126,15 @@ export async function runReindex(
     await deps.redis?.set(fullSyncTargetKey(shopId), name, "EX", 3600);
 
     let last = 0;
+    report({ phase: "index", percent: 5 });
     const imported = await importInBatches(
       engine,
       name,
       engine.exportDocuments<ProductDoc>(current, [], undefined, [EMBEDDING_FIELD]),
       {
         onProgress: (n) => {
-          if (clock.now() - last > 2000) {
+          report({ phase: "index", percent: indexPercent(n, expected, 5, 95) });
+          if (clock.now() - last > 1000) {
             last = clock.now();
             void progress({ indexedCount: n });
           }
@@ -138,12 +150,14 @@ export async function runReindex(
       );
     }
 
+    report({ phase: "finalize", percent: 97 });
     await copyContentIndex(shopId, version, engine);
     await engine.upsertAlias(alias, name);
     await engine.dropCollection(current);
     const indexed = (await engine.getCollection(name))?.numDocuments ?? imported.imported;
     await progress({
       syncState: "IDLE",
+      syncProgress: Prisma.DbNull,
       indexVersion: version,
       indexedCount: indexed,
       // Bản export có thể cũ hơn thay đổi đến trong lúc copy → lùi watermark để lượt delta 5 phút lấy lại.
@@ -152,7 +166,7 @@ export async function runReindex(
     return finish({ status: "SUCCEEDED", collection: name, expected, imported: imported.imported });
   } catch (err) {
     if (created && name) await engine.dropCollection(name).catch(() => undefined);
-    await progress({ syncState: "ERROR" });
+    await progress({ syncState: "ERROR", syncProgress: Prisma.DbNull });
     return finish({
       status: "FAILED",
       collection: name,

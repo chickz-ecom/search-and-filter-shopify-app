@@ -23,6 +23,8 @@ export type BulkSpec<Row = Record<string, unknown>> = {
   /** true chỉ khi cần thứ tự connection con (collections → products). */
   groupObjects?: boolean;
   onRow: (row: Row) => void | Promise<void>;
+  /** Mỗi lần poll trạng thái (objectCount tăng dần) — cho thanh tiến độ trang Sync. */
+  onStatus?: (info: BulkOperationInfo) => void;
 };
 
 export type BulkResult = {
@@ -119,11 +121,15 @@ export class BulkRunner {
     await this.ex.query(BULK_CANCEL_MUTATION, { id }).catch(() => undefined);
   }
 
-  async waitDone(id: string): Promise<BulkOperationInfo> {
+  async waitDone(
+    id: string,
+    onStatus?: (info: BulkOperationInfo) => void,
+  ): Promise<BulkOperationInfo> {
     const started = this.clock.now();
     let interval = this.d.pollMinMs;
     for (;;) {
       const info = await this.status(id);
+      onStatus?.(info);
       if (TERMINAL.has(info.status)) return info;
       if (this.clock.now() - started > this.d.timeoutMs) {
         await this.cancel(id);
@@ -144,7 +150,7 @@ export class BulkRunner {
   async runOne<Row>(spec: BulkSpec<Row>): Promise<BulkResult> {
     const t0 = this.clock.now();
     const id = await this.start(spec.query, spec.groupObjects ?? false);
-    const info = await this.waitDone(id);
+    const info = await this.waitDone(id, spec.onStatus);
     const t1 = this.clock.now();
     if (info.status !== "COMPLETED") {
       throw new BulkError(

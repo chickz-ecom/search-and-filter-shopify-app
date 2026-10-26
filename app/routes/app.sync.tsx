@@ -63,7 +63,7 @@ export default function SyncPage() {
   const fetcher = useFetcher<typeof action>();
   const t = translator(data.locale);
   // Sync đang chạy → tự cập nhật trạng thái/tiến độ, không cần reload trang.
-  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING");
+  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING", 1500);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {

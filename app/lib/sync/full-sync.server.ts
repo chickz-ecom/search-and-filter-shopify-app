@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Redis } from "ioredis";
 import type { SearchEngine } from "../search/engine";
 import { buildContentSchema, buildProductSchema, type MetafieldSpec } from "../search/index-schema";
@@ -27,7 +27,7 @@ import { rkey } from "../redis.server";
 import { realClock, type Clock, type GraphqlExecutor } from "../shopify/graphql";
 import { currentRanks } from "./best-selling.server";
 import { refreshStoreContent } from "./content.server";
-import { BulkRunner, catalogStats, planShards } from "./bulk-runner";
+import { BulkRunner, catalogStats, planShards, type BulkOperationInfo } from "./bulk-runner";
 import { mapProduct, type ProductNode } from "./mapper";
 import { fetchProductMetafieldDefinitions, resolveMetafieldSpecs } from "./metafields.server";
 import {
@@ -37,6 +37,7 @@ import {
   importInBatches,
   type CollectionInfo,
 } from "./pipeline";
+import { fetchPercent, indexPercent, progressReporter } from "./progress";
 import { earlyProductsQuery, PRODUCT_FILTER } from "./queries";
 import { MemoryStaging, MEMORY_STAGING_MAX_PRODUCTS, PgStaging, type Staging } from "./staging";
 
@@ -112,7 +113,15 @@ export async function runFullSync(
           stats: { reason: opts.reason },
         },
       });
-  await updateProgress(db, shopId, { syncState: "RUNNING", indexedCount: 0 });
+  await updateProgress(db, shopId, {
+    syncState: "RUNNING",
+    indexedCount: 0,
+    syncProgress: { phase: "prepare", percent: 0 },
+  });
+  const report = progressReporter(
+    (p) => updateProgress(db, shopId, { syncProgress: p }),
+    () => clock.now(),
+  );
 
   const alias = productAlias(shopId);
   let current: string | null;
@@ -129,7 +138,7 @@ export async function runFullSync(
         error: err instanceof Error ? err.message : String(err),
       },
     });
-    await updateProgress(db, shopId, { syncState: "ERROR" });
+    await updateProgress(db, shopId, { syncState: "ERROR", syncProgress: Prisma.DbNull });
     throw err;
   }
   const version = nextVersion(current);
@@ -201,22 +210,38 @@ export async function runFullSync(
       ? deps.staging === "memory"
       : catalog.count <= MEMORY_STAGING_MAX_PRODUCTS;
     staging = useMemory ? new MemoryStaging() : new PgStaging(db, job.id);
+    report({ phase: "fetch", percent: fetchPercent(0, 1) });
     const collections: CollectionInfo[] = [];
     const manualSizes = new Map<string, number>();
     const shards = planShards(catalog.count, catalog.oldest, catalog.newest);
     const priceCountries = fixedPriceCountries(shop);
     stats.priceCountries = priceCountries;
-    const bulkPromise = runner.run(
-      buildFullSyncSpecs({
-        staging,
-        metafields,
-        shards,
-        priceCountries,
-        manualSizes,
-        locales: secondaryLocales,
+    const specs = buildFullSyncSpecs({
+      staging,
+      metafields,
+      shards,
+      priceCountries,
+      manualSizes,
+      locales: secondaryLocales,
 
-        onCollection: (c) => collections.push(c),
-      }),
+      onCollection: (c) => collections.push(c),
+    });
+    // Tiến độ tải: số bulk đã xong + tổng dòng Shopify báo (objectCount tăng dần trong lúc chạy).
+    const fetched = new Map<string, number>();
+    const doneBulks = new Set<string>();
+    const bulkPromise = runner.run(
+      specs.map((s) => ({
+        ...s,
+        onStatus: (info: BulkOperationInfo) => {
+          fetched.set(s.name, Number(info.objectCount ?? 0));
+          if (info.status === "COMPLETED") doneBulks.add(s.name);
+          report({
+            phase: "fetch",
+            percent: fetchPercent(doneBulks.size, specs.length),
+            fetched: [...fetched.values()].reduce((a, b) => a + b, 0),
+          });
+        },
+      })),
     );
     const earlyPromise =
       firstSync && deps.earlyResults !== false
@@ -245,6 +270,7 @@ export async function runFullSync(
       ? await currentRanks(engine, current).catch(() => new Map<string, number>())
       : undefined;
     let lastProgress = 0;
+    report({ phase: "index", percent: indexPercent(0, staged) });
     const imported = await importInBatches(
       engine,
       name,
@@ -258,7 +284,8 @@ export async function runFullSync(
       }),
       {
         onProgress: (n) => {
-          if (clock.now() - lastProgress > 2000) {
+          report({ phase: "index", percent: indexPercent(n, staged) });
+          if (clock.now() - lastProgress > 1000) {
             lastProgress = clock.now();
             void updateProgress(db, shopId, { indexedCount: n });
           }
@@ -272,6 +299,7 @@ export async function runFullSync(
       countsAcceptable(catalog.count, imported.imported) &&
       imported.failed <= Math.max(5, staged * 0.001);
 
+    report({ phase: "finalize", percent: 98 });
     await buildContentIndex(shopId, version, collections, engine);
     // Trang/bài viết (nếu merchant bật + cấp scope) — lỗi ở đây không làm hỏng sync sản phẩm.
     await refreshStoreContent(db, engine, ex, shopId).catch((e) =>
@@ -280,7 +308,7 @@ export async function runFullSync(
 
     if (!ok) {
       if (!firstSync) await engine.dropCollection(name);
-      await updateProgress(db, shopId, { syncState: "ERROR" });
+      await updateProgress(db, shopId, { syncState: "ERROR", syncProgress: Prisma.DbNull });
       return finish({
         status: "FAILED",
         collection: name,
@@ -299,6 +327,7 @@ export async function runFullSync(
     }
     await updateProgress(db, shopId, {
       syncState: "IDLE",
+      syncProgress: Prisma.DbNull,
       indexVersion: version,
       lastFullSyncAt: new Date(clock.now()),
       // Watermark lùi 2 phút để delta không bỏ sót thay đổi trong lúc bulk chạy (mục 5.3).
@@ -317,7 +346,7 @@ export async function runFullSync(
     });
   } catch (err) {
     if (!firstSync) await engine.dropCollection(name).catch(() => undefined);
-    await updateProgress(db, shopId, { syncState: "ERROR" });
+    await updateProgress(db, shopId, { syncState: "ERROR", syncProgress: Prisma.DbNull });
     return finish({
       status: "FAILED",
       collection: name,
