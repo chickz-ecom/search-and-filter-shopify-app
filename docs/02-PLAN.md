@@ -584,6 +584,16 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 6.5 Hồ sơ App Store (listing, video, privacy policy, hướng dẫn theme, tài khoản cho reviewer).
 - [x] 6.6 Soát checklist BFS và nộp.
 
+### Phase 7 — Analytics v2 (sau launch, theo yêu cầu merchant)
+Giống bố cục Searchanise: Overview (6 KPI + biểu đồ Polaris Viz + 7 bảng top), Search (Queries, 0 results, Suggestions,
+Product performance, Filters, Filter values, Filter value combinations), Collections (Collections, Filters, Filter values,
+Filter value combinations), Export CSV; chọn khoảng ngày. Số liệu mới chỉ đếm từ khi triển khai (không backfill).
+- [ ] 7.1 Thu thập: click kèm nguồn (search/collection/instant) + collection; `collection_view`; filter theo ngữ cảnh
+      (search / collection) + tổ hợp giá trị; click gợi ý; pixel `collection_viewed` + `checkout_completed.lineItems`
+      (sản phẩm, số lượng, doanh thu). Rollup sang AnalyticsProductDaily, AnalyticsCollectionDaily, cột mới.
+- [ ] 7.2 Báo cáo: khoảng ngày tuỳ ý, overview + chuỗi theo ngày, các bảng có tìm/sắp xếp/phân trang, CSV.
+- [ ] 7.3 Giao diện: Polaris web components + Polaris Viz (chỉ nạp ở trang Analytics, render phía client).
+
 ---
 
 ## 11. Checklist Built for Shopify (kiểm tra trước khi submit)

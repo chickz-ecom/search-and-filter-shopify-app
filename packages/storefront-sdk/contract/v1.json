@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "surface": {
     "SearchAppContext": {
       "kind": "interface",
@@ -650,7 +650,7 @@
           "optional": false
         },
         "track()": {
-          "type": "(type: \"click\" | \"add_to_cart\" | \"filter\" | \"sort\", data: Record<string, unknown>): void",
+          "type": "(type: \"click\" | \"add_to_cart\" | \"filter\" | \"filter_combo\" | \"sort\" | \"collection_view\" | \"suggestion\", data: Record<string, unknown>): void",
           "optional": false
         },
         "state": {

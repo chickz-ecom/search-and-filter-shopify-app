@@ -18,7 +18,12 @@ register(({ analytics, browser, settings, init }) => {
 
     shopCurrency,
   );
-  for (const name of ["search_submitted", "product_added_to_cart", "checkout_completed"] as const) {
+  for (const name of [
+    "search_submitted",
+    "collection_viewed",
+    "product_added_to_cart",
+    "checkout_completed",
+  ] as const) {
     analytics.subscribe(
       name,
       (event) => void handle({ name, data: event.data } as unknown as PixelEvent),

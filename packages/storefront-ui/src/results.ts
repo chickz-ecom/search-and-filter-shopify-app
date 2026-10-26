@@ -83,6 +83,24 @@ export class SearchPage {
     return this.o.filterPosition === "drawer" || Boolean(this.mq?.matches);
   }
 
+  /** Id collection (từ API hoặc Liquid) — cho analytics theo collection. */
+  private get collectionId(): string | undefined {
+    return this.last?.collection?.id ?? this.sdk.context.collection?.id ?? undefined;
+  }
+
+  /** Ngữ cảnh filter cho analytics: trang search hoặc id collection. */
+  private get scope(): string | undefined {
+    return this.isCollection ? this.collectionId : "search";
+  }
+
+  /** Tổ hợp ≥ 2 giá trị đang áp dụng (Analytics → Filter value combinations). */
+  private trackCombo(filters: Filters) {
+    const values = Object.entries(filters).flatMap(([k, v]) =>
+      Array.isArray(v) ? v.map((x) => `${k}=${x}`) : typeof v === "boolean" ? [`${k}=${v}`] : [],
+    );
+    if (values.length >= 2) this.sdk.track("filter_combo", { scope: this.scope, values });
+  }
+
   private get isCollection() {
     return this.o.mode === "collection" && Boolean(this.o.collection);
   }
@@ -108,8 +126,12 @@ export class SearchPage {
         location.assign(safeHref(res.redirect));
         return;
       }
+      const first = !this.last;
       this.last = res;
       this.render(res);
+      // Một lượt xem cho mỗi lần mở trang collection (không tính lọc/sắp xếp/phân trang sau đó).
+      if (first && this.isCollection && this.collectionId)
+        this.sdk.track("collection_view", { collectionId: this.collectionId });
     } catch {
       // Engine/API lỗi: bỏ skeleton, giữ kết quả native do Liquid in sẵn (không ném lỗi ra console).
       this.el.classList.remove("sa-loading", "sa-pending");
@@ -368,8 +390,10 @@ export class SearchPage {
       return;
     }
     if (t instanceof HTMLInputElement && (t.type === "checkbox" || t.type === "radio")) {
-      if (t.checked) this.sdk.track("filter", { key: t.name, value: t.value });
-      this.apply(this.readFilters());
+      if (t.checked) this.sdk.track("filter", { key: t.name, value: t.value, scope: this.scope });
+      const filters = this.readFilters();
+      this.trackCombo(filters);
+      this.apply(filters);
     }
   }
 
@@ -408,6 +432,8 @@ export class SearchPage {
         query: this.last?.query,
         productId: product.dataset.saProduct,
         position: Number(product.dataset.saPos),
+        source: this.isCollection ? "collection" : "search",
+        collectionId: this.collectionId,
       });
       return;
     }

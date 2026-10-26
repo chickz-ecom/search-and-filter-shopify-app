@@ -4,6 +4,13 @@ All notable changes to the storefront SDK (`window.SearchApp`) and the `/v1` API
 
 Deprecations are announced here at least 90 days before removal.
 
+## [1.2.0] — 2026-10-26
+
+### Added
+- `track()` accepts three more event types for the Analytics pages: `filter_combo` (`{ scope, values }`, two or more `key=value` pairs applied together), `collection_view` (`{ collectionId }`) and `suggestion` (`{ query, suggestion }`, a click on a query suggestion in the search dropdown).
+- `track("click", …)` accepts `source` (`"search"`, `"collection"` or `"instant"`) and `collectionId`; `track("filter", …)` accepts `scope` (`"search"` or a collection id). Existing calls keep working; events without these fields are counted without the extra breakdown.
+- `/v1/events` accepts the same types.
+
 ## [1.1.0] — 2026-10-26
 
 ### Added

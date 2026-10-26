@@ -1,6 +1,6 @@
 import type { Pricer } from "./pricing";
 import type { SearchAppContext, SearchAppSDK } from "./types";
-export declare const VERSION = "1.1.0";
+export declare const VERSION = "1.2.0";
 export type SdkDeps = {
     fetch?: typeof fetch;
     pricer?: Pricer;

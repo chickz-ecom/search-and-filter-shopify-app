@@ -385,11 +385,14 @@ components:
             query: { type: string }
             productId: { type: string }
             position: { type: integer }
+            source: { type: string, enum: [search, collection, instant] }
+            collectionId: { type: string }
         - type: object
           required: [type, productId]
           properties:
             type: { const: add_to_cart }
             query: { type: string }
+            collectionId: { type: string }
             productId: { type: string }
             revenue: { type: number, description: Shop currency, major units. }
         - type: object
@@ -397,13 +400,42 @@ components:
           properties:
             type: { const: purchase }
             query: { type: string }
+            collectionId: { type: string, description: Used when the purchase followed a collection visit, not a search. }
             revenue: { type: number }
+            items:
+              type: array
+              maxItems: 100
+              items:
+                type: object
+                required: [productId, qty]
+                properties:
+                  productId: { type: string }
+                  qty: { type: integer }
+                  revenue: { type: number, description: Shop currency, major units. }
         - type: object
           required: [type, key, value]
           properties:
             type: { const: filter }
             key: { type: string }
             value: { type: string }
+            scope: { type: string, description: '"search" or a collection id.' }
+        - type: object
+          required: [type, values]
+          properties:
+            type: { const: filter_combo }
+            scope: { type: string }
+            values: { type: array, items: { type: string, description: key=value }, minItems: 2, maxItems: 8 }
+        - type: object
+          required: [type, collectionId]
+          properties:
+            type: { const: collection_view }
+            collectionId: { type: string }
+        - type: object
+          required: [type, query, suggestion]
+          properties:
+            type: { const: suggestion }
+            query: { type: string }
+            suggestion: { type: string }
         - type: object
           required: [type, key]
           properties:

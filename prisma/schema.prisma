@@ -84,19 +84,21 @@ model Shop {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  syncJobs       SyncJob[]
-  searchSettings SearchSettings?
-  sortOptions    SortOption[]
-  sortDefaults   SortDefault[]
-  filterSets     FilterSet[]
-  synonyms       Synonym[]
-  redirects      Redirect[]
-  merchRules     MerchRule[]
-  stopWords      StopWord[]
-  appearance     Appearance?
-  analytics      AnalyticsDaily[]
-  usage          AnalyticsUsageDaily[]
-  orderLines     OrderLine[]
+  syncJobs        SyncJob[]
+  searchSettings  SearchSettings?
+  sortOptions     SortOption[]
+  sortDefaults    SortDefault[]
+  filterSets      FilterSet[]
+  synonyms        Synonym[]
+  redirects       Redirect[]
+  merchRules      MerchRule[]
+  stopWords       StopWord[]
+  appearance      Appearance?
+  analytics       AnalyticsDaily[]
+  usage           AnalyticsUsageDaily[]
+  productStats    AnalyticsProductDaily[]
+  collectionStats AnalyticsCollectionDaily[]
+  orderLines      OrderLine[]
 }
 
 // Dòng đơn hàng rút gọn cho xếp hạng bán chạy (task 2.15, D17): CHỈ id + số lượng + doanh thu dòng, không có dữ liệu
@@ -323,6 +325,9 @@ model AnalyticsDaily {
   clicks              Int      @default(0)
   addToCarts          Int      @default(0)
   revenueShopCurrency Decimal  @default(0) @db.Decimal(14, 2)
+  /// Analytics v2 (7.1): số sản phẩm đã mua + số đơn sau lượt search này (pixel, trong 30 phút).
+  productsBought      Int      @default(0)
+  orders              Int      @default(0)
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
@@ -333,6 +338,10 @@ model AnalyticsDaily {
 enum UsageKind {
   FILTER
   SORT
+  /// Tổ hợp giá trị filter áp cùng lúc (key = "vendor=Nike&size=M", đã sắp xếp).
+  FILTER_COMBO
+  /// Click gợi ý trong ô search: key = từ đã gõ, value = gợi ý.
+  SUGGESTION
 }
 
 model AnalyticsUsageDaily {
@@ -340,13 +349,52 @@ model AnalyticsUsageDaily {
   shopId String
   date   DateTime  @db.Date
   kind   UsageKind
+  /// Ngữ cảnh: "search", id collection, hoặc "" (dữ liệu cũ trước 7.1).
+  scope  String    @default("")
   key    String
   value  String    @default("")
   count  Int       @default(0)
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
-  @@unique([shopId, date, kind, key, value])
+  @@unique([shopId, date, kind, scope, key, value])
+}
+
+/// Analytics v2 (7.1): theo sản phẩm/ngày — click (theo nguồn), add to cart, đã mua, doanh thu (currency gốc).
+model AnalyticsProductDaily {
+  id               String   @id @default(cuid())
+  shopId           String
+  date             DateTime @db.Date
+  productId        String
+  clicks           Int      @default(0)
+  searchClicks     Int      @default(0)
+  collectionClicks Int      @default(0)
+  addToCarts       Int      @default(0)
+  purchases        Int      @default(0)
+  revenue          Decimal  @default(0) @db.Decimal(14, 2)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, date, productId])
+  @@index([shopId, date])
+}
+
+/// Analytics v2 (7.1): theo collection/ngày — lượt xem, click sản phẩm, đã mua, số đơn, doanh thu.
+model AnalyticsCollectionDaily {
+  id           String   @id @default(cuid())
+  shopId       String
+  date         DateTime @db.Date
+  collectionId String
+  views        Int      @default(0)
+  clicks       Int      @default(0)
+  purchases    Int      @default(0)
+  orders       Int      @default(0)
+  revenue      Decimal  @default(0) @db.Decimal(14, 2)
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, date, collectionId])
+  @@index([shopId, date])
 }
 
 model WebhookReceipt {

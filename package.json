@@ -54,6 +54,7 @@
     "@react-router/node": "7.18.4",
     "@react-router/serve": "7.18.4",
     "@shopify/app-bridge-react": "^4.2.14",
+    "@shopify/polaris-viz": "^16.16.0",
     "@shopify/shopify-app-react-router": "^4.0.0",
     "@shopify/shopify-app-session-storage-prisma": "^11.0.1",
     "bullmq": "^6.4.2",
@@ -115,6 +116,18 @@
   "overrides": {
     "p-map": "^4.0.0",
     "qs": "^6.16.0",
-    "deepmerge-ts": "^8.0.2"
+    "deepmerge-ts": "^8.0.2",
+    "@shopify/polaris-viz": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "@shopify/polaris-viz-core": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    },
+    "@react-spring/web": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }

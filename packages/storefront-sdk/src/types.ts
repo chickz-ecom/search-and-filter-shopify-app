@@ -266,8 +266,21 @@ export interface SearchAppSDK {
   getConfig(): Promise<PublicConfig>;
   /** Formats minor units with the theme's money format. Defaults to the shopper's currency. */
   formatMoney(minorUnits: number, currency?: string): string;
-  /** Records an anonymous analytics event for search insights. */
-  track(type: "click" | "add_to_cart" | "filter" | "sort", data: Record<string, unknown>): void;
+  /**
+   * Records an anonymous analytics event for search insights. `click` accepts `source`
+   * (`"search"`, `"collection"`, `"instant"`) and `collectionId`; `filter` accepts `scope` (`"search"` or a collection id).
+   */
+  track(
+    type:
+      | "click"
+      | "add_to_cart"
+      | "filter"
+      | "filter_combo"
+      | "sort"
+      | "collection_view"
+      | "suggestion",
+    data: Record<string, unknown>,
+  ): void;
   /** Reads and writes the search state in the URL. `set()` pushes a history entry unless `replace` is true. */
   state: {
     get(): UrlState;

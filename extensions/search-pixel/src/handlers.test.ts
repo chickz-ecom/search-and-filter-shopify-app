@@ -61,4 +61,62 @@ describe("web pixel handlers (2.13)", () => {
     expect(evs[0]).toEqual({ type: "purchase", query: "tee", revenue: 100 });
     expect(evs[1]).toEqual({ type: "purchase", query: "tee" });
   });
+
+  it("7.1: sends each product bought, attributed to the search or else to the collection viewed", async () => {
+    const send = vi.fn();
+    const h = createPixelHandlers(settings, memoryStorage({ sa_rate_EUR: "0.5" }), send, "USD");
+    const line = (id: number, qty: number, amount: number, currencyCode = "USD") => ({
+      quantity: qty,
+      finalLinePrice: { amount, currencyCode },
+      variant: { product: { id: `gid://shopify/Product/${id}` } },
+    });
+    // Chỉ xem collection (chưa search) → đơn ghi cho collection, kèm từng sản phẩm.
+    await h({
+      name: "collection_viewed",
+      data: { collection: { id: "gid://shopify/Collection/77", title: "Gifts" } },
+    });
+    await h({
+      name: "product_added_to_cart",
+      data: { cartLine: { merchandise: { product: { id: "gid://shopify/Product/5" } } } },
+    });
+    await h({
+      name: "checkout_completed",
+      data: {
+        checkout: {
+          subtotalPrice: { amount: 30, currencyCode: "USD" },
+          lineItems: [line(5, 2, 20), line(6, 1, 10)],
+        },
+      },
+    });
+    // Sau đó search → đơn tiếp theo ghi cho từ khoá (ưu tiên search hơn collection).
+    await h({ name: "search_submitted", data: { searchResult: { query: "tee" } } });
+    await h({
+      name: "checkout_completed",
+      data: {
+        checkout: {
+          subtotalPrice: { amount: 10, currencyCode: "EUR" },
+          lineItems: [line(7, 1, 10, "EUR")],
+        },
+      },
+    });
+    const evs = send.mock.calls.map((c) => JSON.parse(c[1]).events[0]);
+    expect(evs).toEqual([
+      { type: "add_to_cart", collectionId: "77", productId: "5" },
+      {
+        type: "purchase",
+        collectionId: "77",
+        revenue: 30,
+        items: [
+          { productId: "5", qty: 2, revenue: 20 },
+          { productId: "6", qty: 1, revenue: 10 },
+        ],
+      },
+      {
+        type: "purchase",
+        query: "tee",
+        revenue: 20,
+        items: [{ productId: "7", qty: 1, revenue: 20 }],
+      },
+    ]);
+  });
 });

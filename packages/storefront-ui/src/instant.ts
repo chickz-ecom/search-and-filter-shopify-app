@@ -75,8 +75,8 @@ function attach(input: HTMLInputElement, sdk: SearchAppSDK) {
   const render = (q: string, res: SuggestResponse) => {
     const card = templateFor("suggest-item", SUGGEST_ITEM, document, templates);
     let n = 0;
-    const opt = (href: string, label: string) =>
-      `<a role="option" id="${id}-${n++}" class="sa-ac__item" href="${esc(safeHref(href))}">${esc(label)}</a>`;
+    const opt = (href: string, label: string, suggestion = false) =>
+      `<a role="option" id="${id}-${n++}" class="sa-ac__item" href="${esc(safeHref(href))}"${suggestion ? ` data-sa-suggestion="${esc(label)}"` : ""}>${esc(label)}</a>`;
     const group = (label: string, body: string) =>
       body
         ? `<div role="group" aria-label="${esc(label)}" class="sa-ac__group"><p class="sa-ac__heading" aria-hidden="true">${esc(label)}</p>${body}</div>`
@@ -85,7 +85,9 @@ function attach(input: HTMLInputElement, sdk: SearchAppSDK) {
     const html =
       group(
         texts.suggestions ?? "Suggestions",
-        res.suggestions.map((s) => opt(`${searchUrl}?q=${encodeURIComponent(s)}`, s)).join(""),
+        res.suggestions
+          .map((s) => opt(`${searchUrl}?q=${encodeURIComponent(s)}`, s, true))
+          .join(""),
       ) +
       group(
         texts.products ?? "Products",
@@ -148,13 +150,18 @@ function attach(input: HTMLInputElement, sdk: SearchAppSDK) {
   });
   box.addEventListener("mousedown", (e) => e.preventDefault()); // giữ focus để click không bị blur trước
   box.addEventListener("click", (e) => {
-    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-sa-product]");
+    const target = e.target as HTMLElement;
+    const a = target.closest<HTMLAnchorElement>("a[data-sa-product]");
     if (a)
       sdk.track("click", {
         query: input.value.trim(),
         productId: a.dataset.saProduct,
         position: Number(a.dataset.saPos),
+        source: "instant",
       });
+    const s = target.closest<HTMLAnchorElement>("a[data-sa-suggestion]");
+    if (s)
+      sdk.track("suggestion", { query: input.value.trim(), suggestion: s.dataset.saSuggestion });
   });
   const reposition = () => !box.hidden && requestAnimationFrame(place);
   window.addEventListener("scroll", reposition, { passive: true });

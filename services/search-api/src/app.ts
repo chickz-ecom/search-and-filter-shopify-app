@@ -30,7 +30,10 @@ const CLIENT_EVENTS = new Set<string>([
   "add_to_cart",
   "purchase",
   "filter",
+  "filter_combo",
   "sort",
+  "collection_view",
+  "suggestion",
   "pricing",
 ]);
 
