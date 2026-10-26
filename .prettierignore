@@ -5,3 +5,11 @@ node_modules
 prisma
 public
 .shopify
+build
+.react-router
+coverage
+playwright-report
+test-results
+extensions/search-theme/assets/*.js
+*.md
+package-lock.json

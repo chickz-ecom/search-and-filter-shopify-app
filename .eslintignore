@@ -3,3 +3,8 @@ build
 public/build
 */*.yml
 .shopify
+coverage
+playwright-report
+test-results
+extensions/*/assets/*.js
+.react-router

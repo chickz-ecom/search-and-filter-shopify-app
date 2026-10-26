@@ -9,3 +9,7 @@
       Lệnh này điền `client_id` vào `shopify.app.toml`.
 - [ ] A3. Tạo dev store (Dev Dashboard → Stores → Create dev store), bật preview admin mới.
       Chạy: `shopify app dev --feature-preview new_admin_design` → cài app vào dev store (DoD 0.1).
+
+## B. CI / GitHub
+- [ ] B1. Tạo repo GitHub, push `main`. Thêm secret `SHOPIFY_CLI_PARTNERS_TOKEN` (Partner Dashboard → Settings → CLI token)
+      để job `shopify-config` chạy `shopify app config validate` (job này chỉ chạy khi push).

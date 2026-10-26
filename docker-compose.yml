@@ -6,7 +6,8 @@ name: search-app
 services:
   typesense:
     image: typesense/typesense:30.1
-    command: ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY:-dev-typesense-key}", "--enable-cors"]
+    command:
+      ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY:-dev-typesense-key}", "--enable-cors"]
     ports:
       - "127.0.0.1:8108:8108"
     volumes:

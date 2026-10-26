@@ -39,16 +39,16 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Product feature</strong>. Some detail about your feature and its benefit to your
+            customer.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Product feature</strong>. Some detail about your feature and its benefit to your
+            customer.
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>Product feature</strong>. Some detail about your feature and its benefit to your
+            customer.
           </li>
         </ul>
       </div>
