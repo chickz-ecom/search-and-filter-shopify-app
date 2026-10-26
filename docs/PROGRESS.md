@@ -4,13 +4,14 @@
 > Tiếp tục: `cat docs/PROGRESS.md && git log --oneline -20 && grep -n "\[ \]\|\[~\]" docs/02-PLAN.md | head`
 
 ## Hiện tại
-- Phase: 3 — Admin App Home
-- Task: 3.1 (layout, s-app-nav, Home)
+- Phase: 4 — Tài liệu cho developer
+- Task: 4.1 (docs/developers: quickstart, SDK reference từ .d.ts, events, template, OpenAPI, changelog)
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
 - Phase 1: 1.1–1.14 xong (xem tổng kết bên dưới).
 - Phase 2: 2.1 search-api (load test 204 RPS, p99 78 ms), 2.2–2.4 builders, 2.5 merch, 2.6 SDK (5,97 KB gzip), 2.7 pricing Storefront API, 2.8 phương án B.
+- Phase 3: 3.1–3.10 xong (xem tổng kết bên dưới).
 - Mẫu làm việc: dùng `scratchpad/check.sh` (prettier+typecheck+lint+test) trước mọi commit; `scratchpad/rep.py` để sửa file (báo lỗi nếu không tìm thấy chuỗi).
 
 
@@ -56,7 +57,21 @@
 - BFS: storefront chỉ qua theme app extension, không ScriptTag/Asset API; Lighthouse ≤ 5 (fixture; Horizon thật → G3).
 - Cần store thật: HUMAN_TODO F1–F4 (giá market), G1–G3 (theme), H1–H2 (bản dịch, pixel).
 
+## Tổng kết Phase 3 (2026-10-26)
+- 10 trang admin (Home, Search, Sorting, Filters, Merchandising ×2, Appearance, Analytics, Sync, Developers, Plans), en + vi.
+  Mẫu: component thuần app/components/*View.tsx (validate MCP polaris-app-home v2.0: tất cả VALID) + test SSR; route chỉ loader/action.
+- DoD: Save Bar (ui-save-bar lập trình) trên mọi form; Thử tìm theo cấu hình chưa lưu; thêm metafield → cảnh báo + enqueue full sync;
+  lưu → purge Redis + micro-cache search-api + CDN tag (≤ 1 phút); Appearance có preview iframe sandbox cạnh editor dùng đúng CSS/template widget.
+- Analytics: top query, zero-result kèm nút tạo synonym/redirect (?new=), filter/sort usage. Sửa race rollup khi shop bị xoá giữa chừng.
+- Developers: headless = gói ≥ Pro + merchant bật (mặc định tắt) + allowlist origin (tuỳ chọn); search-api trả 403 có mã lỗi rõ.
+- Plans: Shopify App Pricing qua Partner API activeSubscription (không webhook → refresh khi mở trang + job đêm); vượt hạn mức chỉ báo info.
+- Web Vitals admin (fixture + Polaris CDN, Desktop + Pixel 7, 22 trang): CLS p75 0.000 (max 0.061), LCP p75 ≤ 372 ms, không tràn ngang.
+  Đã sửa CLS 0.28 ở Appearance (auto-fit → auto-fill). Field vitals thật gửi về /app/vitals.
+- BFS phase 3: s-app-nav, Save Bar, s-table/s-modal/empty state, Home có setup + embed status + KPI, onboarding đóng được, live preview,
+  không pattern gây áp lực, tính năng ngoài gói disable kèm giải thích.
+- Còn thiếu so với nav mục 8: trang Help (support/FAQ) → làm cùng 6.5 (listing). Kiểm tra trên admin thật: HUMAN_TODO I1–I5, J1–J3.
+
 ## Bước tiếp theo
-- Phase 3: 3.1 Home (checklist qua shopify.app.extensions(), deep link, card sync, KPI) → 3.2 Search → 3.3 Sorting → 3.4 Filters → 3.5 Merch → 3.6 Appearance → 3.7 Analytics → 3.8 Developers → 3.9 Plans → 3.10 kiểm tra mobile/Web Vitals.
+- Phase 4: 4.1 docs/developers → 4.2 ba section mẫu → 4.3 contract test .d.ts. Sau đó Phase 5 (AI, tuỳ chọn) và Phase 6.
 - Mẫu UI admin: component thuần trong app/components/*View.tsx (validate MCP polaris-app-home v2.0 + test SSR), route chỉ loader/action.
 
