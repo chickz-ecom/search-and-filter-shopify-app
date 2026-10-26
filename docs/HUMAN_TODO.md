@@ -38,3 +38,6 @@
       Xem log route `/api/events/collections` có nhận `collection.products` (fields_changed.removed) hay không → ghi kết quả vào Nhật ký.
       Dù không bắn, index vẫn phải cập nhật trong ≤ 1 phút nhờ `products/update` (incremental lấy lại product.collections).
       Thử thêm: đổi kiểu sắp xếp collection (Sort: Manual → Price) → event `collection.sortOrder` → pos_* bị xoá.
+- [ ] D6. (DoD 1.9) Trên store Standard có 30k sản phẩm: import CSV sửa 30k sản phẩm → đo thời gian tới khi index khớp
+      (mục tiêu ≤ 10 phút; app sẽ chuyển sang delta bulk vì > 2.000 ID). Chạy checksum đêm thủ công:
+      thêm job `checksum` (BullMQ UI hoặc `node -e` với getSyncQueue().add) → kiểm tra < 2 phút và `writes: 0`.
