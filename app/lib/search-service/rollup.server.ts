@@ -54,40 +54,59 @@ export async function rollupAnalytics(redis: Redis, db: Db, now = new Date()) {
     }
     const { queries, usage } = parseCounters(await redis.hgetall(countersKey(shopId, day)));
     const date = new Date(`${day}T00:00:00Z`);
-    for (const [query, r] of queries) {
-      await db.analyticsDaily.upsert({
-        where: { shopId_date_query: { shopId, date, query } },
-        update: {
-          searches: r.searches,
-          zeroResults: r.zeroResults,
-          clicks: r.clicks,
-          addToCarts: r.addToCarts,
-          revenueShopCurrency: r.revenue,
-        },
-        create: {
-          shopId,
-          date,
-          query,
-          searches: r.searches,
-          zeroResults: r.zeroResults,
-          clicks: r.clicks,
-          addToCarts: r.addToCarts,
-          revenueShopCurrency: r.revenue,
-        },
-      });
-      rows++;
-    }
-    for (const u of usage) {
-      await db.analyticsUsageDaily.upsert({
-        where: {
-          shopId_date_kind_key_value: { shopId, date, kind: u.kind, key: u.key, value: u.value },
-        },
-        update: { count: u.count },
-        create: { shopId, date, kind: u.kind, key: u.key, value: u.value, count: u.count },
-      });
-      rows++;
+    try {
+      rows += await writeDay(db, shopId, date, queries, usage);
+    } catch (e) {
+      // Shop bị xoá (gỡ app) giữa lúc kiểm tra và lúc ghi → FK lỗi: bỏ ngày đó, không làm hỏng cả lượt rollup.
+      if ((e as { code?: string }).code !== "P2003") throw e;
+      await redis.srem(pendingDaysKey, entry);
+      continue;
     }
     if (day < today) await redis.srem(pendingDaysKey, entry);
   }
   return { days: pending.length, rows };
+}
+
+async function writeDay(
+  db: Db,
+  shopId: string,
+  date: Date,
+  queries: ReturnType<typeof parseCounters>["queries"],
+  usage: ReturnType<typeof parseCounters>["usage"],
+) {
+  let rows = 0;
+  for (const [query, r] of queries) {
+    await db.analyticsDaily.upsert({
+      where: { shopId_date_query: { shopId, date, query } },
+      update: {
+        searches: r.searches,
+        zeroResults: r.zeroResults,
+        clicks: r.clicks,
+        addToCarts: r.addToCarts,
+        revenueShopCurrency: r.revenue,
+      },
+      create: {
+        shopId,
+        date,
+        query,
+        searches: r.searches,
+        zeroResults: r.zeroResults,
+        clicks: r.clicks,
+        addToCarts: r.addToCarts,
+        revenueShopCurrency: r.revenue,
+      },
+    });
+    rows++;
+  }
+  for (const u of usage) {
+    await db.analyticsUsageDaily.upsert({
+      where: {
+        shopId_date_kind_key_value: { shopId, date, kind: u.kind, key: u.key, value: u.value },
+      },
+      update: { count: u.count },
+      create: { shopId, date, kind: u.kind, key: u.key, value: u.value, count: u.count },
+    });
+    rows++;
+  }
+  return rows;
 }

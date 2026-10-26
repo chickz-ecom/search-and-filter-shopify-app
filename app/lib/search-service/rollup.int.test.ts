@@ -3,7 +3,7 @@ import { testDb } from "../../../test/db";
 import { testRedis } from "../../../test/redis";
 import { postgresUp, redisUp } from "../../../test/services";
 import { ensureShop } from "../shop/shop.server";
-import { recordEvents } from "./analytics.server";
+import { pendingDaysKey, recordEvents } from "./analytics.server";
 import { parseCounters, rollupAnalytics } from "./rollup.server";
 
 const up = (await postgresUp()) && (await redisUp());
@@ -35,6 +35,31 @@ describe("analytics rollup (2.13)", () => {
   describe.skipIf(!up)("live", () => {
     const domain = `an-${Date.now()}.myshopify.com`;
     afterAll(() => testDb().shop.deleteMany({ where: { domain } }));
+
+    it("skips a shop deleted between the existence check and the write (FK race)", async () => {
+      const shopId = `gone-${Date.now()}`;
+      await recordEvents(testRedis(), shopId, [{ type: "search", query: "x", results: 1 }]);
+      const fk = Object.assign(new Error("fk"), { code: "P2003" });
+      // Shop khác (của test chạy song song) đi qua DB thật như bình thường — rollup là idempotent.
+      const real = testDb();
+      type Args = { where: { id?: string; shopId_date_query?: { shopId: string } } };
+      const db = {
+        shop: {
+          findUnique: (a: Args) =>
+            a.where.id === shopId ? { id: shopId } : real.shop.findUnique(a as never),
+        },
+        analyticsDaily: {
+          upsert: async (a: Args) => {
+            if (a.where.shopId_date_query?.shopId === shopId) throw fk;
+            return real.analyticsDaily.upsert(a as never);
+          },
+        },
+        analyticsUsageDaily: real.analyticsUsageDaily,
+      } as unknown as Parameters<typeof rollupAnalytics>[1];
+      await expect(rollupAnalytics(testRedis(), db)).resolves.toBeDefined();
+      const pending = await testRedis().smembers(pendingDaysKey);
+      expect(pending.some((e) => e.startsWith(`${shopId}|`))).toBe(false);
+    });
 
     it("writes idempotent daily rows and finalizes past days", async () => {
       const { shop } = await ensureShop(testDb(), domain);
