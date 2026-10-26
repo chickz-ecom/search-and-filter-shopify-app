@@ -485,7 +485,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [ ] 1.3 Bulk runner: nhiều bulk phẳng song song, chia shard theo `created_at`, stream-parse JSONL, staging, join theo ID (không dựa thứ tự dòng).
   - **Benchmark** trên dev store có 30k và 100k sản phẩm (dùng `productSet` hoặc bulk mutation để tạo dữ liệu mẫu). So 3 cấu hình: lồng một query / phẳng song song / phẳng + shard. Ghi kết quả vào Nhật ký.
   - DoD: **30k sản phẩm (5 variant, 10 metafield) index xong ≤ 5 phút**, mục tiêu 3 phút; 100k ≤ 15 phút; RAM worker ổn định.
-- [ ] 1.4 Mapper `Product → ProductDoc` (có `gid`, `title_sort`, `discount_pct`, `variant_titles`).
+- [x] 1.4 Mapper `Product → ProductDoc` (có `gid`, `title_sort`, `discount_pct`, `variant_titles`).
   - DoD: unit test với fixture thật.
 - [ ] 1.5 Full sync với alias swap, kèm lượt "có kết quả sớm" (1–2k sản phẩm đầu sẵn sàng dưới 60 giây) và tiến độ x/y trên Home.
 - [ ] 1.6 Webhook routes (HMAC, dedupe, enqueue, < 500ms).
@@ -629,3 +629,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 2.4 xong: filter translator dùng đúng tham số native filter.p.*/filter.v.* (URL dùng chung cho fallback), filter_by có escape, giá đổi minor units theo exponent currency, facet disjunctive + min/max giá.
 - 2026-10-26: 0.4 xong: shopify.app.toml theo cú pháp đã đối chiếu (docs/shopify-api/config-extensions.md): 11 scope, webhook gom theo route + include_fields, compliance_topics, [[events.subscription]] collection.products + collection.sortOrder, app proxy /apps/search. Bỏ product_listings/* và collection_listings/* (chỉ áp dụng cho kênh riêng của app, không phải Online Store). Contract test smol-toml; validate thật → HUMAN_TODO C1–C2.
 - 2026-10-26: Nâng React 18 → 19.3 (theo docs App Home: controlled field của Polaris web components cần React 19); thêm app/types/app-bridge-jsx.d.ts nối JSX global của app-bridge-types vào React.JSX. Ghi chú tra cứu API ở docs/shopify-api/ (Admin 34 op đã validate 2026-10, Storefront 5 op, config/extension, App Home).
+- 2026-10-26: 1.4 xong: mapProduct (gid, title_sort không dấu, discount_pct, variant_titles bỏ Default Title, opt_* theo option, metafield có kiểu, pos_ chỉ cho collection MANUAL, bản dịch, price_min_{cc}); fixture JSONL theo shape query đã validate (fixture thật → HUMAN_TODO D1). Query sync sinh động: 14 op đã pass MCP validate 2026-10.

@@ -1,0 +1,8 @@
+{"id":"gid://shopify/Collection/501","handle":"summer","title":"Summer","updatedAt":"2026-10-01T00:00:00Z","sortOrder":"MANUAL"}
+{"id":"gid://shopify/Product/1003","__parentId":"gid://shopify/Collection/501"}
+{"id":"gid://shopify/Product/1001","__parentId":"gid://shopify/Collection/501"}
+{"id":"gid://shopify/Product/9999","__parentId":"gid://shopify/Collection/501"}
+{"id":"gid://shopify/Collection/502","handle":"all","title":"All products","updatedAt":"2026-10-01T00:00:00Z","sortOrder":"BEST_SELLING"}
+{"id":"gid://shopify/Product/1001","__parentId":"gid://shopify/Collection/502"}
+{"id":"gid://shopify/Product/1002","__parentId":"gid://shopify/Collection/502"}
+{"id":"gid://shopify/Product/1003","__parentId":"gid://shopify/Collection/502"}

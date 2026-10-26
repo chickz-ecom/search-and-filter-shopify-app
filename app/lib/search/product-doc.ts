@@ -46,7 +46,7 @@ export type ProductDoc = {
       | `title_${string}`
       | `description_${string}`
       | `tags_${string}`
-  ]: string | number | boolean | string[] | undefined;
+  ]: string | number | boolean | string[] | number[] | undefined;
 };
 
 export type VariantSummary = {
