@@ -17,6 +17,7 @@ export type AnalyticsEvent =
   | { type: "search"; query: string; results: number }
   | { type: "click"; query?: string; productId: string; position?: number }
   | { type: "add_to_cart"; query?: string; productId: string; revenue?: number }
+  | { type: "purchase"; query?: string; revenue?: number }
   | { type: "filter"; key: string; value: string }
   | { type: "sort"; key: string };
 
@@ -48,6 +49,10 @@ export async function recordEvents(
       case "add_to_cart":
         m.hincrby(key, `a|${clean(e.query ?? "")}`, 1);
         if (e.revenue && e.revenue > 0) m.hincrbyfloat(key, `r|${clean(e.query ?? "")}`, e.revenue);
+        break;
+      case "purchase":
+        if (e.revenue && e.revenue > 0 && Number.isFinite(e.revenue))
+          m.hincrbyfloat(key, `r|${clean(e.query ?? "")}`, Math.min(e.revenue, 1_000_000));
         break;
       case "filter":
         m.hincrby(key, `f|${e.key.slice(0, 64)}|${e.value.slice(0, 100)}`, 1);

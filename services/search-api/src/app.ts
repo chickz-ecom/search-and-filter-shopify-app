@@ -155,7 +155,9 @@ export function createSearchApi(deps: SearchApiDeps) {
     const kind = trusted
       ? "storefront"
       : originKind(origin, [ctx.shop.domain, ...ctx.shop.storefrontDomains]);
-    if (kind !== "storefront" && !headlessAllowed(ctx.shop.plan, ctx.features)) {
+    // Beacon analytics từ sandbox web pixel có origin khác → không tính là headless.
+    const isEvents = c.req.method === "POST" && new URL(c.req.url).pathname === "/v1/events";
+    if (kind !== "storefront" && !isEvents && !headlessAllowed(ctx.shop.plan, ctx.features)) {
       return c.json(
         { error: "headless_not_in_plan", message: "Headless API requires the Pro plan or higher" },
         403,

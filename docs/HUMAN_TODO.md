@@ -75,3 +75,6 @@
 ## H. Đa ngôn ngữ
 - [ ] H1. Dev store có ngôn ngữ thứ hai (vi) + bản dịch (Translate & Adapt): chạy full sync → xác nhận bulk chấp nhận alias
       `tr_vi: translations(locale:"vi")` và tìm "áo thun" ở storefront `/vi/search` ra đúng sản phẩm; nhãn sort/filter tiếng Việt.
+- [ ] H2. (2.13) Sau `shopify app deploy`: Settings → Customer events → xác nhận pixel "search-pixel" Connected. Dùng
+      "Test pixel"/Pixel Helper: search → add to cart → checkout test → kiểm tra request `POST …/v1/events` và số liệu
+      trong Analytics (rollup 10 phút/lần).

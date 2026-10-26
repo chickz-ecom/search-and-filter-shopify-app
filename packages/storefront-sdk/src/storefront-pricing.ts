@@ -145,6 +145,8 @@ export function createPricer(ctx: SearchAppContext, deps: PricerDeps = {}): Pric
       if (ratios.length) {
         lastRate = median(ratios);
         storage?.setItem(rateKey, String(lastRate));
+        // Key theo currency cho web pixel (quy doanh thu về currency gốc — mục 6.2 "Analytics doanh thu").
+        storage?.setItem(`sa_rate_${currency}`, String(lastRate));
       }
       return { prices, currency, rate: lastRate, ok };
     },

@@ -1,0 +1,29 @@
+# Web pixel (mục 7.3, D13): ẩn danh — chỉ add-to-cart/đơn hàng gắn với lượt search trong phiên, không lưu customer.
+# `uid` do CLI sinh khi `shopify app deploy`/`generate` (không tự điền).
+type = "web_pixel_extension"
+name = "search-pixel"
+runtime_context = "strict"
+
+[customer_privacy]
+analytics = true
+marketing = false
+preferences = false
+sale_of_data = "disabled"
+
+[settings]
+type = "object"
+
+[settings.fields.shop]
+name = "Shop domain"
+description = "myshopify.com domain"
+type = "single_line_text_field"
+
+[settings.fields.apiUrl]
+name = "Search API URL"
+description = "Base URL of the search API"
+type = "single_line_text_field"
+
+[settings.fields.publicKey]
+name = "Public key"
+description = "Public key of the shop for the search API"
+type = "single_line_text_field"

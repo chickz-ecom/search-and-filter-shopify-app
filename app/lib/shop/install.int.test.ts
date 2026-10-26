@@ -26,6 +26,16 @@ describe.skipIf(!up)("onShopAuthenticated", () => {
     metafieldCalls.push(v.metafields);
     return { metafieldsSet: { metafields: [], userErrors: [] } };
   };
+  const pixelCalls: unknown[] = [];
+  fake.handlers.WebPixelCreate = (v) => {
+    pixelCalls.push(v.webPixel);
+    return {
+      webPixelCreate: {
+        webPixel: { id: "gid://shopify/WebPixel/1", settings: "{}" },
+        userErrors: [],
+      },
+    };
+  };
   const ex = new GraphqlExecutor(fake.transport, instantClock());
 
   afterAll(async () => {
@@ -58,6 +68,9 @@ describe.skipIf(!up)("onShopAuthenticated", () => {
         value: "https://search.example",
       },
     ]);
+    expect(pixelCalls[0]).toEqual({
+      settings: { shop: domain, apiUrl: "https://search.example", publicKey: r.shop.publicKey },
+    });
 
     expect(r.shop).toMatchObject({
       currency: "EUR",

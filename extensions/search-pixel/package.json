@@ -1,0 +1,8 @@
+{
+  "name": "search-pixel",
+  "private": true,
+  "main": "dist/main.js",
+  "dependencies": {
+    "@shopify/web-pixels-extension": "^2.18.0"
+  }
+}

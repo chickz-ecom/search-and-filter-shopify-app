@@ -11,6 +11,7 @@ import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { getEngine } from "../app/lib/search";
 import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
 import { refreshShop } from "../app/lib/shop/markets.server";
+import { rollupAnalytics } from "../app/lib/search-service/rollup.server";
 import {
   applyBestSellingRanks,
   fetchBestSellingOrder,
@@ -232,9 +233,13 @@ export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
       );
       return { shops: shops.length };
     }
+    case "rollup-analytics":
+      return rollupAnalytics(redis(), prisma);
     case "tick-cleanup":
       return cleanup({ db: prisma, engine: getEngine(), redis: redis() });
-    default:
-      return { skipped: `unhandled:${job.data.type}` };
+    default: {
+      const unhandled: never = job.data;
+      return { skipped: `unhandled:${(unhandled as { type: string }).type}` };
+    }
   }
 }

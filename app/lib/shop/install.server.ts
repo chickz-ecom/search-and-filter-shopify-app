@@ -64,6 +64,45 @@ export async function setAppConfigMetafields(
   GraphqlExecutor.assertNoUserErrors(d.metafieldsSet.userErrors, "metafieldsSet");
 }
 
+export const WEB_PIXEL_CREATE = `mutation WebPixelCreate($webPixel: WebPixelInput!) {
+  webPixelCreate(webPixel: $webPixel) {
+    webPixel { id settings }
+    userErrors { field message code }
+  }
+}`;
+export const WEB_PIXEL_QUERY = `query WebPixel { webPixel { id settings } }`;
+export const WEB_PIXEL_UPDATE = `mutation WebPixelUpdate($id: ID!, $webPixel: WebPixelInput!) {
+  webPixelUpdate(id: $id, webPixel: $webPixel) {
+    webPixel { id settings }
+    userErrors { field message code }
+  }
+}`;
+
+/** Kích hoạt web pixel của app (mục 7.3) với settings khớp extensions/search-pixel/shopify.extension.toml. */
+export async function ensureWebPixel(
+  ex: GraphqlExecutor,
+  settings: { shop: string; apiUrl: string; publicKey: string },
+) {
+  type R = {
+    webPixelCreate: {
+      webPixel: { id: string } | null;
+      userErrors: { message: string; code: string | null }[];
+    };
+  };
+  const created = await ex.query<R>(WEB_PIXEL_CREATE, { webPixel: { settings } });
+  if (created.webPixelCreate.webPixel) return created.webPixelCreate.webPixel.id;
+  // Đã có pixel (cài lại) → cập nhật settings.
+  const cur = await ex
+    .query<{ webPixel: { id: string } | null }>(WEB_PIXEL_QUERY)
+    .catch(() => ({ webPixel: null }));
+  if (!cur.webPixel)
+    GraphqlExecutor.assertNoUserErrors(created.webPixelCreate.userErrors, "webPixelCreate");
+  type U = { webPixelUpdate: { userErrors: { message: string }[] } };
+  const upd = await ex.query<U>(WEB_PIXEL_UPDATE, { id: cur.webPixel!.id, webPixel: { settings } });
+  GraphqlExecutor.assertNoUserErrors(upd.webPixelUpdate.userErrors, "webPixelUpdate");
+  return cur.webPixel!.id;
+}
+
 export type InstallDeps = {
   db: Db;
   ex: GraphqlExecutor;
@@ -80,6 +119,11 @@ export async function onShopAuthenticated(domain: string, deps: InstallDeps) {
     await setAppConfigMetafields(deps.ex, { publicKey: shop.publicKey, apiUrl: deps.apiUrl }).catch(
       (e) => console.warn("[install] metafieldsSet failed", e),
     );
+    await ensureWebPixel(deps.ex, {
+      shop: domain,
+      apiUrl: deps.apiUrl,
+      publicKey: shop.publicKey,
+    }).catch((e) => console.warn("[install] webPixelCreate failed", e));
   }
 
   const needsSync =
