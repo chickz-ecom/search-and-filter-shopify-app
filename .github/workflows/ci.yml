@@ -61,6 +61,8 @@ jobs:
       - run: npm run lighthouse:compare
 
       - run: npm run build
+      # Image production (task 6.4): admin + search-api + worker từ cùng Dockerfile.
+      - run: docker build -t searchapp:ci .
 
   shopify-config:
     runs-on: ubuntu-latest

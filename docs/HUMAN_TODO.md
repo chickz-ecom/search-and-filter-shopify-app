@@ -133,3 +133,12 @@
       object storage (S3/GCS, giữ 14 bản). Diễn tập khôi phục (snapshot và `scripts/reindex-all.ts --dry-run`) mỗi quý.
 - [ ] L4. (6.3) Trước khi nộp: chạy lại `shopify app security check` + agent checks + `record` + `review` (hướng dẫn ở
       docs/ops/security.md); trong hồ sơ review giải thích UNSAFE_INNERHTML đã chấp nhận (mục "Accepted findings").
+
+## M. Deploy (task 6.4)
+- [ ] M1. Chọn nền tảng (Render blueprint có sẵn `deploy/render/render.yaml` — VERIFY tên field/plan theo docs Render
+      hiện hành; hoặc tự host theo `deploy/selfhost`). Tạo Postgres + Redis managed (Redis `maxmemory-policy noeviction`).
+- [ ] M2. Typesense Cloud HA (3 node) → `TYPESENSE_NODES`, admin key cho admin/worker, search-only key cho search-api.
+- [ ] M3. DNS: `app.<domain>` → admin, `search.<domain>` → CDN → search-api; HTTPS. Cập nhật `application_url`,
+      `redirect_urls`, URL app proxy trong shopify.app.toml rồi `shopify app deploy`.
+- [ ] M4. Điền secret thật (Partner Dashboard, Typesense, CDN, Partner API) vào nền tảng; `METRICS_TOKEN`,
+      `INTERNAL_API_SECRET` sinh ngẫu nhiên. Đặt `SEARCH_API_PUBLIC_URL` = URL CDN trước khi merchant đầu tiên cài.

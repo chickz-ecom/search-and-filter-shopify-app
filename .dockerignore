@@ -1,3 +1,15 @@
 .cache
-build
+.git
+.github
+.shopify
+.env
+.env.*
+!.env.example
 node_modules
+build
+test-results
+playwright-report
+e2e
+docs
+extensions/*/dist
+*.log
