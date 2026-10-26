@@ -224,7 +224,15 @@ export function requiredMetafields(config: ShopConfig): MetafieldRef[] {
   );
 }
 
-export type ShopFeatures = { fixedMarketPrices?: boolean; headless?: boolean };
+export type ShopFeatures = {
+  fixedMarketPrices?: boolean;
+  /** Cấp quyền headless ngoài gói (hỗ trợ/đối tác). */
+  headless?: boolean;
+  /** Merchant tự bật ở trang Developers (mặc định tắt). */
+  headlessEnabled?: boolean;
+  /** Origin trình duyệt được gọi API headless; rỗng = mọi origin. */
+  headlessOrigins?: string[];
+};
 
 export function shopFeatures(shop: Pick<Shop, "features">): ShopFeatures {
   return (shop.features ?? {}) as ShopFeatures;

@@ -45,3 +45,23 @@ export function headlessAllowed(
 ): boolean {
   return Boolean(features?.headless) || planById(planId).headless;
 }
+
+export type HeadlessDecision = "ok" | "not_in_plan" | "disabled" | "origin_not_allowed";
+
+/**
+ * Gọi API ngoài storefront của shop (headless) cần: gói cho phép + merchant đã bật ở trang Developers + (nếu có
+ * danh sách) origin trình duyệt nằm trong danh sách. Gọi server-to-server (không có Origin) chỉ cần hai điều đầu.
+ */
+export function headlessDecision(
+  planId: string | null | undefined,
+  features:
+    { headless?: boolean; headlessEnabled?: boolean; headlessOrigins?: string[] } | undefined,
+  origin: string | null | undefined,
+): HeadlessDecision {
+  if (!headlessAllowed(planId, features)) return "not_in_plan";
+  if (!features?.headlessEnabled) return "disabled";
+  const allow = features.headlessOrigins ?? [];
+  if (origin && allow.length && !allow.includes(origin.toLowerCase().replace(/\/$/, "")))
+    return "origin_not_allowed";
+  return "ok";
+}

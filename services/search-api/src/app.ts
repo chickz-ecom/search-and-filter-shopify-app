@@ -1,6 +1,6 @@
 import { Hono, type Context } from "hono";
 import type { Redis } from "ioredis";
-import { headlessAllowed, planById } from "../../../app/lib/billing/plans";
+import { headlessDecision, planById } from "../../../app/lib/billing/plans";
 import { EngineUnavailableError, type SearchEngine } from "../../../app/lib/search/engine";
 import type { ContentDoc } from "../../../app/lib/search/product-doc";
 import { parseFilterParams, type AppliedFilters } from "../../../app/lib/search/query/filters";
@@ -23,6 +23,12 @@ import { buildPublicConfig } from "../../../app/lib/search-service/public-config
 import { executeSearch, filtersForScope } from "../../../app/lib/search-service/search.server";
 import { executeSuggest } from "../../../app/lib/search-service/suggest.server";
 import type { Db } from "../../../app/lib/shop/shop.server";
+
+const HEADLESS_ERRORS = {
+  not_in_plan: "Headless API requires the Pro plan or higher",
+  disabled: "Turn on headless access in the app's Developers page",
+  origin_not_allowed: "This origin isn't in the shop's allowed headless origins",
+} as const;
 
 // Search API công khai (D9, mục 6.1). Stateless; mọi state ở Postgres/Redis/Typesense.
 // Bảo mật: shop + publicKey, scoped Typesense key theo shop, rate limit theo IP và shop, CORS theo domain shop.
@@ -157,11 +163,10 @@ export function createSearchApi(deps: SearchApiDeps) {
       : originKind(origin, [ctx.shop.domain, ...ctx.shop.storefrontDomains]);
     // Beacon analytics từ sandbox web pixel có origin khác → không tính là headless.
     const isEvents = c.req.method === "POST" && new URL(c.req.url).pathname === "/v1/events";
-    if (kind !== "storefront" && !isEvents && !headlessAllowed(ctx.shop.plan, ctx.features)) {
-      return c.json(
-        { error: "headless_not_in_plan", message: "Headless API requires the Pro plan or higher" },
-        403,
-      );
+    if (kind !== "storefront" && !isEvents) {
+      const decision = headlessDecision(ctx.shop.plan, ctx.features, origin);
+      if (decision !== "ok")
+        return c.json({ error: `headless_${decision}`, message: HEADLESS_ERRORS[decision] }, 403);
     }
     const shopRate = await limiter.hit(`shop:${ctx.shop.id}`, planById(ctx.shop.plan).rpm);
     if (!shopRate.allowed) {

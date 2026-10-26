@@ -91,3 +91,9 @@
 - [ ] I2. (DoD 3.2) Trang Search trên dev store: sửa trọng số → Save Bar hiện; "Thử tìm" đổi thứ hạng trước khi lưu; Discard
       khôi phục; thêm metafield → banner cảnh báo + sau khi lưu trang Sync có job FULL "schema-change". Bật tìm trang/bài viết
       → hộp thoại xin quyền read_online_store_pages.
+- [ ] I3. (DoD 3.6) Trang Appearance: đổi màu/bo góc/số cột → preview bên cạnh đổi ngay; Lưu → storefront đổi ≤ 1 phút
+      (CSS var trong /v1/config); thử template ghi đè thẻ sản phẩm trên Horizon.
+- [ ] I4. (DoD 3.7) Trang Analytics sau vài lượt tìm thật (pixel + /v1/events): top query, query không có kết quả → nút
+      "Thêm synonym" mở sẵn modal ở Merchandising; filter/sort usage có số liệu sau rollup (≤ 10 phút).
+- [ ] I5. (3.8) Publish `docs/developers` (GitHub Pages/Docs site) rồi đặt `DEVELOPER_DOCS_URL`. Kiểm tra trên shop gói Pro:
+      bật "Allow headless requests" → gọi `/v1/search` từ origin khác trả 200; tắt → 403 `headless_disabled`.

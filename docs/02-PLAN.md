@@ -562,7 +562,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 3.5 Merchandising.
 - [x] 3.6 Appearance có live preview.
 - [x] 3.7 Analytics (thêm sort usage).
-- [ ] 3.8 **Trang Developers:** public key, endpoint, snippet mẫu, link docs.
+- [x] 3.8 **Trang Developers:** public key, endpoint, snippet mẫu, link docs.
 - [ ] 3.9 Plans (managed pricing).
 - [ ] 3.10 Kiểm tra mobile, hai giao diện admin, Web Vitals của admin.
 
@@ -678,3 +678,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 3.5 xong: Merchandising — trang tổng quan (đếm + link) và trang theo loại (synonyms / redirects / stopwords / rules): s-table, s-empty-state, s-modal thêm/sửa, s-modal xác nhận xoá; rule: theo từ khoá (exact/contains) hoặc collection (resourcePicker), ghim sản phẩm có vị trí, ẩn sản phẩm (resourcePicker product), boost/bury theo vendor/loại/tag/collection (−10…10), lịch bắt đầu/kết thúc (s-date-field). Mỗi thay đổi → pushMerchToEngine + purge. Bảo mật: thao tác luôn kèm shopId (không sửa/xoá được của shop khác — test), redirect chỉ tới path hoặc domain của shop (chống open redirect). ?new=<query> mở sẵn modal (từ Analytics). MerchViews VALID Polaris v2.0.
 - 2026-10-26: 3.6 Appearance: token màu/bo góc/khoảng cách/số cột/vendor (whitelist, CSS var), text theo locale, template ghi đè (chặn script/on*/javascript:), live preview iframe sandbox dùng chính CSS + template engine widget, đặt cạnh editor; storefront áp cssVars + template merchant; validate polaris-app-home v2.0.
 - 2026-10-26: 3.7 Analytics: KPI 7/30/90 ngày so với kỳ trước, top query (searches/CTR/add-to-cart/doanh thu, bỏ query rỗng), query không có kết quả kèm nút Thêm synonym/redirect (?new=), filter usage (nhãn filter theo locale) và sort usage (tỉ lệ). Sửa race rollup: shop bị xoá giữa chừng (FK P2003) không làm hỏng cả lượt. Polaris v2.0 VALID.
+- 2026-10-26: 3.8 Developers: shop/public key/endpoint (copy), snippet SDK theme + template ghi đè + curl headless, link docs (DEVELOPER_DOCS_URL, HUMAN_TODO I5). Headless giờ cần gói ≥ Pro + merchant bật tường minh (mặc định tắt) + origin trong danh sách (nếu có; server-to-server không bị ảnh hưởng) — headlessDecision dùng chung search-api, lỗi 403 headless_not_in_plan/headless_disabled/headless_origin_not_allowed. Polaris v2.0 VALID.
