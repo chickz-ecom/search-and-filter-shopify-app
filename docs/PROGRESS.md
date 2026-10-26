@@ -4,8 +4,8 @@
 > Tiếp tục: `cat docs/PROGRESS.md && git log --oneline -20 && grep -n "\[ \]\|\[~\]" docs/02-PLAN.md | head`
 
 ## Hiện tại
-- Phase: 6 — Hardening và Launch
-- Task: 6.1 (observability: độ trễ sync, độ sâu queue, p95 search, tỷ lệ lỗi giá Storefront)
+- **HOÀN THÀNH** Phase 0–6 (kể cả 2.15 và Phase 5). Báo cáo: `docs/FINAL_REPORT.md`.
+- Còn mở: "50 lượt cài net + 5 review" (sau khi lên App Store) và việc của người trong `docs/HUMAN_TODO.md`.
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
@@ -86,7 +86,18 @@
 - 5.3 Gợi ý synonym từ zero-result (dấu/khoảng trắng/số nhiều/chính tả/nghĩa), kiểm chứng có sản phẩm, merchant duyệt.
 - Model embedding phải có sẵn trên Typesense (máy dev: tải tay vào /data/models; HUMAN_TODO K1).
 
+## Tổng kết Phase 6 (2026-10-26)
+- 6.1 Metrics Prometheus (search-api + worker, /metrics có token) + 7 alert rule + runbook.
+- 6.2 Load ×10 (2.000 RPS origin, 0 lỗi) — sửa cạn pool Postgres (single-flight) + hệ số rate limit mùa cao điểm; HA 3 node
+  (tắt leader: 0 lỗi); snapshot đêm + reindex-all khôi phục.
+- 6.3 Security check 35/35 (5 subagent song song) — sửa bypass template merchant, href không an toàn, open redirect, scope
+  thừa, index trang/bài viết thật, auth hiện rõ, override deepmerge-ts, dependabot.
+- 6.4 Một image cho 3 process (smoke test thật), Render blueprint, compose self-host, hướng dẫn deploy + bảng env đầy đủ.
+- 6.5 Hồ sơ App Store (listing có test giới hạn, 6 ảnh 1600×900, privacy policy đúng với code, hướng dẫn review), trang Help.
+- 6.6 BFS checklist có bằng chứng (13/14; mục 14 sau khi lên store).
+- Soát plan lần cuối phát hiện 2.15 (bán chạy theo đơn) chưa làm → đã làm đủ DoD.
+
 ## Bước tiếp theo
-- Phase 6: 6.1 observability → 6.2 load test ×10 + HA/backup → 6.3 bảo mật → 6.4 deploy → 6.5 hồ sơ App Store (+ trang Help) → 6.6 BFS.
+- Làm theo thứ tự `docs/FINAL_REPORT.md` mục 4 (HUMAN_TODO giai đoạn 1 → 4).
 - Mẫu UI admin: component thuần trong app/components/*View.tsx (validate MCP polaris-app-home v2.0 + test SSR), route chỉ loader/action.
 
