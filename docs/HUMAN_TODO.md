@@ -41,3 +41,5 @@
 - [ ] D6. (DoD 1.9) Trên store Standard có 30k sản phẩm: import CSV sửa 30k sản phẩm → đo thời gian tới khi index khớp
       (mục tiêu ≤ 10 phút; app sẽ chuyển sang delta bulk vì > 2.000 ID). Chạy checksum đêm thủ công:
       thêm job `checksum` (BullMQ UI hoặc `node -e` với getSyncQueue().add) → kiểm tra < 2 phút và `writes: 0`.
+- [ ] C4. Mở app trong admin (ngôn ngữ tài khoản = Tiếng Việt) → xác nhận URL app nhúng có `?locale=vi...`
+      (app dùng tham số này để chọn en/vi, `app/i18n/index.ts`). Nếu không có, đổi sang đọc `session.locale` (online token).
