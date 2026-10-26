@@ -1,5 +1,5 @@
 import type { SearchAppSDK, SuggestResponse } from "../../storefront-sdk/src/index";
-import { applyCssVars, SUGGEST_ITEM, esc, fill, templateFor } from "./templates";
+import { applyCssVars, SUGGEST_ITEM, esc, fill, safeHref, templateFor } from "./templates";
 
 // Instant search (mục 7.1): nạp lười khi focus ô search. Dropdown position:fixed (không đẩy layout → không CLS),
 // ARIA combobox + phím mũi tên/Enter/Escape. API lỗi → không làm gì, Enter vẫn submit /search native.
@@ -76,7 +76,7 @@ function attach(input: HTMLInputElement, sdk: SearchAppSDK) {
     const card = templateFor("suggest-item", SUGGEST_ITEM, document, templates);
     let n = 0;
     const opt = (href: string, label: string) =>
-      `<a role="option" id="${id}-${n++}" class="sa-ac__item" href="${esc(href)}">${esc(label)}</a>`;
+      `<a role="option" id="${id}-${n++}" class="sa-ac__item" href="${esc(safeHref(href))}">${esc(label)}</a>`;
     const group = (label: string, body: string) =>
       body
         ? `<div role="group" aria-label="${esc(label)}" class="sa-ac__group"><p class="sa-ac__heading" aria-hidden="true">${esc(label)}</p>${body}</div>`

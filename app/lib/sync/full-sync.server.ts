@@ -26,6 +26,7 @@ import { env } from "../env.server";
 import { rkey } from "../redis.server";
 import { realClock, type Clock, type GraphqlExecutor } from "../shopify/graphql";
 import { currentRanks } from "./best-selling.server";
+import { refreshStoreContent } from "./content.server";
 import { BulkRunner, catalogStats, planShards } from "./bulk-runner";
 import { mapProduct, type ProductNode } from "./mapper";
 import { fetchProductMetafieldDefinitions, resolveMetafieldSpecs } from "./metafields.server";
@@ -256,6 +257,10 @@ export async function runFullSync(
       imported.failed <= Math.max(5, staged * 0.001);
 
     await buildContentIndex(shopId, version, collections, engine);
+    // Trang/bài viết (nếu merchant bật + cấp scope) — lỗi ở đây không làm hỏng sync sản phẩm.
+    await refreshStoreContent(db, engine, ex, shopId).catch((e) =>
+      console.warn("[sync] content refresh failed", (e as Error).message),
+    );
 
     if (!ok) {
       if (!firstSync) await engine.dropCollection(name);

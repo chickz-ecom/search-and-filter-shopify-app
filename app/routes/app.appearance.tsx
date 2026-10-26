@@ -5,12 +5,14 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppearanceView } from "../components/AppearanceView";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { loadAppearance, saveAppearance } from "../lib/admin/appearance.server";
 import type { AppearanceConfig } from "../lib/config/appearance";
 import widgetCss from "../../extensions/search-theme/assets/searchapp.css?raw";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   return {
     locale,
     locales: shop.locales,
@@ -23,7 +25,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 type ActionData = { ok: true } | { ok: false; errors: Record<string, string> };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   return saveAppearance(db, shop, await request.json());
 };
 

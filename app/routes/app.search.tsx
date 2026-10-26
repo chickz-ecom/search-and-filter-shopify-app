@@ -5,6 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { SearchView } from "../components/SearchView";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { cachedMetafieldDefinitions } from "../lib/admin/metafield-defs.server";
 import { saveSearchSettings, zodErrors } from "../lib/admin/search-settings.server";
 import { SearchSettingsSchema, type SearchSettingsConfig } from "../lib/config/search-settings";
@@ -13,11 +14,13 @@ import { getEngine } from "../lib/search";
 import { buildShopContext } from "../lib/search-service/context.server";
 import { previewSearch, type PreviewResult } from "../lib/search-service/preview.server";
 import { loadShopConfig, shopFeatures } from "../lib/shop/shop.server";
+import { CONTENT_SCOPES } from "../lib/sync/content-scopes";
 import { semanticAllowed } from "../lib/billing/plans";
 import { adminContextTransport, GraphqlExecutor } from "../lib/shopify/graphql";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, admin, session, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, admin, session, locale, db } = await adminContext(request, auth);
   const [config, metafieldDefs] = await Promise.all([
     loadShopConfig(db, shop.id),
     cachedMetafieldDefinitions(new GraphqlExecutor(adminContextTransport(admin)), shop.id, redis()),
@@ -27,7 +30,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     currency: shop.currency,
     initial: config.settings,
     metafieldDefs,
-    hasContentScope: (session.scope ?? "").split(",").includes("read_online_store_pages"),
+    hasContentScope: CONTENT_SCOPES.every((sc) => (session.scope ?? "").split(",").includes(sc)),
     semanticEntitled: semanticAllowed(shop.plan, shopFeatures(shop)),
   };
 };
@@ -39,7 +42,8 @@ type ActionData =
   | { intent: "preview"; ok: false; errors: Record<string, string> };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   const body = (await request.json()) as {
     intent: "save" | "preview";
     settings: unknown;
@@ -91,7 +95,7 @@ export default function SearchPage() {
     );
     if (wantsContent && !data.hasContentScope) {
       // Scope tuỳ chọn (shopify.app.toml optional_scopes) — chỉ xin khi merchant bật tìm trang/bài viết.
-      await shopify.scopes?.request(["read_online_store_pages"]).catch(() => undefined);
+      await shopify.scopes?.request(CONTENT_SCOPES).catch(() => undefined);
     }
     save.submit({ intent: "save", settings } as never, {
       method: "post",

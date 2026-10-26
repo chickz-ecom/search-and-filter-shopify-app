@@ -5,6 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { SortingView } from "../components/SortingView";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { cachedMetafieldDefinitions } from "../lib/admin/metafield-defs.server";
 import {
   collectionTitles,
@@ -18,7 +19,8 @@ import { getEngine } from "../lib/search";
 import { adminContextTransport, GraphqlExecutor } from "../lib/shopify/graphql";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, admin, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, admin, locale, db } = await adminContext(request, auth);
   const [initial, metafieldDefs, availability] = await Promise.all([
     loadSortingForm(db, shop.id),
     cachedMetafieldDefinitions(new GraphqlExecutor(adminContextTransport(admin)), shop.id, redis()),
@@ -42,7 +44,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 type ActionData = { ok: true; reindex: boolean } | { ok: false; errors: Record<string, string> };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   return saveSorting(db, shop, await request.json());
 };
 

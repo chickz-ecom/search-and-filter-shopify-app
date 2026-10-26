@@ -13,12 +13,11 @@ describe("shopify.app.toml", () => {
 
   it("declares the planned scopes", () => {
     const scopes = String(toml.access_scopes.scopes).split(",");
-    expect(scopes).toEqual(
-      expect.arrayContaining([
+    // Đúng tập cần dùng (security check SCOPE_OVER_REQUEST: không xin scope không dùng).
+    expect(scopes.sort()).toEqual(
+      [
         "read_products",
         "read_inventory",
-        "read_product_listings",
-        "read_publications",
         "read_translations",
         "read_locales",
         "read_markets",
@@ -26,8 +25,9 @@ describe("shopify.app.toml", () => {
         "write_app_proxy",
         "write_pixels",
         "read_customer_events",
-      ]),
+      ].sort(),
     );
+    expect(toml.access_scopes.optional_scopes).toEqual(["read_content", "read_online_store_pages"]);
     expect(scopes).not.toContain("read_orders"); // D13: không cần Protected Customer Data
   });
 

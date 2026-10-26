@@ -131,3 +131,5 @@
       bảng ở docs/ops/load-and-ha.md. Chạy lại `scripts/load-test-search.ts --rps 2000 --workers 8 --zipf` trên hạ tầng thật.
 - [ ] L3. (6.2) Backup: bật PITR Postgres (14 ngày), Redis AOF, đặt `TYPESENSE_SNAPSHOT_DIR` + sidecar đẩy snapshot lên
       object storage (S3/GCS, giữ 14 bản). Diễn tập khôi phục (snapshot và `scripts/reindex-all.ts --dry-run`) mỗi quý.
+- [ ] L4. (6.3) Trước khi nộp: chạy lại `shopify app security check` + agent checks + `record` + `review` (hướng dẫn ở
+      docs/ops/security.md); trong hồ sơ review giải thích UNSAFE_INNERHTML đã chấp nhận (mục "Accepted findings").

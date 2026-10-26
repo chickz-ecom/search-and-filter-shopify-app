@@ -6,9 +6,12 @@ import { getShopByDomain } from "./shop/shop.server";
 import { enqueueSync } from "./queue/queue.server";
 import { adminContextTransport, GraphqlExecutor } from "./shopify/graphql";
 
-// Ngữ cảnh chung cho route admin: xác thực (token exchange), Shop, locale UI.
-export async function adminContext(request: Request) {
-  const { session, admin, redirect } = await authenticate.admin(request);
+export type AdminAuth = Awaited<ReturnType<typeof authenticate.admin>>;
+
+// Ngữ cảnh chung cho route admin: Shop, locale UI. Route PHẢI tự `await authenticate.admin(request)` rồi truyền kết
+// quả vào (rào xác thực hiện rõ trong từng loader/action — Shopify app security check UNAUTHENTICATED_ENDPOINT).
+export async function adminContext(request: Request, auth: AdminAuth) {
+  const { session, admin, redirect } = auth;
   let shop = await getShopByDomain(prisma, session.shop);
   if (!shop) {
     // afterAuth chưa chạy (vd. cài qua managed install trước khi hook có mặt) → tạo ngay.

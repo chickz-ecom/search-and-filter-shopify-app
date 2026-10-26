@@ -5,11 +5,13 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { DevelopersView } from "../components/DevelopersView";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { developersInfo, saveDevelopers } from "../lib/admin/developers.server";
 import { env } from "../lib/env.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale } = await adminContext(request, auth);
   const e = env();
   return { locale, info: developersInfo(shop, e.SEARCH_API_PUBLIC_URL, e.DEVELOPER_DOCS_URL) };
 };
@@ -17,7 +19,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 type ActionData = { ok: true } | { ok: false; errors: Record<string, string> };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   return saveDevelopers(db, shop, await request.json());
 };
 

@@ -5,6 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AnalyticsView } from "../components/AnalyticsView";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { mutateMerch } from "../lib/admin/merch.server";
 import { getAnalyticsReport, parseRange } from "../lib/analytics/report.server";
 import {
@@ -17,7 +18,8 @@ import { getEngine } from "../lib/search";
 import { buildShopContext } from "../lib/search-service/context.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   const range = parseRange(new URL(request.url).searchParams.get("range"));
   const engine = getEngine();
   // Gợi ý synonym (5.3) phụ thuộc engine: lỗi → trang vẫn hiện báo cáo.
@@ -35,7 +37,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 type ActionData = { ok: boolean; intent: "approve" | "dismiss" };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   const body = (await request.json()) as {
     intent: "approve" | "dismiss";
     query: string;

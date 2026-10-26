@@ -17,7 +17,7 @@ const PRODUCTS: P[] = [
   { id: "5", title: "Shoes runner", vendor: "Nike", price: 9000, available: true },
 ];
 
-const config = {
+export const config = {
   version: "1",
   locale: "en",
   shop: { currency: "USD", primaryLocale: "en", locales: ["en"] },

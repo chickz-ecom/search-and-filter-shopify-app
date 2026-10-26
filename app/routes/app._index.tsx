@@ -5,13 +5,15 @@ import type { Prisma } from "@prisma/client";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { HomeView, type OnboardingState } from "../components/HomeView";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { embedStatusFrom, themeEditorLinks, type EmbedStatus } from "../lib/admin/theme-links";
 import { getKpis } from "../lib/analytics/kpi.server";
 import { getSyncStatus } from "../lib/sync/status.server";
 
 // Home (task 3.1): checklist + trạng thái embed (shopify.app.extensions()) + card sync + KPI 7 ngày.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   const [status, kpis] = await Promise.all([getSyncStatus(db, shop.id), getKpis(db, shop.id)]);
   const onboarding: OnboardingState = {
     ...(shop.onboarding as Record<string, string>),
@@ -33,7 +35,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   const intent = (await request.formData()).get("intent");
   if (intent === "dismiss")
     await db.shop.update({ where: { id: shop.id }, data: { onboardingDismissed: true } });

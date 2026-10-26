@@ -56,13 +56,60 @@ export const TextsSchema = z.record(
 );
 
 /** Template ghi đè: không cho script/handler/javascript: (engine đã escape biến; đây là HTML do merchant viết). */
+/**
+ * Kiểm tra template merchant theo DANH SÁCH CHO PHÉP (security check 6.3 TEXT_SETTING_HTML_SMUGGLING: regex cũ bỏ lọt
+ * "<img/onerror=…>"). Trả mô tả vấn đề đầu tiên, hoặc null nếu an toàn. Placeholder {{…}} được bỏ trước khi kiểm.
+ */
+const TEMPLATE_TAGS = new Set(
+  "a abbr b br del div em figcaption figure h2 h3 h4 h5 h6 hr i img ins li mark ol p picture s small source span strong sub sup ul".split(
+    " ",
+  ),
+);
+const TEMPLATE_ATTR =
+  /^(class|id|href|src|srcset|sizes|alt|title|width|height|loading|decoding|role|style|rel|target|aria-[a-z-]+|data-[a-z0-9-]+)$/;
+const URL_ATTRS = new Set(["href", "src", "srcset"]);
+const decodeEntities = (v: string) =>
+  v
+    .replace(/&#x([0-9a-f]+);?/gi, (_, h: string) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&#(\d+);?/g, (_, d: string) => String.fromCharCode(Number(d)))
+    .replace(/&colon;/gi, ":")
+    .replace(/&tab;|&newline;/gi, "");
+
+export function templateProblem(template: string): string | null {
+  const t = template.replace(/\{\{[\s\S]*?\}\}/g, "");
+  if (/<!(?!--)|<\?/.test(t)) return "Declarations and processing instructions aren't allowed";
+  const tagRe = /<(\/?)([a-zA-Z][a-zA-Z0-9-]*)([^>]*)>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tagRe.exec(t))) {
+    const tag = m[2].toLowerCase();
+    if (!TEMPLATE_TAGS.has(tag)) return `The <${tag}> tag isn't allowed in templates`;
+    if (m[1]) continue;
+    const attrRe = /([^\s"'=<>/]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'>]+))?/g;
+    let a: RegExpExecArray | null;
+    while ((a = attrRe.exec(m[3]))) {
+      const name = a[1].toLowerCase();
+      if (!TEMPLATE_ATTR.test(name)) return `The "${name}" attribute isn't allowed in templates`;
+      const value = decodeEntities((a[2] ?? "").replace(/^["']|["']$/g, "")).replace(
+        // eslint-disable-next-line no-control-regex -- cố ý: loại ký tự điều khiển khỏi URL (security 6.3)
+        /[\s\u0000-\u001f]/g,
+        "",
+      );
+      if (URL_ATTRS.has(name) && /^(javascript|data|vbscript):/i.test(value))
+        return "Links must use http(s) or a path";
+      if (name === "style" && /url\(|expression|@import|\\/i.test(value))
+        return "Styles can't load URLs";
+    }
+  }
+  return null;
+}
+
 export const SafeTemplate = z
   .string()
   .max(20_000)
-  .refine(
-    (t) => !/<\s*script|<\s*iframe|\son[a-z]+\s*=|javascript:/i.test(t),
-    "Templates can't contain scripts, event handlers or javascript: links",
-  );
+  .superRefine((t, ctx) => {
+    const problem = templateProblem(t);
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  });
 
 export const TemplatesSchema = z.object({
   "product-card": SafeTemplate.optional(),

@@ -3,6 +3,7 @@ import { Emitter } from "./events";
 import { currencyExponent, formatMoney, intlMoney } from "./money";
 import type { ApiProduct, Pricer } from "./pricing";
 import { readState, writeState } from "./state";
+import { sanitizeTemplate } from "./sanitize";
 import { render } from "./template";
 import type {
   CollectionParams,
@@ -55,6 +56,9 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
   const getConfig = () =>
     (configP ??= client.get<PublicConfig>("config", {}, 300_000).then((c) => {
       lastFilters = ctx.collection ? c.filters.default : c.filters.search;
+      c.templates = Object.fromEntries(
+        Object.entries(c.templates ?? {}).map(([k, v]) => [k, sanitizeTemplate(v)]),
+      );
       return c;
     }));
 

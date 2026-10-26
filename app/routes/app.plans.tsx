@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { PlansView } from "../components/PlansView";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { planForProductCount, PLANS } from "../lib/billing/plans";
 import {
   planSelectionUrl,
@@ -13,7 +14,8 @@ import {
 // Cũng là welcome link của các gói (Partner Dashboard → /app/plans; Shopify nối ?plan_handle=…): mỗi lần mở trang
 // đối chiếu lại gói với Partner API.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   let subscription: SubscriptionInfo;
   let checkFailed = false;
   try {

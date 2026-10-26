@@ -22,6 +22,7 @@ import {
   storefrontContextTransport,
 } from "../app/lib/sync/best-selling.server";
 import { runChecksum } from "../app/lib/sync/checksum.server";
+import { refreshStoreContent } from "../app/lib/sync/content.server";
 import { unauthenticated } from "../app/shopify.server";
 import { syncCollection } from "../app/lib/sync/collections.server";
 import { runDelta } from "../app/lib/sync/delta.server";
@@ -126,6 +127,12 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
         await release();
       }
     }
+    case "content": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      const d = workerDeps(domain);
+      return refreshStoreContent(d.db, d.engine, d.ex, data.shopId);
+    }
     case "best-selling": {
       const domain = await shopDomain(data.shopId);
       if (!domain) return { skipped: "uninstalled" };
@@ -218,6 +225,11 @@ export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
             name: "checksum",
             data: { type: "checksum" as const, shopId: s.id },
             opts: { jobId: `checksum-${s.id}-${day}` },
+          },
+          {
+            name: "content",
+            data: { type: "content" as const, shopId: s.id },
+            opts: { jobId: `content-${s.id}-${day}` },
           },
           {
             name: "best-selling",

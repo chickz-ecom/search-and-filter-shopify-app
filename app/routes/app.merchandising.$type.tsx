@@ -5,6 +5,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { MerchListView } from "../components/MerchViews";
 import { translator } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import {
   listMerch,
   MERCH_TYPES,
@@ -19,7 +20,8 @@ import { contentAlias, productAlias } from "../lib/search/names";
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const type = params.type as MerchType;
   if (!MERCH_TYPES.includes(type)) throw new Response("Not found", { status: 404 });
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   const lists = await listMerch(db, shop.id);
   // Tên sản phẩm/collection trong rule (index của shop).
   const names: Record<string, string> = {};
@@ -64,7 +66,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 type ActionData = { ok: true } | { ok: false; errors: Record<string, string> };
 
 export const action = async ({ request }: ActionFunctionArgs): Promise<ActionData> => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   return mutateMerch(db, shop, (await request.json()) as MerchMutation);
 };
 

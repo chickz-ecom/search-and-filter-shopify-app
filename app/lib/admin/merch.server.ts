@@ -36,10 +36,17 @@ export const RedirectInput = (shopDomain: string, storefrontDomains: string[]) =
       .min(1)
       .max(2000)
       .refine((u) => {
-        if (u.startsWith("/") && !u.startsWith("//")) return true;
+        // Chống open redirect / XSS (security check 6.3): "\" bị trình duyệt hiểu như "/" ("/\evil.com" = "//evil.com"),
+        // ký tự điều khiển cắt URL, và "javascript://shop/%0a…" có hostname là shop → phải ép http(s).
+        // eslint-disable-next-line no-control-regex -- cố ý: loại ký tự điều khiển khỏi URL (security 6.3)
+        if (/[\\\u0000-\u001f]/.test(u)) return false;
+        if (u.startsWith("/")) return !u.startsWith("//");
         try {
-          const host = new URL(u).hostname;
-          return [shopDomain, ...storefrontDomains].includes(host);
+          const url = new URL(u);
+          return (
+            (url.protocol === "https:" || url.protocol === "http:") &&
+            [shopDomain, ...storefrontDomains].includes(url.hostname)
+          );
         } catch {
           return false;
         }

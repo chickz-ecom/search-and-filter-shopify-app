@@ -6,21 +6,21 @@
   class="sa-block"
   data-searchapp-mount="search-page"
   data-mode="search"
-  data-per-page="{{ block.settings.per_page }}"
-  data-columns="{{ block.settings.columns }}"
-  data-filter-position="{{ block.settings.filter_position }}"
-  data-show-sort="{{ block.settings.show_sort }}"
-  data-default-sort="{{ block.settings.default_sort }}"
+  data-per-page="{{ block.settings.per_page | escape }}"
+  data-columns="{{ block.settings.columns | escape }}"
+  data-filter-position="{{ block.settings.filter_position | escape }}"
+  data-show-sort="{{ block.settings.show_sort | escape }}"
+  data-default-sort="{{ block.settings.default_sort | escape }}"
   {{ block.shopify_attributes }}
 >
   {%- comment -%} Khung layout in sẵn (toolbar + cột filter giữ chỗ) → widget điền vào, grid native không bị di chuyển (CLS/LCP, task 2.14). {%- endcomment -%}
-  <div class="sa-layout sa-layout--{{ block.settings.filter_position }}">
+  <div class="sa-layout sa-layout--{{ block.settings.filter_position | escape }}">
     <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p></div>
     {%- if block.settings.filter_position == 'left' or block.settings.filter_position == 'top' -%}<aside class="sa-filters" aria-hidden="true"></aside>{%- endif -%}
     <div class="sa-main">
   {%- paginate search.results by block.settings.per_page -%}
     {%- if search.performed and search.results_count > 0 -%}
-      <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns }}" data-native-results>
+      <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns | escape }}" data-native-results>
         {%- for item in search.results -%}
           {%- if item.object_type == 'product' -%}
             {% render 'sa-native-card', product: item %}

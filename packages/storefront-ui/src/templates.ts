@@ -44,6 +44,11 @@ export function applyCssVars(vars?: Record<string, string>) {
   }
 }
 
+/** Chỉ cho href tương đối hoặc http(s) — URL từ API không bao giờ thành javascript:/data: (task 6.3, test XSS). */
+export const safeHref = (u: string) =>
+  // eslint-disable-next-line no-control-regex -- cố ý: loại ký tự điều khiển khỏi URL (security 6.3)
+  /^(https?:\/\/|\/(?![/\\])|\?|#)/i.test(u.trim()) && !/[\\\u0000-\u001f]/.test(u) ? u : "#";
+
 export const esc = (v: unknown) =>
   String(v ?? "").replace(
     /[&<>"']/g,

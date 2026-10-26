@@ -3,9 +3,11 @@ import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { MerchIndexView } from "../components/MerchViews";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   const where = { shopId: shop.id };
   const [synonyms, redirects, rules, stopwords] = await Promise.all([
     db.synonym.count({ where }),

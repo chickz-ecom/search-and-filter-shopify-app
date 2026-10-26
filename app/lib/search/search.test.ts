@@ -5,9 +5,13 @@ import {
   metafieldEngineType,
   schemaNeedsReindex,
 } from "./index-schema";
-import { parseTypesenseNodes, toEngineFieldForTest } from "./typesense-engine";
 import { isShopResource, nextVersion, productAlias, productCollection } from "./names";
-import { fromTypesenseResult, toTypesenseSearchParams } from "./typesense-engine";
+import {
+  fromTypesenseResult,
+  parseTypesenseNodes,
+  toEngineFieldForTest,
+  toTypesenseSearchParams,
+} from "./typesense-engine";
 
 describe("names", () => {
   it("builds per-shop names and versions", () => {

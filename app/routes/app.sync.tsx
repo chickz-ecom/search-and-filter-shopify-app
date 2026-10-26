@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { translator, type MessageKey } from "../i18n";
 import { adminContext } from "../lib/admin.server";
+import { authenticate } from "../shopify.server";
 import { enqueueSync } from "../lib/queue/queue.server";
 import { SyncView } from "../components/SyncView";
 import { syncErrorHint } from "../lib/sync/errors";
@@ -11,7 +12,8 @@ import { getSyncStatus } from "../lib/sync/status.server";
 
 // Trang Sync (task 1.11, mục 5.5): trạng thái, lịch sử, Sync now.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { shop, locale, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, locale, db } = await adminContext(request, auth);
   const [status, jobs] = await Promise.all([
     getSyncStatus(db, shop.id),
     db.syncJob.findMany({ where: { shopId: shop.id }, orderBy: { startedAt: "desc" }, take: 20 }),
@@ -33,7 +35,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, db } = await adminContext(request);
+  const auth = await authenticate.admin(request);
+  const { shop, db } = await adminContext(request, auth);
   const form = await request.formData();
   if (form.get("intent") !== "sync-now")
     return { ok: false as const, message: "sync.alreadyRunning" as MessageKey };

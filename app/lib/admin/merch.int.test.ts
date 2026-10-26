@@ -100,6 +100,20 @@ describe.skipIf(!up)("Merchandising backend (3.5)", () => {
       ok: false,
       errors: { query: "A redirect for this search already exists" },
     });
+    for (const url of [
+      "/\\evil.example",
+      "javascript://shop.example/%0aalert(1)",
+      "/x\u0000y",
+      "//evil.example",
+    ]) {
+      const r = await mutateMerch(
+        testDb(),
+        shop,
+        { op: "upsert", type: "redirects", data: { query: `bad ${url}`, url } },
+        { purge },
+      );
+      expect(r.ok, url).toBe(false);
+    }
     const evil = await mutateMerch(
       testDb(),
       shop,

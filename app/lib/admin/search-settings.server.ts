@@ -29,6 +29,8 @@ export async function saveSearchSettings(
   input: unknown,
   deps: {
     enqueueFullSync?: (shopId: string) => Promise<void>;
+    /** Bật/tắt tìm trang/bài viết → làm mới index nội dung (không cần full sync). */
+    enqueueContent?: (shopId: string) => Promise<void>;
     purge?: typeof afterConfigSaved;
   } = {},
 ): Promise<SaveResult> {
@@ -46,7 +48,12 @@ export async function saveSearchSettings(
         .sort(),
       c.settings.semanticSearch && entitled ? "embedding" : "",
     ].join(",");
-  const before = schemaKey(await loadShopConfig(db, shop.id));
+  const beforeConfig = await loadShopConfig(db, shop.id);
+  const before = schemaKey(beforeConfig);
+  const contentKey = (t: SearchSettingsConfig["searchTypes"]) =>
+    JSON.stringify([t.pages, t.articles]);
+  const contentChanged =
+    contentKey(beforeConfig.settings.searchTypes) !== contentKey(s.searchTypes);
   await db.searchSettings.upsert({
     where: { shopId: shop.id },
     update: {
@@ -89,6 +96,12 @@ export async function saveSearchSettings(
         ))
     )(shop.id);
   }
+  if (contentChanged && !reindex)
+    await (
+      deps.enqueueContent ??
+      ((id) =>
+        enqueueSync({ type: "content", shopId: id }, { jobId: `content-${id}-${Date.now()}` }))
+    )(shop.id);
   const onboarding = {
     ...((shop.onboarding as Record<string, string>) ?? {}),
     search: new Date().toISOString(),

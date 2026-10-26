@@ -7,7 +7,7 @@ import type {
   SearchAppSDK,
   SearchResponse,
 } from "../../storefront-sdk/src/index";
-import { applyCssVars, EMPTY, PRODUCT_CARD, esc, fill, templateFor } from "./templates";
+import { applyCssVars, EMPTY, PRODUCT_CARD, esc, fill, safeHref, templateFor } from "./templates";
 
 // Widget "search-page" cho app block search-results / collection-filter (mục 7.2) và data-searchapp-mount.
 // Liquid in sẵn grid native (SEO + fallback, D11); widget chỉ thay nội dung TRONG vùng của block khi có dữ liệu.
@@ -81,7 +81,7 @@ export class SearchPage {
         : await this.sdk.search(params);
       if (mine !== this.loading) return;
       if (res.redirect) {
-        location.assign(res.redirect);
+        location.assign(safeHref(res.redirect));
         return;
       }
       this.last = res;

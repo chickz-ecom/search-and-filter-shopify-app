@@ -1,3 +1,4 @@
+import { purgeShopConfig } from "../search-service/context.server";
 import type { Redis } from "ioredis";
 import type { SearchEngine } from "../search/engine";
 import {
@@ -16,9 +17,11 @@ import type { Db } from "./shop.server";
 // - shop/redact (≈48h sau gỡ): xoá index + mọi dữ liệu của shop (BFS: "shop/redact xoá sạch").
 
 export async function uninstallShop(shopId: string, deps: { db: Db; redis?: Redis }) {
-  await deps.db.shop
+  const shop = await deps.db.shop
     .update({ where: { id: shopId }, data: { syncState: "IDLE", uninstalledAt: new Date() } })
-    .catch(() => undefined);
+    .catch(() => null);
+  // search-api ngừng phục vụ shop ngay (cache ngữ cảnh Redis 5 phút) — security check SESSION_LIFECYCLE.
+  if (shop) await purgeShopConfig(shop.domain, deps.redis);
   await deps.db.syncJob.updateMany({
     where: { shopId, status: { in: ["QUEUED", "RUNNING"] } },
     data: { status: "CANCELLED", finishedAt: new Date() },

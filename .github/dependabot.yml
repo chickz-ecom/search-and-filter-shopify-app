@@ -1,0 +1,16 @@
+# Cập nhật phụ thuộc tự động (task 6.3; Shopify app security check MISSING_DEPENDENCY_SECURITY_AUTOMATION).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 10
+    groups:
+      shopify:
+        patterns: ["@shopify/*"]
+      dev-tooling:
+        dependency-type: development
+    # Bản vá bảo mật luôn mở PR riêng, kể cả ngoài lịch.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }

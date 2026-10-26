@@ -1,0 +1,10 @@
+query ContentPages($cursor: String) {
+  pages(first: 250, after: $cursor) {
+    nodes { id title handle body isPublished updatedAt }
+    pageInfo { hasNextPage endCursor }
+  }
+  articles(first: 250, after: $cursor) {
+    nodes { id title handle body isPublished updatedAt blog { handle } }
+    pageInfo { hasNextPage endCursor }
+  }
+}
