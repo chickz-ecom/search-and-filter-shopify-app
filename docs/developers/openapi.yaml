@@ -211,6 +211,7 @@ components:
             - headless_not_in_plan
             - headless_disabled
             - headless_origin_not_allowed
+            - shop_blocked
             - rate_limited
             - engine_unavailable
             - invalid_body

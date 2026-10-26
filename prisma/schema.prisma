@@ -78,6 +78,8 @@ model Shop {
   // Feature flags: { fixedMarketPrices?: boolean, headless?: boolean }
   features              Json      @default("{}")
   onboardingDismissed   Boolean   @default(false)
+  /// Ghi chú nội bộ của đội vận hành (back-office), không hiện cho merchant.
+  adminNotes            String?
   // Checklist Home (BFS 4.2.x): { search?: iso, sorting?: iso, filters?: iso, preview?: iso }
   onboarding            Json      @default("{}")
 
@@ -404,4 +406,20 @@ model WebhookReceipt {
   receivedAt DateTime @default(now())
 
   @@index([receivedAt])
+}
+
+/// Back-office (8.1): gói và quyền lợi. id = handle gói ở Partner Dashboard (Shopify App Pricing) — giá thật đặt ở đó.
+model PlanConfig {
+  id          String   @id
+  name        String
+  /// Chỉ để hiển thị và ước tính MRR.
+  priceUsd    Decimal  @default(0) @db.Decimal(10, 2)
+  maxProducts Int
+  rpm         Int
+  headless    Boolean  @default(false)
+  semantic    Boolean  @default(false)
+  visible     Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

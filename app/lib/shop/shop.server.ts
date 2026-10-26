@@ -1,3 +1,4 @@
+import type { PlanOverrides } from "../billing/plans";
 import { randomBytes } from "node:crypto";
 import type { Prisma, PrismaClient, Shop } from "@prisma/client";
 import { DEFAULT_FILTERS, FilterItemsSchema, type FilterItem } from "../config/filters";
@@ -232,12 +233,9 @@ export function requiredMetafields(config: ShopConfig): MetafieldRef[] {
   );
 }
 
-export type ShopFeatures = {
+/** Cờ theo shop; ghi đè gói (semantic, headless, gói tặng, giới hạn, khoá) do back-office đặt — PlanOverrides. */
+export type ShopFeatures = PlanOverrides & {
   fixedMarketPrices?: boolean;
-  /** Cấp AI search ngoài gói (hỗ trợ/đối tác). */
-  semantic?: boolean;
-  /** Cấp quyền headless ngoài gói (hỗ trợ/đối tác). */
-  headless?: boolean;
   /** Merchant tự bật ở trang Developers (mặc định tắt). */
   headlessEnabled?: boolean;
   /** Origin trình duyệt được gọi API headless; rỗng = mọi origin. */

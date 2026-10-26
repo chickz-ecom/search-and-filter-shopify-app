@@ -20,7 +20,7 @@ import { SortingView } from "../../app/components/SortingView";
 import { SyncView } from "../../app/components/SyncView";
 import type { Locale } from "../../app/i18n";
 import { themeEditorLinks } from "../../app/lib/admin/theme-links";
-import { PLANS } from "../../app/lib/billing/plans";
+import { DEFAULT_PLANS } from "../../app/lib/billing/plans";
 import { DEFAULT_TOKENS } from "../../app/lib/config/appearance";
 import { DEFAULT_FILTERS } from "../../app/lib/config/filters";
 import { defaultSearchSettings } from "../../app/lib/config/search-settings";
@@ -390,7 +390,7 @@ function pages(locale: Locale): Record<string, ReactElement> {
     plans: (
       <PlansView
         locale={locale}
-        plans={PLANS}
+        plans={DEFAULT_PLANS}
         subscription={{
           planId: "growth",
           source: "partner",

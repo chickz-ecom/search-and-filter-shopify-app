@@ -1,3 +1,4 @@
+import { refreshPlans } from "./billing/plans-registry.server";
 import prisma from "../db.server";
 import { localeFromRequest } from "../i18n";
 import { authenticate } from "../shopify.server";
@@ -12,6 +13,8 @@ export type AdminAuth = Awaited<ReturnType<typeof authenticate.admin>>;
 // quả vào (rào xác thực hiện rõ trong từng loader/action — Shopify app security check UNAUTHENTICATED_ENDPOINT).
 export async function adminContext(request: Request, auth: AdminAuth) {
   const { session, admin, redirect } = auth;
+  // Gói/quyền lợi do back-office quản lý (8.1) — làm mới registry (tối đa mỗi 30 s).
+  await refreshPlans(prisma);
   let shop = await getShopByDomain(prisma, session.shop);
   if (!shop) {
     // afterAuth chưa chạy (vd. cài qua managed install trước khi hook có mặt) → tạo ngay.

@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import type { Redis } from "ioredis";
-import { headlessDecision, planById } from "../../../app/lib/billing/plans";
+import { entitlements, headlessDecision } from "../../../app/lib/billing/plans";
+import { refreshPlans } from "../../../app/lib/billing/plans-registry.server";
 import { LATENCY_BUCKETS, Registry } from "../../../app/lib/observability/metrics";
 import { EngineUnavailableError, type SearchEngine } from "../../../app/lib/search/engine";
 import type { ContentDoc } from "../../../app/lib/search/product-doc";
@@ -211,6 +212,10 @@ export function createSearchApi(deps: SearchApiDeps) {
     if (!ctx) return c.json({ error: "unknown_shop" }, 404);
     if (!trusted && !safeEqual(c.req.query("key") ?? "", ctx.shop.publicKey))
       return c.json({ error: "invalid_key" }, 401);
+    // Back-office (8.1): quyền lợi hiệu lực (gói / gói tặng / ghi đè); shop bị khoá → 403, storefront về kết quả gốc.
+    await refreshPlans(deps.db);
+    const ent = entitlements({ plan: ctx.shop.plan, features: ctx.features });
+    if (ent.blocked) return c.json({ error: "shop_blocked" }, 403);
 
     const kind = trusted
       ? "storefront"
@@ -224,7 +229,7 @@ export function createSearchApi(deps: SearchApiDeps) {
     }
     const shopRate = await limiter.hit(
       `shop:${ctx.shop.id}`,
-      planById(ctx.shop.plan).rpm * (deps.shopRpmMultiplier ?? 1),
+      ent.rpm * (deps.shopRpmMultiplier ?? 1),
     );
     if (!shopRate.allowed) {
       c.header("Retry-After", String(shopRate.resetSec));

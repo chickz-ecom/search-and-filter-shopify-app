@@ -10,6 +10,7 @@ Deprecations are announced here at least 90 days before removal.
 - `track()` accepts three more event types for the Analytics pages: `filter_combo` (`{ scope, values }`, two or more `key=value` pairs applied together), `collection_view` (`{ collectionId }`) and `suggestion` (`{ query, suggestion }`, a click on a query suggestion in the search dropdown).
 - `track("click", …)` accepts `source` (`"search"`, `"collection"` or `"instant"`) and `collectionId`; `track("filter", …)` accepts `scope` (`"search"` or a collection id). Existing calls keep working; events without these fields are counted without the extra breakdown.
 - `/v1/events` accepts the same types.
+- Any `/v1` route can return `403` with `shop_blocked` when the app's support team has paused search for the shop. Storefront widgets keep the theme's native results, as with any other error.
 
 ## [1.1.0] — 2026-10-26
 

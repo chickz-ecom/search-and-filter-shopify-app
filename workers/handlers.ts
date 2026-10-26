@@ -37,6 +37,7 @@ import { runFullSync } from "../app/lib/sync/full-sync.server";
 import { runIncrementalJob } from "../app/lib/sync/incremental-job.server";
 import { runReindex } from "../app/lib/sync/reindex.server";
 import { deleteProducts, inventoryItemsToProducts } from "../app/lib/sync/incremental.server";
+import { refreshPlans } from "../app/lib/billing/plans-registry.server";
 import { prisma, workerDeps } from "./context";
 
 async function shopDomain(shopId: string): Promise<string | null> {
@@ -49,6 +50,8 @@ async function shopDomain(shopId: string): Promise<string | null> {
 
 export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
   const data = job.data;
+  // AI search theo gói (full sync / reindex) đọc registry gói của back-office (8.1).
+  await refreshPlans(prisma);
   switch (data.type) {
     case "full": {
       const domain = await shopDomain(data.shopId);

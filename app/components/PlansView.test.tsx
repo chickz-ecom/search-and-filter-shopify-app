@@ -1,11 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PLANS } from "../lib/billing/plans";
+import { DEFAULT_PLANS } from "../lib/billing/plans";
 import { PlansView, type PlansViewProps } from "./PlansView";
 
 const base: PlansViewProps = {
   locale: "en",
-  plans: PLANS,
+  plans: DEFAULT_PLANS,
   subscription: {
     planId: "growth",
     source: "partner",

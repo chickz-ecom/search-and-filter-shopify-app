@@ -594,6 +594,18 @@ Filter value combinations), Export CSV; chọn khoảng ngày. Số liệu mới
 - [x] 7.2 Báo cáo: khoảng ngày tuỳ ý, overview + chuỗi theo ngày, các bảng có tìm/sắp xếp/phân trang, CSV.
 - [x] 7.3 Giao diện: Polaris web components + Polaris Viz (chỉ nạp ở trang Analytics, render phía client).
 
+### Phase 8 — Back-office nội bộ (`/admin`, ý tưởng từ app lookbook)
+Quản lý gói + shop cho đội vận hành, ngoài Shopify admin. Thu tiền vẫn bằng **Shopify App Pricing** (quy định cho app public
+mới — shopify.dev/docs/apps/launch/billing): giá/trial/chu kỳ đặt ở Partner Dashboard; back-office quản lý quyền lợi theo
+gói và ngoại lệ theo shop. Không làm: mã giảm giá (App Pricing không cho app tự áp), quảng cáo/app gợi ý (không liên quan).
+- [ ] 8.1 Gói từ DB (`PlanConfig`, id = handle gói ở Partner Dashboard): tên, giá hiển thị, giới hạn sản phẩm, req/phút,
+      AI search, headless, hiện/ẩn, thứ tự. Registry trong tiến trình (app, search-api, worker) tự làm mới; quyền lợi
+      hiệu lực = gói (hoặc gói tặng còn hạn) + ghi đè theo shop; khoá shop → search-api 403 (storefront về kết quả gốc).
+- [ ] 8.2 Đăng nhập riêng: Agent (scrypt, khoá sau 5 lần sai), Role + quyền (catalog trong code), session cookie
+      riêng (secret từ env, thiếu → back-office tắt), script tạo agent đầu tiên, audit log mọi thay đổi.
+- [ ] 8.3 Trang: Dashboard (shop cài/gỡ, phân bổ gói, MRR ước tính, lỗi sync, lượt search), Plans, Shops (tìm/lọc,
+      chi tiết: quyền lợi hiệu lực, tặng gói có hạn, ghi đè, khoá, ghi chú, sync/reindex), Agents, Roles, Audit log.
+
 ---
 
 ## 11. Checklist Built for Shopify (kiểm tra trước khi submit)

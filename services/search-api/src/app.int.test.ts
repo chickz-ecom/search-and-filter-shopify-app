@@ -427,6 +427,27 @@ describe.skipIf(!up)("search-api (2.1)", () => {
     expect(ok.status).toBe(200);
   });
 
+  it("8.1: a shop blocked in the back-office gets 403 so the storefront keeps native results", async () => {
+    const purge = () =>
+      api.request("/internal/purge", {
+        method: "POST",
+        headers: { "x-internal-secret": "s3cret" },
+        body: JSON.stringify({ shop: domain }),
+      });
+    const shop = await testDb().shop.findUniqueOrThrow({ where: { domain } });
+    await testDb().shop.update({
+      where: { domain },
+      data: { features: { ...(shop.features as object), blocked: true } },
+    });
+    await purge();
+    const blocked = await get(`/v1/search?${qs({ q: "tshirt" })}`);
+    expect(blocked.status).toBe(403);
+    expect(await blocked.json()).toEqual({ error: "shop_blocked" });
+    await testDb().shop.update({ where: { domain }, data: { features: shop.features as object } });
+    await purge();
+    expect((await get(`/v1/search?${qs({ q: "tshirt" })}`)).status).toBe(200);
+  });
+
   it("returns 503 when the engine is down so the storefront keeps native results", async () => {
     await purgeShopConfig(domain, testRedis());
     clearContextMemory();

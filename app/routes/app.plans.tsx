@@ -4,7 +4,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { PlansView } from "../components/PlansView";
 import { adminContext } from "../lib/admin.server";
 import { authenticate } from "../shopify.server";
-import { planForProductCount, PLANS } from "../lib/billing/plans";
+import { planById, planForProductCount, plans } from "../lib/billing/plans";
 import {
   planSelectionUrl,
   refreshPlan,
@@ -24,7 +24,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.warn("[plans] refresh failed", (e as Error).message);
     checkFailed = true;
     subscription = {
-      planId: PLANS.find((p) => p.id === shop.plan)?.id ?? "free",
+      planId: planById(shop.plan).id,
       source: "local",
       billingPeriod: null,
       renewsAt: null,
@@ -35,7 +35,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
   return {
     locale,
-    plans: PLANS,
+    // Gói đang hiển thị + gói hiện tại của shop (kể cả gói cũ đã ẩn).
+    plans: plans().filter((p) => p.visible || p.id === subscription.planId),
     subscription,
     productCount: shop.productCount,
     recommended: planForProductCount(shop.productCount).id,

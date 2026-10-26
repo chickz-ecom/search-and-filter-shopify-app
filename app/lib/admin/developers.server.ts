@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { z } from "zod";
-import { headlessAllowed, planById, PLANS } from "../billing/plans";
+import { headlessAllowed, planById, plans } from "../billing/plans";
 import { afterConfigSaved } from "../search-service/purge.server";
 import { shopFeatures, type Db } from "../shop/shop.server";
 import { zodErrors, type FieldErrors } from "./search-settings.server";
@@ -31,7 +31,7 @@ export function developersInfo(shop: ShopRow, endpoint: string, docsUrl: string)
     docsUrl,
     headless: {
       entitled: headlessAllowed(shop.plan, f),
-      minPlan: PLANS.find((p) => p.headless)!.name,
+      minPlan: plans().find((p) => p.visible && p.headless)?.name ?? planById("pro").name,
       enabled: Boolean(f.headlessEnabled),
       origins: f.headlessOrigins ?? [],
     },

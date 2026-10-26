@@ -2,7 +2,7 @@ import { env } from "../env.server";
 import { redis } from "../redis.server";
 import { purgeShopConfig } from "../search-service/context.server";
 import type { Db } from "../shop/shop.server";
-import { PLANS, planById, type PlanId } from "./plans";
+import { planById, planIdFromList, type PlanId } from "./plans";
 
 // Shopify App Pricing (task 3.9, D12). Shopify host trang chọn gói; app chỉ đọc gói hiện tại qua Partner API
 // `activeSubscription` (App Pricing không gửi webhook billing và không dùng currentAppInstallation —
@@ -76,13 +76,9 @@ export function partnerClientFromEnv(fetchImpl: typeof fetch = fetch): PartnerCl
   };
 }
 
-/** Handle gói khai ở Partner Dashboard phải trùng PlanId (HUMAN_TODO J1). */
+/** Handle gói khai ở Partner Dashboard phải trùng id gói trong back-office (HUMAN_TODO J1). */
 export function planIdFromHandles(handles: string[]): PlanId | null {
-  for (const h of handles) {
-    const p = PLANS.find((x) => x.id === h.toLowerCase());
-    if (p) return p.id;
-  }
-  return null;
+  return planIdFromList(handles);
 }
 
 // VERIFY: dạng URL trang chọn gói (docs dựng từ store handle + app handle; chuỗi mẫu bị lược) — HUMAN_TODO J3.
