@@ -23,3 +23,9 @@
 - [ ] D1. Lấy JSONL bulk thật (products/variants/collections) từ dev store để thay fixture tổng hợp:
       `shopify app bulk execute --query "$(cat docs/shopify-api/admin/bulk-inner-products.graphql)"` rồi tải file `url`,
       cắt 20 dòng vào `app/lib/sync/__fixtures__/products.real.jsonl`; chạy `npx vitest run app/lib/sync`.
+- [ ] D2. Benchmark sync trên dev store thật (DoD 1.3: 30k ≤ 5 phút, 100k ≤ 15 phút). Cần store có 30k và 100k sản phẩm
+      (5 variant, 10 metafield) — tạo bằng bulk mutation `productSet`. Lấy offline token của app (bảng Session), rồi:
+      `npx tsx scripts/bench-sync.ts --live --shop <store>.myshopify.com --token <token> --nested`
+      `npx tsx scripts/bench-sync.ts --live --shop ... --token ...` (phẳng song song)
+      `npx tsx scripts/bench-sync.ts --live --shop ... --token ... --shards 2 --staging pg` (phẳng + shard)
+      Ghi `bulks[].waitMs`, `totalMs`, `peakRss` vào Nhật ký của 02-PLAN.md.

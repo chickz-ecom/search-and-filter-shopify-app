@@ -100,6 +100,22 @@ export function bulkCollectionsQuery(): string {
 }`;
 }
 
+/** Cấu hình so sánh benchmark 1.3: một query lồng (product → variants, collections). Không dùng trong production. */
+export function bulkNestedQuery(metafields: MetafieldRef[]): string {
+  return `{
+  products(query: ${JSON.stringify(PRODUCT_FILTER)}) {
+    edges {
+      node {
+        ${PRODUCT_CORE_FIELDS}
+        ${metafieldAliases(metafields)}
+        variants { edges { node { ${VARIANT_FIELDS.replace("product { id }", "")} } } }
+        collections { edges { node { id handle title sortOrder } } }
+      }
+    }
+  }
+}`;
+}
+
 /** (d) Checksum đêm: siêu nhẹ. */
 export function bulkChecksumQuery(): string {
   return `{

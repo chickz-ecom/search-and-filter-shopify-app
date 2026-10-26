@@ -304,24 +304,61 @@ export class TypesenseEngine implements SearchEngine {
     return { success: res.success, failed: errors.length, errors };
   }
 
+  private nodeCursor = 0;
+
+  private nodeUrls(): string[] {
+    const nodes = this.config.nodes?.length
+      ? this.config.nodes
+      : [{ host: this.config.host, port: this.config.port, protocol: this.config.protocol }];
+    return nodes.map((n) => `${n.protocol}://${n.host}:${n.port}`);
+  }
+
+  /**
+   * Import qua fetch native thay vì client typesense: client (axios) giữ lại bộ nhớ qua các lần import lớn
+   * (đo: 100 lô × 1.000 doc OOM ở heap 160 MB; fetch: ổn định). Xoay vòng node + retry khi lỗi mạng/5xx.
+   */
   private async importJsonl(
     collection: string,
     docs: { id: string }[],
     action: ImportAction,
   ): Promise<ImportResult> {
     const jsonl = docs.map((d) => JSON.stringify(d)).join("\n");
-    const raw: string = await wrap<string>(
-      this.c
-        .collections(collection)
-        .documents()
-        .import(jsonl, { action, dirty_values: "coerce_or_drop" }),
-      "import",
-    ).catch((err: unknown) => {
-      // ImportError mang theo kết quả từng dòng.
-      const results = (err as { importResults?: Json[] })?.importResults;
-      if (results) return results.map((r) => JSON.stringify(r)).join("\n");
-      throw err;
-    });
+    const urls = this.nodeUrls();
+    const path = `/collections/${encodeURIComponent(collection)}/documents/import?action=${action}&dirty_values=coerce_or_drop`;
+    let raw = "";
+    let lastErr: unknown;
+    const attempts = Math.max(2, urls.length + 1);
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const base = urls[this.nodeCursor++ % urls.length];
+      try {
+        const res = await fetch(base + path, {
+          method: "POST",
+          headers: { "X-TYPESENSE-API-KEY": this.config.apiKey, "Content-Type": "text/plain" },
+          body: jsonl,
+          signal: AbortSignal.timeout((this.config.connectionTimeoutSeconds ?? 5) * 1000 * 12),
+        });
+        raw = await res.text();
+        if (res.status === 404)
+          throw Object.assign(new Error(`Collection ${collection} not found`), { httpStatus: 404 });
+        if (res.status >= 500)
+          throw Object.assign(new Error(`Typesense import HTTP ${res.status}`), {
+            httpStatus: res.status,
+          });
+        if (res.status >= 400 && !raw.includes('"success"')) {
+          throw Object.assign(
+            new Error(`Typesense import HTTP ${res.status}: ${raw.slice(0, 200)}`),
+            { httpStatus: res.status },
+          );
+        }
+        lastErr = undefined;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (!isUnavailable(err)) throw err;
+        await new Promise((r) => setTimeout(r, 100 * (attempt + 1)));
+      }
+    }
+    if (lastErr) throw new EngineUnavailableError("Typesense unavailable during import", lastErr);
     const result: ImportResult = { success: 0, failed: 0, errors: [] };
     raw.split("\n").forEach((line, i) => {
       if (!line.trim()) return;
