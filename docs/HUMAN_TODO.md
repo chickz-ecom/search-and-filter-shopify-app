@@ -31,3 +31,6 @@
       Ghi `bulks[].waitMs`, `totalMs`, `peakRss` vào Nhật ký của 02-PLAN.md.
 - [ ] D3. Cài app lên dev store mới (≥ 2k sản phẩm), đo thời gian tới khi search có kết quả (lượt sớm: tối đa 1.000 sản phẩm hoặc 45 s;
       DoD 1.5: < 60 s) và xem Home hiện "Indexing: x/y". Chạy `npm run worker` song song với `shopify app dev`.
+- [ ] D4. Thử webhook thật: `shopify app webhook trigger --topic products/update --address <tunnel>/webhooks/products --api-version 2026-10`
+      (và `shop/redact`, `customers/redact`, `customers/data_request` → `/webhooks/compliance`). Kiểm tra 200 và job vào queue;
+      gửi HMAC sai phải nhận 401.

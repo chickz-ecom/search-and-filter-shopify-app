@@ -1,17 +1,5 @@
 import type { ActionFunctionArgs } from "react-router";
-import { authenticate } from "../shopify.server";
-import db from "../db.server";
+import { handleWebhookRequest } from "../lib/webhooks/dispatch.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { shop, session, topic } = await authenticate.webhook(request);
-
-  console.log(`Received ${topic} webhook for ${shop}`);
-
-  // Webhook requests can trigger multiple times and after an app has already been uninstalled.
-  // If this webhook already ran, the session may have been deleted previously.
-  if (session) {
-    await db.session.deleteMany({ where: { shop } });
-  }
-
-  return new Response();
-};
+// app/uninstalled — xoá session, đánh dấu shop, xếp job dừng/giữ index 48h (mục 5.4).
+export const action = ({ request }: ActionFunctionArgs) => handleWebhookRequest(request);

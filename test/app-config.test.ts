@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { parse } from "smol-toml";
 import { describe, expect, it } from "vitest";
 
@@ -69,5 +69,16 @@ describe("shopify.app.toml", () => {
 
   it("never routes webhooks under /app (layout app.tsx)", () => {
     for (const s of toml.webhooks.subscriptions) expect(s.uri.startsWith("/app")).toBe(false);
+  });
+
+  it("has a route file for every webhook / event uri (flat routes)", () => {
+    const uris = [
+      ...toml.webhooks.subscriptions.map((s: { uri: string }) => s.uri),
+      ...toml.events.subscription.map((s: { uri: string }) => s.uri),
+    ];
+    for (const uri of new Set<string>(uris)) {
+      const file = `app/routes/${uri.replace(/^\//, "").replace(/\//g, ".")}.tsx`;
+      expect(existsSync(file), `${uri} → ${file}`).toBe(true);
+    }
   });
 });
