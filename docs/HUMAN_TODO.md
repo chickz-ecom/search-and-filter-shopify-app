@@ -52,3 +52,13 @@
       → đặt vào `TYPESENSE_SEARCH_ONLY_KEY`. (Mỗi shop còn có scoped key riêng do full sync tạo.)
 - [ ] E2. Đặt CDN (Cloudflare) trước `search.<domain>`: tôn trọng Cache-Control, bật Cache-Tag; tạo API token quyền
       "Cache Purge" → `CDN_PURGE_URL`, `CDN_PURGE_TOKEN`.
+
+## F. Giá theo market (D15) — cần dev store có Markets
+- [ ] F1. (2.7a) Trên dev store có custom domain: trong console trang storefront chạy
+      `fetch('/api/2026-10/graphql.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'{shop{name}}'})}).then(r=>r.status)`
+      và lặp lại với `https://<store>.myshopify.com/api/2026-10/graphql.json` từ custom domain (kiểm tra CORS).
+      Nếu same-origin chạy: đặt `"storefront":{"endpoint":"/api/2026-10/graphql.json"}` trong snippet `sa-config` (mặc định đang dùng myshopify — có tài liệu).
+- [ ] F2. (2.7c) Gửi query giá với 48 ID thật, đọc `extensions.cost` (nếu có) → ghi vào Nhật ký; giữ ≤ 1.000 (tokenless).
+- [ ] F3. (DoD 2.7) Tạo 3 market: USD gốc, EUR quy đổi tự động, VND có price list giá cố định. So giá trên kết quả search,
+      collection và autocomplete với trang sản phẩm của theme (phải khớp 100%); DevTools → Network: đúng 1 request
+      `graphql.json` mỗi lần tải trang kết quả; sản phẩm không publish ở market bị ẩn; filter giá chạy ở EUR.

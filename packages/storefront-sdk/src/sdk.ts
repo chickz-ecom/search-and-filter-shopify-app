@@ -59,9 +59,6 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
       ? formatMoney(minor, currency, ctx.moneyFormat)
       : intlMoney(minor, currency, ctx.locale);
 
-  const majorRate = (base: string, local: string, rate: number) =>
-    rate * 10 ** (currencyExponent(local) - currencyExponent(base));
-
   /** Khoảng giá khách chọn (currency đang xem) → currency gốc trước khi gửi (mục 6.2). */
   async function toApiFilters(filters: Filters | undefined): Promise<string | undefined> {
     if (!filters || !Object.keys(filters).length) return undefined;
@@ -84,7 +81,9 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
   async function localize(raw: RawResponse): Promise<SearchResponse> {
     const base = raw.currency;
     const fixed = await fixedMarket();
-    const useLocal = !fixed && pricer.needsLocalPrice();
+    const cfg = await getConfig().catch(() => null);
+    const useLocal =
+      !fixed && pricer.needsLocalPrice(Boolean(cfg?.adjustedCountries.includes(ctx.country)));
     const loc = useLocal
       ? await pricer.localize(raw.products)
       : { prices: new Map(), currency: base, rate: 1, ok: true };
@@ -109,7 +108,7 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
         priceReady: ready,
       });
     }
-    const r = majorRate(base, currency, useLocal ? loc.rate : 1);
+    const r = useLocal ? loc.rate : 1;
     const facets: Facet[] = raw.facets.map((f) =>
       f.type === "range" && f.currency
         ? {

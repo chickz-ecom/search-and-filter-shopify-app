@@ -15,13 +15,14 @@ export type Localized = {
         available: boolean;
     } | null>;
     currency: string;
-    /** localMin / baseMin (median của trang) — quy đổi khoảng giá filter. 1 khi cùng currency. */
+    /** Tỷ lệ theo ĐƠN VỊ CHÍNH: giáLocal / giáGốc (median của trang) — quy đổi khoảng giá filter. */
     rate: number;
     /** false khi không lấy được giá đúng (lỗi/timeout) → UI hiện "Xem giá". */
     ok: boolean;
 };
 export interface Pricer {
-    needsLocalPrice(): boolean;
+    /** `adjusted`: country của khách có điều chỉnh giá theo market (PublicConfig.adjustedCountries). */
+    needsLocalPrice(adjusted?: boolean): boolean;
     localize(products: ApiProduct[]): Promise<Localized>;
     /** Tỷ lệ đã biết gần nhất (quy đổi khoảng giá trước khi gửi filter). */
     rate(): number;
