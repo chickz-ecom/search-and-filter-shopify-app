@@ -1,0 +1,28 @@
+query PredictiveSearchFallback(
+  $query: String!
+  $limit: Int
+  $country: CountryCode
+  $language: LanguageCode
+) @inContext(country: $country, language: $language) {
+  predictiveSearch(
+    query: $query
+    limit: $limit
+    limitScope: EACH
+    types: [PRODUCT, COLLECTION, QUERY]
+  ) {
+    products {
+      id
+      handle
+      title
+    }
+    collections {
+      id
+      handle
+      title
+    }
+    queries {
+      text
+      styledText
+    }
+  }
+}

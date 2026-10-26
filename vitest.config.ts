@@ -10,8 +10,10 @@ export default defineConfig({
       "packages/**/*.test.ts",
       "services/**/*.test.ts",
       "scripts/**/*.test.ts",
+      "test/**/*.test.ts",
     ],
     environment: "node",
+    setupFiles: ["test/setup.ts"],
     // Test tích hợp (Postgres/Redis/Typesense thật) đặt tên *.int.test.ts và tự skip khi thiếu dịch vụ.
     testTimeout: 20_000,
     env: { NODE_ENV: "test" },

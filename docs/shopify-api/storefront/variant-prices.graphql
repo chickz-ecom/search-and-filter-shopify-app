@@ -1,0 +1,25 @@
+query VariantPrices(
+  $id: ID!
+  $country: CountryCode
+  $language: LanguageCode
+) @inContext(country: $country, language: $language) {
+  node(id: $id) {
+    ... on Product {
+      id
+      variants(first: 100) {
+        nodes {
+          id
+          availableForSale
+          price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+}

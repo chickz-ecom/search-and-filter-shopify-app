@@ -1,0 +1,28 @@
+query SearchProductsFallback(
+  $query: String!
+  $first: Int!
+  $after: String
+  $country: CountryCode
+  $language: LanguageCode
+) @inContext(country: $country, language: $language) {
+  search(
+    query: $query
+    first: $first
+    after: $after
+    types: [PRODUCT]
+    sortKey: RELEVANCE
+    unavailableProducts: LAST
+  ) {
+    totalCount
+    nodes {
+      ... on Product {
+        id
+        handle
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
