@@ -31,7 +31,8 @@
     "lighthouse:compare": "node scripts/lighthouse-compare.mjs --runs 3 --budget 5",
     "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss",
     "docs:sdk": "npm run build:sdk-types && node scripts/gen-sdk-docs.mjs",
-    "docs:sdk:check": "npm run build:sdk-types && node scripts/gen-sdk-docs.mjs --check"
+    "docs:sdk:check": "npm run build:sdk-types && node scripts/gen-sdk-docs.mjs --check",
+    "sdk:snapshot": "npm run build:sdk-types && tsx scripts/sdk-snapshot.ts"
   },
   "type": "module",
   "engines": {

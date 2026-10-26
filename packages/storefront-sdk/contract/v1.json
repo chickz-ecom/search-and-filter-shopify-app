@@ -1,0 +1,671 @@
+{
+  "version": "1.0.0",
+  "surface": {
+    "SearchAppContext": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "shop": {
+          "type": "string",
+          "optional": false
+        },
+        "publicKey": {
+          "type": "string",
+          "optional": false
+        },
+        "apiBase": {
+          "type": "string",
+          "optional": false
+        },
+        "proxy": {
+          "type": "boolean",
+          "optional": true
+        },
+        "country": {
+          "type": "string",
+          "optional": false
+        },
+        "language": {
+          "type": "string",
+          "optional": false
+        },
+        "currency": {
+          "type": "string",
+          "optional": false
+        },
+        "shopCurrency": {
+          "type": "string",
+          "optional": false
+        },
+        "moneyFormat": {
+          "type": "string",
+          "optional": false
+        },
+        "moneyWithCurrencyFormat": {
+          "type": "string",
+          "optional": true
+        },
+        "locale": {
+          "type": "string",
+          "optional": false
+        },
+        "pageType": {
+          "type": "string",
+          "optional": true
+        },
+        "collection": {
+          "type": "{ id: string; handle: string } | null",
+          "optional": true
+        },
+        "searchTerms": {
+          "type": "string",
+          "optional": true
+        },
+        "storefront": {
+          "type": "{ endpoint?: string; version?: string }",
+          "optional": true
+        },
+        "searchUrl": {
+          "type": "string",
+          "optional": true
+        },
+        "cssUrl": {
+          "type": "string",
+          "optional": true
+        }
+      }
+    },
+    "FilterValue": {
+      "kind": "alias",
+      "text": "string[] | { min?: number; max?: number } | boolean"
+    },
+    "Filters": {
+      "kind": "alias",
+      "text": "Record<string, FilterValue>"
+    },
+    "SearchParams": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "q": {
+          "type": "string",
+          "optional": true
+        },
+        "filters": {
+          "type": "Filters",
+          "optional": true
+        },
+        "sort": {
+          "type": "string",
+          "optional": true
+        },
+        "page": {
+          "type": "number",
+          "optional": true
+        },
+        "perPage": {
+          "type": "number",
+          "optional": true
+        },
+        "fields": {
+          "type": "string[]",
+          "optional": true
+        }
+      }
+    },
+    "CollectionParams": {
+      "kind": "interface",
+      "extends": ["Omit<SearchParams, \"q\">"],
+      "members": {
+        "q": {
+          "type": "string",
+          "optional": true
+        }
+      }
+    },
+    "Money": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "amount": {
+          "type": "number",
+          "optional": false
+        },
+        "currency": {
+          "type": "string",
+          "optional": false
+        }
+      }
+    },
+    "Product": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "id": {
+          "type": "string",
+          "optional": false
+        },
+        "gid": {
+          "type": "string",
+          "optional": false
+        },
+        "handle": {
+          "type": "string",
+          "optional": false
+        },
+        "url": {
+          "type": "string",
+          "optional": false
+        },
+        "title": {
+          "type": "string",
+          "optional": false
+        },
+        "vendor": {
+          "type": "string",
+          "optional": false
+        },
+        "product_type": {
+          "type": "string",
+          "optional": false
+        },
+        "image": {
+          "type": "string",
+          "optional": true
+        },
+        "image_alt": {
+          "type": "string",
+          "optional": true
+        },
+        "image_2": {
+          "type": "string",
+          "optional": true
+        },
+        "available": {
+          "type": "boolean",
+          "optional": false
+        },
+        "price_min": {
+          "type": "number",
+          "optional": false
+        },
+        "price_max": {
+          "type": "number",
+          "optional": false
+        },
+        "compare_at_max": {
+          "type": "number",
+          "optional": true
+        },
+        "currency": {
+          "type": "string",
+          "optional": false
+        },
+        "price": {
+          "type": "string | null",
+          "optional": false
+        },
+        "compare_at_price": {
+          "type": "string | null",
+          "optional": false
+        },
+        "on_sale": {
+          "type": "boolean",
+          "optional": false
+        },
+        "discount_pct": {
+          "type": "number",
+          "optional": false
+        },
+        "tags": {
+          "type": "string[]",
+          "optional": false
+        },
+        "variants": {
+          "type": "{ id: string; title: string; sku?: string; price: number; compare_at?: number; available: boolean; options: string[] }[]",
+          "optional": false
+        },
+        "badges": {
+          "type": "string[]",
+          "optional": false
+        },
+        "priceReady": {
+          "type": "boolean",
+          "optional": false
+        }
+      }
+    },
+    "FacetValue": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "value": {
+          "type": "string",
+          "optional": false
+        },
+        "label": {
+          "type": "string",
+          "optional": true
+        },
+        "count": {
+          "type": "number",
+          "optional": false
+        },
+        "selected": {
+          "type": "boolean",
+          "optional": false
+        }
+      }
+    },
+    "ListFacet": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "key": {
+          "type": "string",
+          "optional": false
+        },
+        "label": {
+          "type": "string",
+          "optional": false
+        },
+        "type": {
+          "type": "\"checkbox\" | \"radio\" | \"swatch\" | \"toggle\"",
+          "optional": false
+        },
+        "param": {
+          "type": "string",
+          "optional": false
+        },
+        "values": {
+          "type": "FacetValue[]",
+          "optional": false
+        },
+        "collapsed": {
+          "type": "boolean",
+          "optional": false
+        },
+        "showCount": {
+          "type": "boolean",
+          "optional": false
+        }
+      }
+    },
+    "RangeFacet": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "key": {
+          "type": "string",
+          "optional": false
+        },
+        "label": {
+          "type": "string",
+          "optional": false
+        },
+        "type": {
+          "type": "\"range\"",
+          "optional": false
+        },
+        "param": {
+          "type": "string",
+          "optional": false
+        },
+        "min": {
+          "type": "number",
+          "optional": false
+        },
+        "max": {
+          "type": "number",
+          "optional": false
+        },
+        "selected": {
+          "type": "{ min?: number; max?: number }",
+          "optional": true
+        },
+        "currency": {
+          "type": "string",
+          "optional": true
+        },
+        "collapsed": {
+          "type": "boolean",
+          "optional": false
+        }
+      }
+    },
+    "Facet": {
+      "kind": "alias",
+      "text": "ListFacet | RangeFacet"
+    },
+    "SortOption": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "key": {
+          "type": "string",
+          "optional": false
+        },
+        "label": {
+          "type": "string",
+          "optional": false
+        }
+      }
+    },
+    "SearchResponse": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "query": {
+          "type": "string",
+          "optional": false
+        },
+        "redirect": {
+          "type": "string | null",
+          "optional": false
+        },
+        "total": {
+          "type": "number",
+          "optional": false
+        },
+        "page": {
+          "type": "number",
+          "optional": false
+        },
+        "per_page": {
+          "type": "number",
+          "optional": false
+        },
+        "pages": {
+          "type": "number",
+          "optional": false
+        },
+        "sort": {
+          "type": "string",
+          "optional": false
+        },
+        "sort_options": {
+          "type": "SortOption[]",
+          "optional": false
+        },
+        "products": {
+          "type": "Product[]",
+          "optional": false
+        },
+        "facets": {
+          "type": "Facet[]",
+          "optional": false
+        },
+        "applied_filters": {
+          "type": "Filters",
+          "optional": false
+        },
+        "currency": {
+          "type": "string",
+          "optional": false
+        },
+        "collection": {
+          "type": "{ id: string; handle: string }",
+          "optional": true
+        }
+      }
+    },
+    "SuggestResponse": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "query": {
+          "type": "string",
+          "optional": false
+        },
+        "products": {
+          "type": "Product[]",
+          "optional": false
+        },
+        "collections": {
+          "type": "{ title: string; url: string; handle: string }[]",
+          "optional": false
+        },
+        "pages": {
+          "type": "{ title: string; url: string }[]",
+          "optional": false
+        },
+        "articles": {
+          "type": "{ title: string; url: string }[]",
+          "optional": false
+        },
+        "suggestions": {
+          "type": "string[]",
+          "optional": false
+        },
+        "total_products": {
+          "type": "number",
+          "optional": false
+        }
+      }
+    },
+    "PublicFilter": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "id": {
+          "type": "string",
+          "optional": false
+        },
+        "label": {
+          "type": "string",
+          "optional": false
+        },
+        "type": {
+          "type": "\"checkbox\" | \"radio\" | \"swatch\" | \"range\" | \"toggle\"",
+          "optional": false
+        },
+        "source": {
+          "type": "string",
+          "optional": false
+        },
+        "param": {
+          "type": "string",
+          "optional": false
+        },
+        "collapsed": {
+          "type": "boolean",
+          "optional": false
+        },
+        "showCount": {
+          "type": "boolean",
+          "optional": false
+        }
+      }
+    },
+    "PublicConfig": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "version": {
+          "type": "string",
+          "optional": false
+        },
+        "locale": {
+          "type": "string",
+          "optional": false
+        },
+        "shop": {
+          "type": "{ currency: string; primaryLocale: string; locales: string[] }",
+          "optional": false
+        },
+        "searchTypes": {
+          "type": "Record<\"products\" | \"collections\" | \"pages\" | \"articles\", { autocomplete: boolean; results: boolean }>",
+          "optional": false
+        },
+        "sortOptions": {
+          "type": "SortOption[]",
+          "optional": false
+        },
+        "sortDefaults": {
+          "type": "{ search: string }",
+          "optional": false
+        },
+        "filters": {
+          "type": "{ default: PublicFilter[]; search: PublicFilter[] }",
+          "optional": false
+        },
+        "texts": {
+          "type": "Record<string, string>",
+          "optional": false
+        },
+        "appearance": {
+          "type": "Record<string, unknown>",
+          "optional": false
+        },
+        "cssVars": {
+          "type": "Record<string, string>",
+          "optional": true
+        },
+        "showVendor": {
+          "type": "boolean",
+          "optional": true
+        },
+        "templates": {
+          "type": "Record<string, string>",
+          "optional": false
+        },
+        "fixedPriceCountries": {
+          "type": "string[]",
+          "optional": false
+        },
+        "adjustedCountries": {
+          "type": "string[]",
+          "optional": false
+        }
+      }
+    },
+    "UrlState": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "q": {
+          "type": "string",
+          "optional": true
+        },
+        "filters": {
+          "type": "Filters",
+          "optional": false
+        },
+        "sort": {
+          "type": "string",
+          "optional": true
+        },
+        "page": {
+          "type": "number",
+          "optional": true
+        }
+      }
+    },
+    "SearchAppEvent": {
+      "kind": "alias",
+      "text": "\"ready\" | \"before-search\" | \"results\" | \"render\" | \"filters:change\" | \"sort:change\" | \"error\""
+    },
+    "MountOptions": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "type": {
+          "type": "\"results\" | \"filters\" | \"sort\" | \"pagination\" | \"instant\" | string",
+          "optional": false
+        },
+        "template": {
+          "type": "string | HTMLTemplateElement",
+          "optional": true
+        },
+        "[option: string]": {
+          "type": "unknown",
+          "optional": false
+        }
+      }
+    },
+    "Widget": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "update()": {
+          "type": "(res: SearchResponse): void",
+          "optional": true
+        },
+        "destroy()": {
+          "type": "(): void",
+          "optional": true
+        }
+      }
+    },
+    "WidgetFactory": {
+      "kind": "alias",
+      "text": "(el: HTMLElement, options: MountOptions, sdk: SearchAppSDK) => Widget | void"
+    },
+    "SearchAppSDK": {
+      "kind": "interface",
+      "extends": [],
+      "members": {
+        "version": {
+          "type": "readonly string",
+          "optional": false
+        },
+        "context": {
+          "type": "readonly SearchAppContext",
+          "optional": false
+        },
+        "ready()": {
+          "type": "(): Promise<SearchAppSDK>",
+          "optional": false
+        },
+        "search()": {
+          "type": "(params?: SearchParams): Promise<SearchResponse>",
+          "optional": false
+        },
+        "suggest()": {
+          "type": "(q: string, options?: { limit?: number }): Promise<SuggestResponse>",
+          "optional": false
+        },
+        "collection()": {
+          "type": "(handle: string, params?: CollectionParams): Promise<SearchResponse>",
+          "optional": false
+        },
+        "getConfig()": {
+          "type": "(): Promise<PublicConfig>",
+          "optional": false
+        },
+        "formatMoney()": {
+          "type": "(minorUnits: number, currency?: string): string",
+          "optional": false
+        },
+        "track()": {
+          "type": "(type: \"click\" | \"add_to_cart\" | \"filter\" | \"sort\", data: Record<string, unknown>): void",
+          "optional": false
+        },
+        "state": {
+          "type": "{ get(): UrlState; set(next: Partial<UrlState>, options?: { replace?: boolean }): void }",
+          "optional": false
+        },
+        "on()": {
+          "type": "(event: SearchAppEvent, handler: (payload: unknown) => void): () => void",
+          "optional": false
+        },
+        "off()": {
+          "type": "(event: SearchAppEvent, handler: (payload: unknown) => void): void",
+          "optional": false
+        },
+        "mount()": {
+          "type": "(el: HTMLElement | string, options: MountOptions): Widget | void",
+          "optional": false
+        },
+        "registerWidget()": {
+          "type": "(type: string, factory: WidgetFactory): void",
+          "optional": false
+        },
+        "render()": {
+          "type": "(template: string, data: unknown): string",
+          "optional": false
+        }
+      }
+    }
+  }
+}
