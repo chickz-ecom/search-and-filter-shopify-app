@@ -5,7 +5,7 @@ import type { SyncStatus } from "../lib/sync/status.server";
 // UI trang Sync (props thuần → validate bằng Polaris App Home v2.0 và test được).
 export type SyncJobRow = {
   id: string;
-  type: "FULL" | "INCREMENTAL" | "RECONCILE" | "CHECKSUM";
+  type: "FULL" | "INCREMENTAL" | "RECONCILE" | "CHECKSUM" | "REINDEX";
   status: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
   startedAt: string;
   durationMs: number | null;
@@ -20,6 +20,8 @@ export type SyncViewProps = {
   hint: MessageKey | null;
   submitting: boolean;
   onSyncNow: () => void;
+  /** Dựng lại index từ dữ liệu đang có (không gọi Shopify). */
+  onReindex: () => void;
 };
 
 const formatDate = (iso: string | null, locale: string) =>
@@ -42,7 +44,15 @@ const jobTone = {
   CANCELLED: "neutral",
 } as const;
 
-export function SyncView({ locale, status, jobs, hint, submitting, onSyncNow }: SyncViewProps) {
+export function SyncView({
+  locale,
+  status,
+  jobs,
+  hint,
+  submitting,
+  onSyncNow,
+  onReindex,
+}: SyncViewProps) {
   const t = translator(locale);
   const busy = status.state === "RUNNING" || status.state === "QUEUED" || submitting;
 
@@ -59,6 +69,9 @@ export function SyncView({ locale, status, jobs, hint, submitting, onSyncNow }: 
         onClick={onSyncNow}
       >
         {t("sync.now")}
+      </s-button>
+      <s-button slot="secondary-actions" disabled={busy} onClick={onReindex}>
+        {t("sync.reindex")}
       </s-button>
 
       {status.lastError && hint && (
@@ -93,6 +106,7 @@ export function SyncView({ locale, status, jobs, hint, submitting, onSyncNow }: 
             {formatDate(status.lastIncrementalAt, locale) ?? t("common.never")}
           </s-paragraph>
           <s-paragraph tone="neutral">{t("sync.explain")}</s-paragraph>
+          <s-paragraph tone="neutral">{t("sync.actionsHelp")}</s-paragraph>
         </s-stack>
       </s-section>
 

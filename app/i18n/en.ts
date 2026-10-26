@@ -23,8 +23,12 @@ export const en = {
   "common.resetDefaults": "Restore defaults",
   "common.errorSaving": "Could not save",
   "sync.title": "Sync",
-  "sync.now": "Sync now",
+  "sync.now": "Sync from Shopify",
   "sync.queued": "Full sync queued",
+  "sync.reindex": "Reindex",
+  "sync.reindexQueued": "Reindex queued",
+  "sync.actionsHelp":
+    "Sync from Shopify downloads all products, variants and collections again. Reindex rebuilds the search index from the data already synced, without contacting Shopify: use it after changing search settings or if results look wrong. It does not pick up new products.",
   "sync.alreadyRunning": "A sync is already running",
   "sync.status": "Status",
   "sync.indexed": "Indexed {indexed} of {total} products",
@@ -46,6 +50,7 @@ export const en = {
   "sync.job.INCREMENTAL": "Changes",
   "sync.job.RECONCILE": "Reconcile",
   "sync.job.CHECKSUM": "Nightly check",
+  "sync.job.REINDEX": "Reindex",
   "sync.jobStatus.QUEUED": "Queued",
   "sync.jobStatus.RUNNING": "Running",
   "sync.jobStatus.SUCCEEDED": "Succeeded",
@@ -55,14 +60,14 @@ export const en = {
     "Changes in Shopify reach search within about a minute. A full sync only runs on install, after adding a metafield field, or when the nightly check finds a large drift.",
   "sync.error.heading": "The last sync failed",
   "sync.fix.count":
-    "Some products could not be indexed. Run Sync now; if it keeps failing, contact support with the time shown.",
+    "Some products could not be indexed. Run Sync from Shopify; if it keeps failing, contact support with the time shown.",
   "sync.fix.throttled":
     "Shopify is rate limiting requests for your store. The sync retries automatically; no action is needed.",
   "sync.fix.access":
     "The app lost access to your products. Open the app from Shopify admin to restore access, then run Sync now.",
   "sync.fix.engine":
-    "The search service was briefly unavailable. Your storefront kept showing Shopify's native results. Run Sync now.",
-  "sync.fix.generic": "Run Sync now. If it keeps failing, contact support.",
+    "The search service was briefly unavailable. Your storefront kept showing Shopify's native results. Run Sync from Shopify.",
+  "sync.fix.generic": "Run Sync from Shopify. If it keeps failing, contact support.",
   "home.title": "Search & Filter",
   "home.setup.heading": "Setup guide",
   "home.setup.progress": "{done} of {total} tasks complete",

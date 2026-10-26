@@ -39,17 +39,23 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const auth = await authenticate.admin(request);
   const { shop, db } = await adminContext(request, auth);
   const form = await request.formData();
-  if (form.get("intent") !== "sync-now")
+  const intent = form.get("intent");
+  if (intent !== "sync-now" && intent !== "reindex")
     return { ok: false as const, message: "sync.alreadyRunning" as MessageKey };
   if (shop.syncState === "RUNNING" || shop.syncState === "QUEUED") {
     return { ok: false as const, message: "sync.alreadyRunning" as MessageKey };
   }
   await db.shop.update({ where: { id: shop.id }, data: { syncState: "QUEUED" } });
+  // "sync-now": full sync từ Shopify. "reindex": dựng lại index từ dữ liệu đang có, không gọi Shopify.
+  const type = intent === "reindex" ? "reindex" : "full";
   await enqueueSync(
-    { type: "full", shopId: shop.id, reason: "manual" },
-    { jobId: `full-${shop.id}-${Date.now()}` },
+    { type, shopId: shop.id, reason: "manual" },
+    { jobId: `${type}-${shop.id}-${Date.now()}` },
   );
-  return { ok: true as const, message: "sync.queued" as MessageKey };
+  return {
+    ok: true as const,
+    message: (type === "reindex" ? "sync.reindexQueued" : "sync.queued") as MessageKey,
+  };
 };
 
 export default function SyncPage() {
@@ -71,6 +77,7 @@ export default function SyncPage() {
       {...data}
       submitting={fetcher.state !== "idle"}
       onSyncNow={() => fetcher.submit({ intent: "sync-now" }, { method: "post" })}
+      onReindex={() => fetcher.submit({ intent: "reindex" }, { method: "post" })}
     />
   );
 }

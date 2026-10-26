@@ -175,11 +175,12 @@ export interface SearchEngine {
   getDocument<T>(collection: string, id: string): Promise<T | null>;
   deleteDocuments(collection: string, ids: string[]): Promise<number>;
   deleteByFilter(collection: string, filterBy: string): Promise<number>;
-  /** Stream id + field được chọn (dùng cho checksum đêm). */
+  /** Stream id + field được chọn (checksum đêm); `includeFields` rỗng = mọi field (reindex), trừ `excludeFields`. */
   exportDocuments<T>(
     collection: string,
     includeFields: string[],
     filterBy?: string,
+    excludeFields?: string[],
   ): AsyncIterable<T>;
 
   search<T>(collection: string, params: SearchParams): Promise<SearchResult<T>>;

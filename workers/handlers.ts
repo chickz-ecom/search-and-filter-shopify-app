@@ -35,6 +35,7 @@ import { syncCollection } from "../app/lib/sync/collections.server";
 import { runDelta } from "../app/lib/sync/delta.server";
 import { runFullSync } from "../app/lib/sync/full-sync.server";
 import { runIncrementalJob } from "../app/lib/sync/incremental-job.server";
+import { runReindex } from "../app/lib/sync/reindex.server";
 import { deleteProducts, inventoryItemsToProducts } from "../app/lib/sync/incremental.server";
 import { prisma, workerDeps } from "./context";
 
@@ -60,6 +61,18 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
           reason: data.reason,
           syncJobId: data.syncJobId,
         });
+      } finally {
+        await release();
+      }
+    }
+    case "reindex": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      // Chung khoá với full sync: hai việc cùng dựng index mới, không được chạy song song.
+      const release = await acquireLock(redis(), rkey("lock", "full", data.shopId), 3600_000);
+      if (!release) return { skipped: "already-running" };
+      try {
+        return await runReindex(data.shopId, workerDeps(domain), { reason: data.reason });
       } finally {
         await release();
       }

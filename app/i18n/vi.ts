@@ -24,8 +24,12 @@ export const vi: Record<MessageKey, string> = {
   "common.resetDefaults": "Khôi phục mặc định",
   "common.errorSaving": "Không lưu được",
   "sync.title": "Đồng bộ",
-  "sync.now": "Đồng bộ ngay",
+  "sync.now": "Đồng bộ từ Shopify",
   "sync.queued": "Đã xếp lịch đồng bộ toàn bộ",
+  "sync.reindex": "Dựng lại index",
+  "sync.reindexQueued": "Đã xếp lịch dựng lại index",
+  "sync.actionsHelp":
+    "Đồng bộ từ Shopify tải lại toàn bộ sản phẩm, biến thể và collection. Dựng lại index tạo lại chỉ mục tìm kiếm từ dữ liệu đã đồng bộ, không gọi Shopify: dùng sau khi đổi cài đặt tìm kiếm hoặc khi kết quả có vẻ sai. Cách này không lấy sản phẩm mới.",
   "sync.alreadyRunning": "Đang có một lượt đồng bộ",
   "sync.status": "Trạng thái",
   "sync.indexed": "Đã index {indexed}/{total} sản phẩm",
@@ -47,6 +51,7 @@ export const vi: Record<MessageKey, string> = {
   "sync.job.INCREMENTAL": "Thay đổi",
   "sync.job.RECONCILE": "Đối soát",
   "sync.job.CHECKSUM": "Kiểm tra đêm",
+  "sync.job.REINDEX": "Dựng lại index",
   "sync.jobStatus.QUEUED": "Đang chờ",
   "sync.jobStatus.RUNNING": "Đang chạy",
   "sync.jobStatus.SUCCEEDED": "Thành công",
@@ -56,14 +61,14 @@ export const vi: Record<MessageKey, string> = {
     "Thay đổi trên Shopify được đưa vào tìm kiếm trong khoảng một phút. Đồng bộ toàn bộ chỉ chạy khi cài app, khi thêm trường metafield, hoặc khi kiểm tra đêm phát hiện lệch lớn.",
   "sync.error.heading": "Lượt đồng bộ gần nhất bị lỗi",
   "sync.fix.count":
-    "Một số sản phẩm chưa index được. Bấm Đồng bộ ngay; nếu vẫn lỗi, liên hệ hỗ trợ kèm thời điểm hiển thị.",
+    "Một số sản phẩm chưa index được. Bấm Đồng bộ từ Shopify; nếu vẫn lỗi, liên hệ hỗ trợ kèm thời điểm hiển thị.",
   "sync.fix.throttled":
     "Shopify đang giới hạn tốc độ yêu cầu của cửa hàng. App tự thử lại, bạn không cần làm gì.",
   "sync.fix.access":
     "App mất quyền đọc sản phẩm. Mở app từ Shopify admin để cấp lại quyền, rồi bấm Đồng bộ ngay.",
   "sync.fix.engine":
-    "Dịch vụ tìm kiếm tạm gián đoạn. Cửa hàng vẫn hiển thị kết quả gốc của Shopify. Bấm Đồng bộ ngay.",
-  "sync.fix.generic": "Bấm Đồng bộ ngay. Nếu vẫn lỗi, liên hệ hỗ trợ.",
+    "Dịch vụ tìm kiếm tạm gián đoạn. Cửa hàng vẫn hiển thị kết quả gốc của Shopify. Bấm Đồng bộ từ Shopify.",
+  "sync.fix.generic": "Bấm Đồng bộ từ Shopify. Nếu vẫn lỗi, liên hệ hỗ trợ.",
   "home.title": "Search & Filter",
   "home.setup.heading": "Hướng dẫn cài đặt",
   "home.setup.progress": "Đã xong {done}/{total} bước",

@@ -447,8 +447,11 @@ export class TypesenseEngine implements SearchEngine {
     collection: string,
     includeFields: string[],
     filterBy?: string,
+    excludeFields?: string[],
   ): AsyncIterable<T> {
-    const params: Json = { include_fields: includeFields.join(",") };
+    const params: Json = {};
+    if (includeFields.length) params.include_fields = includeFields.join(",");
+    if (excludeFields?.length) params.exclude_fields = excludeFields.join(",");
     if (filterBy) params.filter_by = filterBy;
     const stream: Readable = await wrap(
       this.c.collections(collection).documents().exportStream(params),

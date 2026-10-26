@@ -19,9 +19,21 @@ const base: SyncViewProps = {
   hint: null,
   submitting: false,
   onSyncNow: () => undefined,
+  onReindex: () => undefined,
 };
 
 describe("SyncView", () => {
+  it("offers Sync from Shopify and a separate Reindex, both disabled while a sync runs", () => {
+    const busy = renderToStaticMarkup(<SyncView {...base} />);
+    expect(busy).toContain("Sync from Shopify");
+    expect(busy).toMatch(/<s-button[^>]*slot="secondary-actions"[^>]*disabled[^>]*>Reindex</);
+    const idle = renderToStaticMarkup(
+      <SyncView {...base} status={{ ...base.status, state: "IDLE" }} />,
+    );
+    expect(idle).toMatch(/<s-button[^>]*slot="secondary-actions"(?![^>]*disabled)[^>]*>Reindex</);
+    expect(idle).toContain("does not pick up new products");
+  });
+
   it("shows x/y progress while indexing and disables Sync now", () => {
     const html = renderToStaticMarkup(<SyncView {...base} />);
     expect(html).toContain("Indexing: 5/10");

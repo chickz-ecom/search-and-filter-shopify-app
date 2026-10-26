@@ -10,6 +10,7 @@ export const MAINT_QUEUE = "maintenance";
 
 export type SyncJobData =
   | { type: "full"; shopId: string; reason: string; syncJobId?: string }
+  | { type: "reindex"; shopId: string; reason: string }
   | { type: "incremental"; shopId: string }
   | { type: "delete"; shopId: string; productIds: string[] }
   | {

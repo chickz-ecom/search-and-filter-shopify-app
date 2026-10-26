@@ -274,6 +274,7 @@ function pages(locale: Locale): Record<string, ReactElement> {
         hint={null}
         submitting={false}
         onSyncNow={noop}
+        onReindex={noop}
       />
     ),
     developers: (

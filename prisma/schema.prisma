@@ -118,6 +118,7 @@ enum SyncJobType {
   INCREMENTAL
   RECONCILE
   CHECKSUM
+  REINDEX
 }
 
 enum SyncJobStatus {
