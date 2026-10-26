@@ -123,7 +123,8 @@ test.describe("results page", () => {
   test("collection block uses the collection endpoint", async ({ page }) => {
     await mockApi(page);
     await page.goto("/collection.html");
-    await expect(page.locator(".sa-block .sa-grid .sa-card")).toHaveCount(2);
+    await expect(page.locator(".sa-block .sa-card")).toHaveCount(2);
+    await expect(page.locator(".sa-block .sa-total")).toHaveText("5 results");
   });
 });
 
@@ -183,4 +184,17 @@ test.describe("fallback: network failures", () => {
     await expect(block.locator(".sa-card__price").first()).toHaveText("View price");
     await expect(block.locator(".sa-card__price", { hasText: "$" })).toHaveCount(0);
   });
+});
+
+test("collection: adopts the native grid when the API returns the same products in the same order (no repaint)", async ({
+  page,
+}) => {
+  await mockApi(page);
+  await page.goto("/collection.html");
+  const block = page.locator(".sa-block");
+  await expect(block.locator(".sa-total")).toBeVisible();
+  // Grid native được giữ nguyên (cùng phần tử DOM, có data-native-results) thay vì vẽ lại.
+  await expect(block.locator("[data-native-results] [data-sa-id]")).toHaveCount(2);
+  await block.getByRole("checkbox", { name: /Nike/ }).check();
+  await expect(block.locator("[data-native-results]")).toHaveCount(0); // thao tác → vẽ lại bằng widget
 });

@@ -46,10 +46,17 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
   const widgets = new Map<string, WidgetFactory>();
   const pending: [HTMLElement, MountOptions][] = [];
   let configP: Promise<PublicConfig> | undefined;
+  let lastFilters: PublicConfig["filters"]["default"] = [];
+
   const queue: unknown[] = [];
   let flushTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const getConfig = () => (configP ??= client.get<PublicConfig>("config", {}, 300_000));
+  // Tải lười: trang không dùng widget không tốn request /config (Lighthouse, task 2.14).
+  const getConfig = () =>
+    (configP ??= client.get<PublicConfig>("config", {}, 300_000).then((c) => {
+      lastFilters = ctx.collection ? c.filters.default : c.filters.search;
+      return c;
+    }));
 
   /** Thị trường có giá cố định trong index → API trả giá theo currency market, không quy đổi. */
   const fixedMarket = async () => (await getConfig()).fixedPriceCountries.includes(ctx.country);
@@ -163,7 +170,9 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
     version: VERSION,
     context: ctx,
     ready: () => Promise.resolve(sdk),
-    search: (params = {}) => {
+    search: async (params = {}) => {
+      // Cần cây filter để đọc filter.* từ URL.
+      await getConfig().catch(() => null);
       const st = sdk.state.get();
       return run("search", {
         q: st.q,
@@ -240,12 +249,6 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
     render: (template, data) => render(template, data, { money: (v) => fmt(v, ctx.currency) }),
   };
 
-  let lastFilters: PublicConfig["filters"]["default"] = [];
-  void getConfig()
-    .then((c) => {
-      lastFilters = ctx.collection ? c.filters.default : c.filters.search;
-    })
-    .catch(() => undefined);
   win?.addEventListener?.("pagehide", flush);
   return sdk;
 }

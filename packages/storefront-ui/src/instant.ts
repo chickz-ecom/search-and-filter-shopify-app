@@ -7,9 +7,20 @@ import { esc, fill, templateFor } from "./templates";
 const SELECTOR = 'form[action*="/search"] input[name="q"], input[data-searchapp-instant]';
 let seq = 0;
 
+/** CSS của widget nạp lười (app embed không chặn render trên mọi trang — task 2.14). */
+export function ensureCss(href?: string) {
+  if (!href || document.querySelector(`link[href="${href}"]`)) return;
+  const l = document.createElement("link");
+  l.rel = "stylesheet";
+  l.href = href;
+  document.head.appendChild(l);
+}
+
 function attach(input: HTMLInputElement, sdk: SearchAppSDK) {
   if (input.dataset.saInstant) return;
   input.dataset.saInstant = "1";
+  ensureCss(sdk.context.cssUrl);
+
   const id = `sa-ac-${++seq}`;
   const box = document.createElement("div");
   box.id = id;

@@ -47,6 +47,9 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+      # Lighthouse mobile: theme fixture có / không có app (Home 17% · Product 40% · Collection 43%), giảm > 5 điểm → fail.
+      - run: npm run lighthouse:compare
+
       - run: npm run build
 
   shopify-config:

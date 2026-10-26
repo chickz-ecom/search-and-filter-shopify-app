@@ -1,0 +1,19 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "settings": { "preset": "perf", "formFactor": "mobile" },
+      "url": [
+        "https://REPLACE-dev-store.myshopify.com/",
+        "https://REPLACE-dev-store.myshopify.com/products/REPLACE-product",
+        "https://REPLACE-dev-store.myshopify.com/collections/REPLACE-collection"
+      ]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.6 }],
+        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }]
+      }
+    }
+  }
+}

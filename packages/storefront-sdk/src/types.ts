@@ -25,6 +25,8 @@ export interface SearchAppContext {
   storefront?: { endpoint?: string; version?: string };
   /** Đường dẫn trang search của theme (routes.search_url). */
   searchUrl?: string;
+  /** URL stylesheet của widget (dropdown instant nạp lười, không chặn render). */
+  cssUrl?: string;
 }
 
 export type FilterValue = string[] | { min?: number; max?: number } | boolean;

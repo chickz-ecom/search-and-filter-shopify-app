@@ -24,7 +24,9 @@ function readContext(): SearchAppContext | null {
 }
 
 (function boot() {
-  if (typeof window === "undefined" || window.SearchApp) return;
+  // App embed có thể đặt stub { ready() } (nạp SDK lười) → chỉ bỏ qua khi SDK thật đã có.
+  if (typeof window === "undefined" || window.SearchApp?.version) return;
+
   const ctx = readContext();
   if (!ctx) return;
   const sdk = createSDK(ctx, { pricer: createPricer(ctx) });

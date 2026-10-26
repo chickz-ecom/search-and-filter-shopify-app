@@ -13,6 +13,11 @@
   data-default-sort="{{ block.settings.default_sort }}"
   {{ block.shopify_attributes }}
 >
+  {%- comment -%} Khung layout in sẵn (toolbar + cột filter giữ chỗ) → widget điền vào, grid native không bị di chuyển (CLS/LCP, task 2.14). {%- endcomment -%}
+  <div class="sa-layout sa-layout--{{ block.settings.filter_position }}">
+    <div class="sa-toolbar"><p class="sa-total">{{ 'searchapp.results' | t: count: search.results_count }}</p></div>
+    {%- if block.settings.filter_position != 'drawer' -%}<aside class="sa-filters" aria-hidden="true"></aside>{%- endif -%}
+    <div class="sa-main">
   {%- paginate search.results by block.settings.per_page -%}
     {%- if search.performed and search.results_count > 0 -%}
       <ul class="sa-grid" style="--sa-cols: {{ block.settings.columns }}" data-native-results>
@@ -29,6 +34,8 @@
       <div class="sa-empty"><p class="sa-empty__title">{{ 'searchapp.no_results' | t: terms: search.terms }}</p></div>
     {%- endif -%}
   {%- endpaginate -%}
+    </div>
+  </div>
 </div>
 
 {% schema %}
@@ -36,6 +43,7 @@
   "name": "Search results",
   "target": "content",
   "javascript": "searchapp-results.js",
+  "stylesheet": "searchapp.css",
   "enabled_on": { "templates": ["search"] },
   "settings": [
     { "type": "range", "id": "columns", "label": "Columns", "min": 2, "max": 6, "step": 1, "default": 4 },

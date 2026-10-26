@@ -1,5 +1,6 @@
 {%- comment -%} Thẻ sản phẩm native (fallback + SEO, D11). Giá do Liquid in theo market của khách. {%- endcomment -%}
-<li class="sa-card">
+<li class="sa-card" data-sa-id="{{ product.id }}">
+
   <a class="sa-card__link" href="{{ product.url }}">
     <div class="sa-card__media">
       {%- if product.featured_image -%}

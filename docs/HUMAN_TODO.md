@@ -78,3 +78,7 @@
 - [ ] H2. (2.13) Sau `shopify app deploy`: Settings → Customer events → xác nhận pixel "search-pixel" Connected. Dùng
       "Test pixel"/Pixel Helper: search → add to cart → checkout test → kiểm tra request `POST …/v1/events` và số liệu
       trong Analytics (rollup 10 phút/lần).
+- [ ] G3. (DoD 2.14) Đo Lighthouse trên Horizon thật: cài theme Horizon sạch vào dev store, ghi điểm Home/Product/Collection
+      khi TẮT app embed + block (baseline), rồi BẬT; mỗi trang ≥ 3 lần (median):
+      `npx -y @lhci/cli@0.15 autorun --config=lighthouserc.json` (sửa URL REPLACE…). Tính giảm có trọng số
+      Home 17% · Product 40% · Collection 43%, phải ≤ 5 (BFS ≤ 10). Ghi vào Nhật ký.

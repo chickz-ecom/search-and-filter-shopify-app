@@ -1,5 +1,6 @@
 {
   "searchapp": {
+    "results": "{{ count }} kết quả",
     "sold_out": "Hết hàng",
     "pagination": "Phân trang",
     "no_results": "Không có kết quả cho “{{ terms }}”"

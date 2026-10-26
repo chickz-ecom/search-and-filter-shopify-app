@@ -47,10 +47,24 @@
         data-columns="2"
         data-filter-position="left"
       >
-        <ul class="native-grid" data-native-results>
-          <li><a href="/products/red-tee">Red tee (native)</a></li>
-          <li><a href="/products/blue-jeans">Blue jeans (native)</a></li>
-        </ul>
+        <div class="sa-layout sa-layout--left">
+          <div class="sa-toolbar"><p class="sa-total">5 results</p></div>
+          <aside class="sa-filters" aria-hidden="true"></aside>
+          <div class="sa-main">
+            <ul class="native-grid" data-native-results>
+              <li data-sa-id="1" class="sa-card">
+                <a class="sa-card__link" href="/products/1"
+                  ><h3 class="sa-card__title">Red tee</h3></a
+                >
+              </li>
+              <li data-sa-id="2" class="sa-card">
+                <a class="sa-card__link" href="/products/2"
+                  ><h3 class="sa-card__title">Blue jeans</h3></a
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </main>
     <script src="/theme.js"></script>

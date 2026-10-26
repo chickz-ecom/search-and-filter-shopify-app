@@ -50,6 +50,7 @@
 | D14 | API version **2026-10** (cấu hình một chỗ) | Cần cho Collection model mới; nâng version theo quý. |
 | D15 | **Giá hiển thị lấy từ Storefront API**: một query `nodes(ids:)` với `@inContext(country, language)` cho cả trang. Index chỉ lưu giá gốc để filter/sort; khoảng giá được quy đổi bằng tỷ lệ suy ra từ chính response đó. | Đúng mọi kiểu giá market (tỷ giá, điều chỉnh %, price list). Tự lọc sản phẩm không bán ở market. Không dùng `Shopify.currency.rate` (không công bố). Xem RESEARCH mục 8. |
 | D16 | **Storefront SDK công khai** (`window.SearchApp`): JSON API, event, template, có semver, có tài liệu | Theme dev tự làm section custom mà không cần fork widget; giảm ticket support "sửa theme". |
+| D17 | **Best-selling tính từ order 60 ngày gần nhất** qua optional scope `read_orders`; fallback Storefront `BEST_SELLING` | Merchant kiểm soát được; chỉ cần Protected Customer Data Level 1, không cần `read_all_orders` hay ShopifyQL (Level 2). Chỉ lưu orderId, productId, qty. |
 
 Muốn đổi một quyết định thì ghi lý do vào "Nhật ký" và cập nhật bảng này.
 
@@ -198,7 +199,7 @@ type SearchField = {
 |---|---|---|
 | `relevance` | `_text_match:desc, <tie-break>` | Chỉ có nghĩa khi có `q`; tie-break theo cấu hình (best-selling hoặc mới nhất) |
 | `manual` | `pos_{collectionId}:asc` | Chỉ có trên collection: thứ tự merchant tự sắp trong admin Shopify |
-| `best_selling` | `best_selling_rank:asc` | Cần đủ dữ liệu order (task 1.12) |
+| `best_selling` | `best_selling_rank:asc` | Nguồn hạng: order 60 ngày gần nhất (`read_orders`, task 2.15); chưa được cấp quyền thì dùng Storefront `BEST_SELLING` (task 1.12) |
 | `price_asc` / `price_desc` | `price_min:asc` / `price_min:desc` (hoặc `price_min_{CC}`) | Thứ tự không đổi khi quy đổi theo tỷ lệ; dùng field theo market nếu có price list |
 | `created_desc` / `created_asc` | `published_at:desc` / `:asc` | |
 | `title_asc` / `title_desc` | `title_sort:asc` / `:desc` | Field `title_sort` dạng string có `sort: true` |
@@ -533,8 +534,23 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - [x] 2.11 Fallback khi tắt engine: trang vẫn có sản phẩm, không lỗi console.
 - [x] 2.12 Đa ngôn ngữ (`request.locale`), nhãn sort và filter theo locale.
 - [x] 2.13 Web pixel và `/events`; rollup `AnalyticsDaily`.
-- [ ] 2.14 Lighthouse CI (Horizon, 3 loại trang).
+- [x] 2.14 Lighthouse CI (Horizon, 3 loại trang).
   - DoD: giảm ≤ 5 điểm.
+
+- [ ] 2.15 **Best-selling theo order 60 ngày gần nhất (D17)**
+  - **Scope:** thêm `read_orders` vào `optional_scopes`, cạnh `read_online_store_pages`. Admin xin quyền bằng `shopify.scopes.request(['read_orders'])` ở trang Sorting và ở bước onboarding "Bật xếp hạng bán chạy theo đơn hàng". Kiểm tra trạng thái bằng `shopify.scopes.query()`. Chưa được cấp quyền thì giữ nguồn Storefront `BEST_SELLING` (1.12) và hiển thị rõ đang dùng nguồn nào.
+  - **Protected customer data:** Order thuộc dữ liệu được bảo vệ, cần **Level 1**. App không đọc field nào của customer (không `customer`, `email`, địa chỉ). Ghi bước xin Level 1 trong Partner Dashboard vào HUMAN_TODO. Cập nhật ADR 0013 và privacy policy: dữ liệu order nào được xử lý, mục đích, thời hạn lưu 60 ngày, mã hoá.
+  - **Dữ liệu:** bảng Prisma `OrderLine(shopId, orderId, productId, qty, createdAt)`, unique theo (`shopId`, `orderId`, `productId`). **Chỉ lưu ID và số lượng.** Mỗi ngày xoá dòng cũ hơn 60 ngày. Khi nhận `shop/redact` thì xoá hết. `customers/redact` không ảnh hưởng vì không có customer id.
+  - **Nạp lần đầu (sau khi được cấp quyền):** bulk `orders(query:"created_at:>='<now−60d>' AND test:false")`, chỉ lấy `id createdAt cancelledAt lineItems { currentQuantity product { id } }`. `currentQuantity` đã trừ hoàn, huỷ và chỉnh sửa. Bỏ order `cancelledAt != null`. Tính `qty` = tổng `currentQuantity` theo product. Validate query bằng `shopify app execute`; cú pháp filter `test:false` có thể khác, cần tra docs.
+  - **Cập nhật liên tục:** webhook `orders/create`, `orders/updated`, `orders/cancelled` (khai trong TOML; topic không có quyền thì bỏ qua cho tới khi được cấp quyền). Handler xác thực, enqueue, rồi worker lấy lại line items của order qua GraphQL và upsert `OrderLine`. Đơn huỷ thì qty = 0. `orders/updated` bắn cả khi hoàn tiền hoặc chỉnh sửa đơn.
+  - **Tính hạng:** job mỗi 15 phút (debounce khi có order mới) chạy `SUM(qty) GROUP BY productId` trên cửa sổ 60 ngày → hạng 1..n. **Chỉ cập nhật `best_selling_rank` cho sản phẩm đổi hạng** (partial update, không re-index). Sản phẩm không bán được thì để trống `best_selling_rank` (missing last, tie-break `published_at:desc`). Thêm tuỳ chọn tiêu chí: số lượng (mặc định), số đơn, doanh thu. Doanh thu cần thêm `discountedTotalSet.shopMoney`; quy về currency của shop.
+  - **Admin:** Sorting → "Nguồn xếp hạng bán chạy": Shopify (mặc định khi chưa cấp quyền) / Đơn hàng 60 ngày. Hiện thời điểm tính cuối và số order đã dùng. Tắt thì gọi `shopify.scopes.revoke(['read_orders'])`, xoá `OrderLine` và quay về nguồn Shopify.
+  - **DoD:**
+    - Fixture 1.000 order (có đơn huỷ và hoàn một phần) cho đúng hạng.
+    - Order mới → hạng cập nhật ≤ 15 phút.
+    - Không có field customer nào trong query hay DB (có test grep query).
+    - Thu hồi quyền → dữ liệu bị xoá và quay về nguồn Shopify.
+    - Unit và integration test pass.
 
 ### Phase 3 — Admin App Home (2 tuần)
 - [ ] 3.1 Layout, `s-app-nav`, Home (checklist qua `app.extensions()` cùng deep link), card sync, KPI.
@@ -652,3 +668,5 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 2.11 xong: Liquid in grid native trước (block) → engine/API lỗi (503, mạng hỏng, timeout 3 s) thì giữ nguyên kết quả native, widget nuốt lỗi (không lỗi JS); instant lỗi → Enter submit /search native; Storefront API lỗi → 'Xem giá', không bao giờ hiện sai currency. E2E Playwright 4 ca fallback × 2 thiết bị pass (lỗi 'Failed to load resource' do trình duyệt tự in khi API trả 503 được loại khỏi kiểm tra).
 - 2026-10-26: 2.12 xong: locale khách (request.locale) → SDK → API: nhãn sort/filter theo locale (labelFor, fallback ngôn ngữ gốc → en), text widget mặc định en/vi + ghi đè từ Appearance, query_by thêm title_{l}/description_{l} trước field gốc. Sync bản dịch: alias tr_{locale}: translations(locale:) { key value } trong bulk products, nodes(ids) incremental và delta bulk (field, không phải connection); key title/body_html → title_{l}/description_{l}. Thêm locale → full sync (1.14). Query đã validate 2026-10; chạy thật trong bulk → HUMAN_TODO H1.
 - 2026-10-26: 2.13 xong: web pixel extensions/search-pixel (runtime strict, customer_privacy analytics only, settings shop/apiUrl/publicKey) — chỉ ghi add_to_cart/purchase sau lượt search trong 30 phút của phiên (không đếm search để tránh trùng với search-api), doanh thu quy về currency gốc bằng rate SDK lưu ở sessionStorage; fetch keepalive (sendBeacon đã deprecated). Kích hoạt bằng webPixelCreate/Update lúc cài (đã validate). /v1/events nhận beacon (miễn kiểm tra headless). Rollup Redis → AnalyticsDaily/AnalyticsUsageDaily mỗi 10 phút, ghi đè (idempotent), chốt ngày đã qua. Ẩn danh (D13).
+- 2026-10-26: Thêm D17 và task 2.15: best-selling theo order 60 ngày (`read_orders` optional scope, PCD Level 1, chỉ lưu ID và số lượng); Storefront BEST_SELLING làm fallback.
+- 2026-10-26: 2.14 xong (đo trên theme fixture; Horizon thật → HUMAN_TODO G3): scripts/lighthouse-compare.mjs (Lighthouse 13 mobile, gzip như CDN, theme có JS/CSS ở cả 2 bản, median 3 lần, trọng số BFS) + lighthouserc.json + bước CI. Tối ưu sau khi đo: app embed không còn CSS chặn render; trang không phải search/collection không tải gì lúc đầu (SDK + instant nạp khi focus ô search, stub window.SearchApp.ready() giữ hợp đồng v1); /config tải lười; block in sẵn khung layout (toolbar + cột filter giữ chỗ) và widget giữ nguyên grid native khi API trả đúng sản phẩm/thứ tự (không vẽ lại ảnh). KẾT QUẢ: Home 0, Product 0, Collection −1 (TBT +81 ms, JS 11,3 KB gzip) → giảm có trọng số 0,4 điểm (ngưỡng 5). Trước tối ưu: LCP Home/Product +750 ms (mô phỏng).

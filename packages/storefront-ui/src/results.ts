@@ -27,6 +27,8 @@ export class SearchPage {
   private cfg: PublicConfig | null = null;
   private last: SearchResponse | null = null;
   private loading = 0;
+  private adopted = false;
+
   private readonly perPage: number;
 
   constructor(
@@ -188,11 +190,44 @@ export class SearchPage {
       filters && pos === "drawer"
         ? `<button type="button" class="sa-btn" data-drawer="" aria-expanded="false">${esc(this.t("filters"))}</button>`
         : "";
+    // Lần đầu: nếu grid native (Liquid) đã đúng các sản phẩm theo đúng thứ tự → giữ nguyên DOM đó (ảnh không vẽ lại
+    // → không đổi LCP, task 2.14); chỉ thêm filter/toolbar/phân trang quanh nó.
+    const native = this.adopted
+      ? null
+      : this.el.querySelector<HTMLElement>("[data-native-results]");
+    const nativeIds = native
+      ? Array.from(native.querySelectorAll<HTMLElement>("[data-sa-id]")).map((n) => n.dataset.saId)
+      : [];
+    const adopt =
+      Boolean(native) &&
+      nativeIds.length > 0 &&
+      nativeIds.join(",") === res.products.map((p) => p.id).join(",");
+    this.adopted = true;
     // Giữ chiều cao cũ trong lúc thay nội dung → không giật layout (CLS).
     this.el.style.minHeight = `${this.el.offsetHeight}px`;
-    this.el.innerHTML =
-      `<div class="sa-layout sa-layout--${esc(pos)}"><div class="sa-toolbar"><p class="sa-total" aria-live="polite">${esc(this.t("results", { n: res.total }))}</p>${drawerBtn}${sort}</div>` +
-      `${filters}<div class="sa-main">${this.chips(res)}${grid}${this.pagination(res)}</div></div>`;
+    const toolbar = `<p class="sa-total" aria-live="polite">${esc(this.t("results", { n: res.total }))}</p>${drawerBtn}${sort}`;
+    const layout = this.el.querySelector<HTMLElement>(".sa-layout");
+    if (adopt && layout && native!.closest(".sa-main")) {
+      // Khung do Liquid in sẵn: điền toolbar/filter/phân trang tại chỗ, grid native đứng yên.
+      layout.querySelector(".sa-toolbar")!.innerHTML = toolbar;
+      const aside = layout.querySelector(".sa-filters");
+      if (aside) {
+        if (filters) aside.outerHTML = filters;
+        else aside.remove();
+      } else if (filters)
+        layout.querySelector(".sa-toolbar")!.insertAdjacentHTML("afterend", filters);
+      const main = native!.closest(".sa-main")!;
+      main.querySelectorAll(".sa-chips, .sa-pagination").forEach((n) => n.remove());
+      native!.insertAdjacentHTML("beforebegin", this.chips(res));
+      native!.insertAdjacentHTML("afterend", this.pagination(res));
+    } else {
+      if (adopt) native!.remove();
+      this.el.innerHTML =
+        `<div class="sa-layout sa-layout--${esc(pos)}"><div class="sa-toolbar">${toolbar}</div>` +
+        `${filters}<div class="sa-main">${this.chips(res)}${adopt ? "<div data-sa-slot></div>" : grid}${this.pagination(res)}</div></div>`;
+      if (adopt) this.el.querySelector("[data-sa-slot]")!.replaceWith(native!);
+    }
+
     this.el.classList.remove("sa-loading");
     requestAnimationFrame(() => (this.el.style.minHeight = ""));
   }

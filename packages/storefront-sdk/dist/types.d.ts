@@ -29,6 +29,8 @@ export interface SearchAppContext {
     };
     /** Đường dẫn trang search của theme (routes.search_url). */
     searchUrl?: string;
+    /** URL stylesheet của widget (dropdown instant nạp lười, không chặn render). */
+    cssUrl?: string;
 }
 export type FilterValue = string[] | {
     min?: number;

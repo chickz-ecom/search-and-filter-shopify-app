@@ -28,6 +28,7 @@
     "build:storefront": "node scripts/build-storefront.mjs && npm run build:sdk-types",
     "build:sdk-types": "tsc -p packages/storefront-sdk/tsconfig.build.json",
     "build:search-api": "node scripts/build-search-api.mjs",
+    "lighthouse:compare": "node scripts/lighthouse-compare.mjs --runs 3 --budget 5",
     "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss"
   },
   "type": "module",
@@ -69,6 +70,7 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "autocannon": "^8.0.0",
+    "chrome-launcher": "^1.2.2",
     "dotenv-cli": "^8.0.0",
     "esbuild": "^0.28.2",
     "eslint": "^8.57.1",
@@ -79,6 +81,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "graphql-config": "^5.1.1",
     "happy-dom": "^20.0.0",
+    "lighthouse": "^13.5.0",
     "prettier": "^3.6.2",
     "smol-toml": "^1.9.1",
     "tsx": "^4.20.0",

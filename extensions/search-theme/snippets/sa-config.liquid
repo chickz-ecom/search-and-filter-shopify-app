@@ -30,6 +30,7 @@
     "locale": {{ request.locale.iso_code | json }},
     "pageType": {{ request.page_type | json }},
     "searchUrl": {{ routes.search_url | json }},
+    "cssUrl": {{ css_url | default: '' | json }},
     "searchTerms": {{ search.terms | default: '' | json }},
     "collection": {% if collection %}{"id": {{ collection.id | json }}, "handle": {{ collection.handle | json }}}{% else %}null{% endif %},
     "storefront": {"endpoint": {{ storefront_endpoint | default: '' | json }}, "version": "2026-10"}
