@@ -1,0 +1,328 @@
+{
+ "schema_version": 2,
+ "diagram_type": "workflow",
+ "meta": {
+  "title": "Luồng merchant — Shopify admin",
+  "output": ".archify/workflow-merchant-admin-20261026-2045/merchant-admin-flow.html",
+  "quality_profile": "showcase",
+  "legend": {
+   "entries": {
+    "external": {
+     "label": "Merchant"
+    },
+    "frontend": {
+     "label": "Màn hình admin"
+    },
+    "backend": {
+     "label": "Xử lý server / worker"
+    },
+    "security": {
+     "label": "Xác thực"
+    },
+    "cloud": {
+     "label": "Dịch vụ Shopify"
+    },
+    "messagebus": {
+     "label": "Hàng đợi"
+    },
+    "database": {
+     "label": "Search index"
+    }
+   }
+  }
+ },
+ "lanes": [
+  {
+   "id": "merchant",
+   "label": "Merchant · Shopify admin"
+  },
+  {
+   "id": "shopify",
+   "label": "Shopify"
+  },
+  {
+   "id": "app",
+   "label": "Admin app (React Router)"
+  },
+  {
+   "id": "data",
+   "label": "Queue · Worker · Index"
+  }
+ ],
+ "phases": [
+  {
+   "id": "install-phase",
+   "label": "Cài đặt",
+   "fromCol": 0,
+   "toCol": 1,
+   "variant": "emphasis"
+  },
+  {
+   "id": "onboard-phase",
+   "label": "Onboarding",
+   "fromCol": 2,
+   "toCol": 2
+  },
+  {
+   "id": "config-phase",
+   "label": "Cấu hình & lưu",
+   "fromCol": 3,
+   "toCol": 5,
+   "variant": "dashed"
+  }
+ ],
+ "mainPath": [
+  "install",
+  "oauth",
+  "afterauth",
+  "home",
+  "config",
+  "save",
+  "action",
+  "apply"
+ ],
+ "nodes": [
+  {
+   "id": "install",
+   "lane": "merchant",
+   "col": 0,
+   "type": "external",
+   "label": "Cài app",
+   "sublabel": "link hoặc App Store"
+  },
+  {
+   "id": "home",
+   "lane": "merchant",
+   "col": 2,
+   "type": "frontend",
+   "label": "Home",
+   "sublabel": "checklist · sync · KPI"
+  },
+  {
+   "id": "config",
+   "lane": "merchant",
+   "col": 3,
+   "type": "frontend",
+   "label": "Cấu hình",
+   "sublabel": "Search · Sorting · Filters",
+   "tag": "Merch · Appearance"
+  },
+  {
+   "id": "save",
+   "lane": "merchant",
+   "col": 4,
+   "type": "frontend",
+   "label": "Save Bar",
+   "sublabel": "contextual save"
+  },
+  {
+   "id": "oauth",
+   "lane": "shopify",
+   "col": 0,
+   "type": "security",
+   "label": "Managed install",
+   "sublabel": "token exchange"
+  },
+  {
+   "id": "adminapi",
+   "lane": "shopify",
+   "col": 1,
+   "type": "cloud",
+   "label": "Admin GraphQL",
+   "sublabel": "metafield · web pixel"
+  },
+  {
+   "id": "theme",
+   "lane": "shopify",
+   "col": 2,
+   "type": "cloud",
+   "label": "Theme editor",
+   "sublabel": "bật embed · thêm block"
+  },
+  {
+   "id": "bulk",
+   "lane": "shopify",
+   "col": 3,
+   "type": "cloud",
+   "label": "Bulk operations",
+   "sublabel": "JSONL products"
+  },
+  {
+   "id": "afterauth",
+   "lane": "app",
+   "col": 1,
+   "type": "backend",
+   "label": "afterAuth",
+   "sublabel": "tạo Shop · publicKey"
+  },
+  {
+   "id": "action",
+   "lane": "app",
+   "col": 4,
+   "type": "backend",
+   "label": "action lưu",
+   "sublabel": "zod · Prisma"
+  },
+  {
+   "id": "apply",
+   "lane": "app",
+   "col": 5,
+   "type": "backend",
+   "label": "Áp cấu hình",
+   "sublabel": "pushMerch · purge cache"
+  },
+  {
+   "id": "queue",
+   "lane": "data",
+   "col": 1,
+   "type": "messagebus",
+   "label": "BullMQ",
+   "sublabel": "job full sync"
+  },
+  {
+   "id": "worker",
+   "lane": "data",
+   "col": 3,
+   "type": "backend",
+   "label": "Sync worker",
+   "sublabel": "map → import"
+  },
+  {
+   "id": "typesense",
+   "lane": "data",
+   "col": 5,
+   "type": "database",
+   "label": "Typesense",
+   "sublabel": "alias · synonym"
+  }
+ ],
+ "edges": [
+  {
+   "id": "e-install",
+   "from": "install",
+   "to": "oauth",
+   "label": "duyệt scope",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-oauth",
+   "from": "oauth",
+   "to": "afterauth",
+   "label": "session",
+   "variant": "security"
+  },
+  {
+   "id": "e-seed",
+   "from": "afterauth",
+   "to": "adminapi",
+   "label": "ghi cấu hình",
+   "role": "branch"
+  },
+  {
+   "id": "e-enqueue",
+   "from": "afterauth",
+   "to": "queue",
+   "label": "sync lần đầu",
+   "variant": "dashed",
+   "role": "async"
+  },
+  {
+   "id": "e-home",
+   "from": "afterauth",
+   "to": "home",
+   "label": "mở /app",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-deeplink",
+   "from": "home",
+   "to": "theme",
+   "label": "deep link",
+   "role": "branch"
+  },
+  {
+   "id": "e-config",
+   "from": "home",
+   "to": "config",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-save",
+   "from": "config",
+   "to": "save",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-submit",
+   "from": "save",
+   "to": "action",
+   "label": "submit",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-apply",
+   "from": "action",
+   "to": "apply",
+   "variant": "emphasis"
+  },
+  {
+   "id": "e-push",
+   "from": "apply",
+   "to": "typesense",
+   "label": "synonym · rule",
+   "role": "branch"
+  },
+  {
+   "id": "e-job",
+   "from": "queue",
+   "to": "worker",
+   "label": "job",
+   "variant": "dashed",
+   "role": "async"
+  },
+  {
+   "id": "e-bulk",
+   "from": "worker",
+   "to": "bulk",
+   "label": "bulk query",
+   "role": "branch"
+  },
+  {
+   "id": "e-index",
+   "from": "worker",
+   "to": "typesense",
+   "label": "import · swap",
+   "variant": "dashed",
+   "role": "async"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Cài đặt",
+   "items": [
+    "Managed install: scope khai trong shopify.app.toml, không có OAuth callback riêng",
+    "afterAuth: tạo hoặc kích hoạt lại Shop, ghi app metafield (publicKey, apiUrl), webPixelCreate, xếp full sync",
+    "Home đọc shopify.app.extensions() để biết app embed và block đã bật chưa (yêu cầu Built for Shopify)"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "Lưu cấu hình",
+   "items": [
+    "Trọng số, bật/tắt trường, sort, filter: áp ngay khi query, không re-index",
+    "Thêm/bớt metafield hoặc bật AI search làm đổi schema → xếp full sync",
+    "Áp cấu hình: đẩy synonym/override sang Typesense, purge cache Redis, search-api (/internal/purge) và CDN"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "Trang khác",
+   "items": [
+    "Sync: Sync now (full sync từ Shopify) hoặc Reindex (dựng lại từ dữ liệu sẵn có)",
+    "Sorting: bật best-selling theo order thì gọi shopify.scopes.request(['read_orders'])",
+    "Plans: Shopify managed pricing; đổi gói cập nhật shop.plan"
+   ]
+  }
+ ]
+}

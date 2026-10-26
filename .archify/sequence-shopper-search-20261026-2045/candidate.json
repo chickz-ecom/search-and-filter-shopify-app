@@ -1,0 +1,442 @@
+{
+ "schema_version": 1,
+ "diagram_type": "sequence",
+ "meta": {
+  "title": "Luồng khách mua hàng — tìm kiếm trên storefront",
+  "output": ".archify/sequence-shopper-search-20261026-2045/shopper-search-flow.html",
+  "quality_profile": "showcase",
+  "legend": {
+   "entries": {
+    "emphasis": {
+     "label": "request chính"
+    },
+    "return": {
+     "label": "phản hồi"
+    },
+    "security": {
+     "label": "qua App Proxy có chữ ký"
+    },
+    "dashed": {
+     "label": "event analytics (không chặn)"
+    },
+    "default": {
+     "label": "thao tác / gọi phụ"
+    }
+   }
+  }
+ },
+ "participants": [
+  {
+   "id": "shopper",
+   "type": "external",
+   "label": "Khách",
+   "sublabel": "trình duyệt"
+  },
+  {
+   "id": "liquid",
+   "type": "frontend",
+   "label": "Theme (Liquid)",
+   "sublabel": "app embed + block"
+  },
+  {
+   "id": "sdk",
+   "type": "frontend",
+   "label": "SDK + widget",
+   "sublabel": "searchapp-*.js"
+  },
+  {
+   "id": "pixel",
+   "type": "frontend",
+   "label": "Web pixel",
+   "sublabel": "search-pixel"
+  },
+  {
+   "id": "proxy",
+   "type": "cloud",
+   "label": "App Proxy",
+   "sublabel": "/apps/search"
+  },
+  {
+   "id": "api",
+   "type": "backend",
+   "label": "Search API",
+   "sublabel": "Hono"
+  },
+  {
+   "id": "redis",
+   "type": "database",
+   "label": "Redis",
+   "sublabel": "rate limit · events"
+  },
+  {
+   "id": "ts",
+   "type": "database",
+   "label": "Typesense",
+   "sublabel": "alias p_{shopId}"
+  },
+  {
+   "id": "sf",
+   "type": "external",
+   "label": "Storefront API",
+   "sublabel": "@inContext"
+  }
+ ],
+ "segments": [
+  {
+   "from": 156,
+   "to": 258,
+   "label": "1 · Tải trang"
+  },
+  {
+   "from": 284,
+   "to": 800,
+   "label": "2 · Instant search"
+  },
+  {
+   "from": 826,
+   "to": 1202,
+   "label": "3 · Trang kết quả + filter"
+  },
+  {
+   "from": 1228,
+   "to": 1502,
+   "label": "4 · Analytics (ẩn danh)"
+  }
+ ],
+ "messages": [
+  {
+   "id": "open-page",
+   "from": "shopper",
+   "to": "liquid",
+   "y": 170,
+   "label": "mở /search · /collections"
+  },
+  {
+   "id": "native-grid",
+   "from": "liquid",
+   "to": "shopper",
+   "y": 202,
+   "label": "grid native + skeleton",
+   "variant": "return",
+   "note": "SEO và fallback; app embed nạp SDK (defer)"
+  },
+  {
+   "id": "type-query",
+   "from": "shopper",
+   "to": "sdk",
+   "y": 310,
+   "label": "gõ từ khoá",
+   "note": "debounce 120 ms"
+  },
+  {
+   "id": "suggest-call",
+   "from": "sdk",
+   "to": "proxy",
+   "y": 380,
+   "label": "GET /v1/suggest",
+   "variant": "emphasis"
+  },
+  {
+   "id": "suggest-signed",
+   "from": "proxy",
+   "to": "api",
+   "y": 412,
+   "label": "chuyển tiếp + chữ ký",
+   "variant": "security",
+   "note": "verify HMAC; bỏ logged_in_customer_id"
+  },
+  {
+   "id": "rate-check",
+   "from": "api",
+   "to": "redis",
+   "y": 482,
+   "label": "rate limit IP + shop"
+  },
+  {
+   "id": "rate-ok",
+   "from": "redis",
+   "to": "api",
+   "y": 514,
+   "label": "ok",
+   "variant": "return"
+  },
+  {
+   "id": "suggest-query",
+   "from": "api",
+   "to": "ts",
+   "y": 546,
+   "label": "multiSearch",
+   "variant": "emphasis",
+   "note": "product · collection · page"
+  },
+  {
+   "id": "suggest-hits",
+   "from": "ts",
+   "to": "api",
+   "y": 616,
+   "label": "hits",
+   "variant": "return"
+  },
+  {
+   "id": "suggest-json",
+   "from": "api",
+   "to": "sdk",
+   "y": 648,
+   "label": "JSON (giá gốc)",
+   "variant": "return"
+  },
+  {
+   "id": "suggest-prices",
+   "from": "sdk",
+   "to": "sf",
+   "y": 680,
+   "label": "nodes(ids) · 1 request",
+   "variant": "emphasis",
+   "note": "chỉ khi currency/market khác gốc"
+  },
+  {
+   "id": "suggest-local",
+   "from": "sf",
+   "to": "sdk",
+   "y": 750,
+   "label": "giá theo market",
+   "variant": "return"
+  },
+  {
+   "id": "dropdown",
+   "from": "sdk",
+   "to": "shopper",
+   "y": 782,
+   "label": "dropdown gợi ý",
+   "variant": "return"
+  },
+  {
+   "id": "submit",
+   "from": "shopper",
+   "to": "sdk",
+   "y": 852,
+   "label": "Enter · chọn filter",
+   "note": "URL giữ filter.p.* qua replaceState"
+  },
+  {
+   "id": "search-call",
+   "from": "sdk",
+   "to": "proxy",
+   "y": 922,
+   "label": "GET /v1/search",
+   "variant": "emphasis"
+  },
+  {
+   "id": "search-signed",
+   "from": "proxy",
+   "to": "api",
+   "y": 954,
+   "label": "chuyển tiếp + chữ ký",
+   "variant": "security"
+  },
+  {
+   "id": "search-query",
+   "from": "api",
+   "to": "ts",
+   "y": 986,
+   "label": "query_by_weights · facet · sort",
+   "variant": "emphasis",
+   "note": "redirect, pin/hide và synonym áp trước"
+  },
+  {
+   "id": "search-hits",
+   "from": "ts",
+   "to": "api",
+   "y": 1056,
+   "label": "hits + facets",
+   "variant": "return"
+  },
+  {
+   "id": "search-json",
+   "from": "api",
+   "to": "sdk",
+   "y": 1088,
+   "label": "kết quả + facet",
+   "variant": "return"
+  },
+  {
+   "id": "search-prices",
+   "from": "sdk",
+   "to": "sf",
+   "y": 1120,
+   "label": "nodes(ids) · 1 request",
+   "variant": "emphasis"
+  },
+  {
+   "id": "search-local",
+   "from": "sf",
+   "to": "sdk",
+   "y": 1152,
+   "label": "giá theo market",
+   "variant": "return"
+  },
+  {
+   "id": "render-results",
+   "from": "sdk",
+   "to": "shopper",
+   "y": 1184,
+   "label": "vẽ grid · filter · phân trang",
+   "variant": "return"
+  },
+  {
+   "id": "click-product",
+   "from": "shopper",
+   "to": "sdk",
+   "y": 1254,
+   "label": "click sản phẩm"
+  },
+  {
+   "id": "click-event",
+   "from": "sdk",
+   "to": "proxy",
+   "y": 1286,
+   "label": "POST /v1/events",
+   "variant": "dashed"
+  },
+  {
+   "id": "click-forward",
+   "from": "proxy",
+   "to": "api",
+   "y": 1318,
+   "label": "beacon",
+   "variant": "dashed"
+  },
+  {
+   "id": "click-store",
+   "from": "api",
+   "to": "redis",
+   "y": 1350,
+   "label": "ghi event",
+   "variant": "dashed"
+  },
+  {
+   "id": "add-to-cart",
+   "from": "shopper",
+   "to": "pixel",
+   "y": 1382,
+   "label": "thêm giỏ · mua"
+  },
+  {
+   "id": "pixel-event",
+   "from": "pixel",
+   "to": "api",
+   "y": 1414,
+   "label": "POST /v1/events",
+   "variant": "dashed",
+   "note": "chỉ trong 30 phút sau lượt search"
+  },
+  {
+   "id": "pixel-store",
+   "from": "api",
+   "to": "redis",
+   "y": 1484,
+   "label": "ghi event",
+   "variant": "dashed"
+  }
+ ],
+ "activations": [
+  {
+   "participant": "liquid",
+   "from": 166,
+   "to": 206
+  },
+  {
+   "participant": "sdk",
+   "from": 306,
+   "to": 786
+  },
+  {
+   "participant": "proxy",
+   "from": 376,
+   "to": 416
+  },
+  {
+   "participant": "api",
+   "from": 408,
+   "to": 652
+  },
+  {
+   "participant": "redis",
+   "from": 478,
+   "to": 518
+  },
+  {
+   "participant": "ts",
+   "from": 542,
+   "to": 620
+  },
+  {
+   "participant": "sf",
+   "from": 676,
+   "to": 754
+  },
+  {
+   "participant": "sdk",
+   "from": 848,
+   "to": 1188
+  },
+  {
+   "participant": "proxy",
+   "from": 918,
+   "to": 958
+  },
+  {
+   "participant": "api",
+   "from": 950,
+   "to": 1092
+  },
+  {
+   "participant": "ts",
+   "from": 982,
+   "to": 1060
+  },
+  {
+   "participant": "sf",
+   "from": 1116,
+   "to": 1156
+  },
+  {
+   "participant": "api",
+   "from": 1314,
+   "to": 1354
+  },
+  {
+   "participant": "api",
+   "from": 1410,
+   "to": 1488
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "Khi có lỗi",
+   "items": [
+    "SDK timeout 3 s; API lỗi hoặc 429 thì giữ nguyên grid native do Liquid in sẵn, không lỗi console",
+    "Instant search lỗi: Enter vẫn submit /search native của Shopify",
+    "Storefront API lỗi: ẩn số tiền, hiện \"Xem giá\" thay vì hiện sai currency"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "Hiệu năng",
+   "items": [
+    "Micro-cache theo URL trong Search API, header Cache-Tag cho CDN",
+    "Lần đầu: nếu kết quả trùng grid native thì giữ DOM, chỉ vẽ toolbar/filter",
+    "Chế độ CDN: SDK gọi thẳng search-api bằng publicKey thay vì qua App Proxy"
+   ]
+  },
+  {
+   "dot": "violet",
+   "title": "Analytics",
+   "items": [
+    "Event ẩn danh, không lưu customer id (Protected Customer Data Level 0)",
+    "Worker rollup Redis → PostgreSQL (AnalyticsDaily) mỗi 10 phút"
+   ]
+  }
+ ]
+}

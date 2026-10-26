@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Search & Filter app — kiến trúc tổng quan",
+    "output": ".archify/architecture-search-app-20261026-2030/search-app-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "shopper", "type": "external", "label": "Khách mua hàng", "sublabel": "trình duyệt storefront", "pos": [40, 40], "size": [150, 64] },
+    { "id": "theme", "type": "frontend", "label": "Theme app extension", "sublabel": "app embed + 2 block · SDK", "tag": "searchapp-sdk.js", "pos": [280, 40], "size": [150, 64] },
+    { "id": "proxy", "type": "cloud", "label": "Shopify App Proxy", "sublabel": "/apps/search/v1/*", "pos": [520, 40], "size": [150, 64] },
+    { "id": "searchapi", "type": "backend", "label": "Search API (Hono)", "sublabel": "config · suggest · search", "tag": "collection · events", "pos": [760, 40], "size": [150, 64] },
+    { "id": "typesense", "type": "database", "label": "Typesense", "sublabel": "1 collection / shop", "tag": "alias p_{shopId}", "pos": [1000, 40], "size": [150, 64] },
+
+    { "id": "storefrontapi", "type": "external", "label": "Storefront API", "sublabel": "nodes(ids) @inContext", "pos": [280, 230], "size": [150, 64] },
+    { "id": "redis", "type": "messagebus", "label": "Redis", "sublabel": "BullMQ · cache · events", "tag": "queue sync + maintenance", "pos": [760, 230], "size": [150, 64] },
+    { "id": "worker", "type": "backend", "label": "Sync worker", "sublabel": "full · delta · incremental", "tag": "checksum · best-selling", "pos": [1000, 230], "size": [150, 64] },
+
+    { "id": "merchant", "type": "external", "label": "Merchant", "sublabel": "Shopify admin", "pos": [40, 420], "size": [150, 64] },
+    { "id": "shopifyadmin", "type": "cloud", "label": "App Bridge", "sublabel": "iframe · Polaris 2", "pos": [280, 420], "size": [150, 64] },
+    { "id": "adminapp", "type": "backend", "label": "Admin app", "sublabel": "React Router v7", "tag": "loader/action · webhook", "pos": [760, 420], "size": [150, 64] },
+    { "id": "adminapi", "type": "external", "label": "Shopify Admin API", "sublabel": "GraphQL 2026-10", "tag": "bulk · webhooks · events", "pos": [1000, 420], "size": [150, 64] },
+
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "Prisma · session · config", "tag": "SyncJob · OrderLine", "pos": [760, 610], "size": [150, 64] }
+  ],
+  "connections": [
+    { "id": "shopper-theme", "from": "shopper", "to": "theme", "label": "gõ tìm", "variant": "emphasis" },
+    { "id": "theme-proxy", "from": "theme", "to": "proxy", "label": "fetch", "variant": "emphasis" },
+    { "id": "proxy-searchapi", "from": "proxy", "to": "searchapi", "label": "ký HMAC", "variant": "security" },
+    { "id": "searchapi-typesense", "from": "searchapi", "to": "typesense", "label": "query", "variant": "emphasis" },
+    { "id": "theme-storefront", "from": "theme", "to": "storefrontapi", "label": "giá theo market · 1 request" },
+    { "id": "searchapi-redis", "from": "searchapi", "to": "redis", "label": "cache · beacon" },
+    { "id": "redis-worker", "from": "redis", "to": "worker", "label": "job" },
+    { "id": "worker-typesense", "from": "worker", "to": "typesense", "label": "upsert · alias swap" },
+    { "id": "worker-adminapi", "from": "worker", "to": "adminapi", "label": "bulk · nodes(ids)" },
+    { "id": "adminapi-adminapp", "from": "adminapi", "to": "adminapp", "label": "webhook", "variant": "dashed" },
+    { "id": "adminapp-redis", "from": "adminapp", "to": "redis", "label": "enqueue", "variant": "dashed" },
+    { "id": "merchant-admin", "from": "merchant", "to": "shopifyadmin", "label": "mở app" },
+    { "id": "admin-adminapp", "from": "shopifyadmin", "to": "adminapp", "label": "ID token", "variant": "security" },
+    { "id": "adminapp-postgres", "from": "adminapp", "to": "postgres", "label": "Prisma" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Luồng tìm kiếm (storefront)", "items": [
+      "App embed nạp searchapp-sdk.js từ Shopify CDN; block search-results / collection-filter in sẵn grid Liquid native làm fallback",
+      "Mặc định gọi qua App Proxy (same-origin); route /proxy chạy Search API ngay trong process Admin app. Chế độ CDN gọi thẳng service search-api",
+      "Giá hiển thị: 1 request Storefront API nodes(ids) @inContext(country, language) cho cả trang",
+      "Web pixel ghi add_to_cart / purchase sau lượt search → /v1/events (ẩn danh)"
+    ] },
+    { "dot": "emerald", "title": "Đồng bộ dữ liệu", "items": [
+      "Full sync: nhiều bulk phẳng song song (groupObjects:false) → collection mới → swap alias",
+      "Webhook / Events: chỉ xác thực + dedupe + enqueue; worker lấy bản mới nhất bằng nodes(ids)",
+      "Cron worker: tick-delta mỗi 60s, checksum + best-selling + refresh markets lúc 03:00 UTC, rollup analytics mỗi 10 phút",
+      "Best-selling: order 60 ngày (read_orders, tuỳ chọn) hoặc Storefront BEST_SELLING"
+    ] },
+    { "dot": "violet", "title": "Admin & merchandising", "items": [
+      "Polaris web components + App Bridge; xác thực bằng ID token, expiring offline token",
+      "Lưu synonym / rule / cấu hình → đẩy thẳng sang Typesense và purge cache Search API",
+      "Worker cũng ghi PostgreSQL (SyncJob, OrderLine, AnalyticsDaily)"
+    ] }
+  ]
+}
