@@ -18,6 +18,8 @@ const EnvSchema = z.object({
   SEARCH_API_PORT: z.coerce.number().int().positive().default(8787),
   SEARCH_API_PUBLIC_URL: z.string().default("http://localhost:8787"),
   INTERNAL_API_SECRET: z.string().default(""),
+  // Back-office /admin (8.2): ký cookie phiên nhân viên; trống hoặc < 32 ký tự → back-office tắt (404).
+  ADMIN_SESSION_SECRET: z.string().default(""),
   // Bearer token cho GET /metrics của search-api và worker (Prometheus scrape). Trống → tắt.
   METRICS_TOKEN: z.string().default(""),
   SEARCH_DEFAULT_LOCALE: z.string().default("en"),

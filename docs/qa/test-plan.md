@@ -346,6 +346,30 @@ Cần có hoạt động thật trên storefront. Dữ liệu được tổng h�
 | DV-02 | P2 | Headless | Gói dưới Pro: công tắc "Allow headless requests" bị khoá, có banner. Gói Pro: bật, nhập origin `http://evil.com/path` | Banner hoặc khoá đúng như mô tả. Origin sai báo "Use an origin like https://www.example.com (no path)" |
 | HP-01 | P3 | Help | Bấm các link "Open theme editor", "Email support" | Mở đúng nơi |
 
+### 5.17b. Back-office nội bộ `/admin` (`BO`)
+
+Cần một tài khoản Owner (tạo bằng `npm run admin:create-agent`). Back-office chạy ngoài Shopify admin, tại `https://<app-domain>/admin`.
+
+| Mã | Ưu tiên | Kịch bản | Các bước | Mong đợi |
+|---|---|---|---|---|
+| BO-01 | P1 | Đăng nhập | Mở `/admin` khi chưa đăng nhập → đăng nhập sai 1 lần → đăng nhập đúng | Chuyển về `/admin/login`. Sai: banner lỗi chung. Đúng: vào Dashboard, menu chỉ hiện mục theo quyền |
+| BO-02 | P1 | Khoá tài khoản | Đăng nhập sai 5 lần liên tiếp → thử đúng mật khẩu | Vẫn bị từ chối (cùng thông báo). Sau 15 phút đăng nhập được |
+| BO-03 | P1 | Không nhúng được | Nhúng `/admin` vào iframe ở trang khác | Trình duyệt chặn (X-Frame-Options DENY) |
+| BO-04 | P1 | Plans | Plans → sửa gói Starter: Products 1500, bật AI search → Save | Danh sách cập nhật. Trong ≤ 30 giây, shop gói Starter dùng được AI search (trang Search của app bật được "Match by meaning") |
+| BO-05 | P2 | Thêm gói | **Add plan**: handle `starter-2027`, ẩn khỏi trang Plans | Gói mới có trong danh sách với badge "Hidden"; không hiện ở trang Plans của merchant. Handle sai định dạng hoặc trùng → báo lỗi |
+| BO-06 | P2 | Xoá gói | Xoá gói đang có shop dùng; xoá gói Free | Đều bị chặn kèm lý do |
+| BO-07 | P1 | Tặng gói | Shops → mở 1 shop → Complimentary plan = Pro, Until = ngày mai → Save | "Using: Pro until …". Merchant dùng được tính năng Pro. Qua ngày hết hạn → quay về gói đang trả |
+| BO-08 | P2 | Ghi đè giới hạn | Products limit override = 50 000 trên shop gói Free | Banner "vượt giới hạn" ở trang Plans của merchant biến mất. Xoá trống thì về giới hạn gói |
+| BO-09 | P1 | Tạm dừng search | Pause search (lý do "Test") → mở storefront của shop → Turn search back on | Khi dừng: storefront hiện kết quả gốc của theme, API trả 403 `shop_blocked`. Mở lại: widget app hiện lại (≤ 1 phút) |
+| BO-10 | P2 | Sync từ back-office | Bấm Sync from Shopify / Reindex | Banner "Queued". Trang Sync của merchant hiện tiến độ |
+| BO-11 | P2 | Lọc shop | Lọc theo gói, theo trạng thái (Uninstalled, Blocked, Complimentary plan, Sync error, Over plan limit), tìm theo domain | Kết quả đúng; phân trang 25 shop/trang |
+| BO-12 | P2 | Dashboard | Xem Dashboard | Số shop đang cài, cài/gỡ 30 ngày, MRR ước tính theo gói, danh sách lỗi sync và vượt giới hạn khớp với trang Shops |
+| BO-13 | P1 | Agents | Add agent (vai trò Support) → đăng nhập bằng mật khẩu được hiện một lần → thử mở Plans → Edit | Đăng nhập được. Support xem được Plans nhưng không sửa được (403); không thấy menu Agents/Roles |
+| BO-14 | P2 | Tắt và reset | Deactivate agent đang đăng nhập ở trình duyệt khác; Reset password | Phiên kia bị đẩy về trang đăng nhập. Mật khẩu cũ không dùng được nữa. Không tự Deactivate chính mình được |
+| BO-15 | P2 | Roles | Tạo vai trò mới chỉ có "View shops"; xoá vai trò đang có người giữ; sửa Owner | Vai trò mới hoạt động đúng quyền. Xoá vai trò đang dùng và sửa Owner đều bị chặn |
+| BO-16 | P2 | Audit log | Sau các bước trên, mở Audit log, lọc theo Shops | Mỗi thay đổi có một dòng: thời gian, email nhân viên, hành động, đối tượng, giá trị trước/sau |
+| BO-17 | P3 | Đổi mật khẩu | Account → đổi mật khẩu | Thành công; phiên ở trình duyệt khác bị đăng xuất, phiên hiện tại vẫn giữ |
+
 ### 5.18. Đa thị trường và ngôn ngữ (`MK`)
 
 | Mã | Ưu tiên | Kịch bản | Các bước | Mong đợi |

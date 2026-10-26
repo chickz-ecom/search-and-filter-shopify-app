@@ -40,7 +40,8 @@
     "sdk:snapshot": "npm run build:sdk-types && tsx scripts/sdk-snapshot.ts",
     "build:services": "node scripts/build-search-api.mjs",
     "start:search-api": "node --enable-source-maps build/search-api/server.mjs",
-    "start:worker": "node --enable-source-maps build/worker/index.mjs"
+    "start:worker": "node --enable-source-maps build/worker/index.mjs",
+    "admin:create-agent": "node --env-file-if-exists=.env --import tsx scripts/create-agent.ts"
   },
   "type": "module",
   "engines": {

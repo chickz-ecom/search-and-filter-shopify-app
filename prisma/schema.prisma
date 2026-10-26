@@ -423,3 +423,48 @@ model PlanConfig {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+/// Back-office (8.2): nhân viên vận hành (ngoài Shopify). Mật khẩu scrypt; sessionVersion tăng → mọi phiên cũ hết hiệu lực.
+model Agent {
+  id             String     @id @default(cuid())
+  email          String     @unique
+  name           String
+  passwordHash   String
+  roleId         String
+  role           AgentRole  @relation(fields: [roleId], references: [id])
+  active         Boolean    @default(true)
+  sessionVersion Int        @default(0)
+  failedLogins   Int        @default(0)
+  lockedUntil    DateTime?
+  lastLoginAt    DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  auditLogs      AuditLog[]
+}
+
+/// Back-office (8.2): vai trò = tập quyền (catalog trong app/lib/backoffice/permissions.ts).
+model AgentRole {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  permissions String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agents      Agent[]
+}
+
+/// Back-office (8.2): mọi thay đổi do nhân viên thực hiện (gói, shop, nhân viên, vai trò).
+model AuditLog {
+  id         String   @id @default(cuid())
+  agentId    String?
+  agent      Agent?   @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  agentEmail String
+  action     String
+  targetType String
+  targetId   String
+  details    Json     @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+}

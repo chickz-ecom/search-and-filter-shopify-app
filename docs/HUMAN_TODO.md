@@ -167,3 +167,14 @@
       tạo đơn mới → hạng đổi ≤ 15 phút; "Switch back" → webhook bị gỡ, OrderLine rỗng, scope bị revoke.
 - [ ] P3. VERIFY validator liệt kê `read_orders, read_marketplace_orders, …` cho query đơn — xác nhận `read_orders` đủ
       cho đơn Online Store/POS thông thường.
+
+## Q. Back-office `/admin` (Phase 8)
+- [ ] Q1. Đặt `ADMIN_SESSION_SECRET` (≥ 32 ký tự ngẫu nhiên, vd. `openssl rand -base64 48`) cho app ở môi trường chạy thật
+      (và `.env` khi dev). Thiếu biến này thì `/admin` trả 404.
+- [ ] Q2. Tạo tài khoản đầu tiên: `npm run admin:create-agent -- --email you@example.com --name "Tên bạn"` (vai trò Owner).
+      Mật khẩu in ra MỘT lần → đăng nhập `https://<app-domain>/admin/login` → **Account** → đổi mật khẩu.
+- [ ] Q3. Mỗi gói ở back-office (Plans) có **handle trùng handle gói ở Partner Dashboard** (J1). Thêm gói mới ở Partner
+      Dashboard → thêm gói cùng handle ở back-office để gán giới hạn/tính năng. Giá ở back-office chỉ để hiển thị/MRR.
+- [ ] Q4. (Khuyến nghị) Chặn `/admin` theo IP văn phòng/VPN ở reverse proxy hoặc Cloudflare Access — app đã có đăng nhập,
+      khoá 15 phút sau 5 lần sai và audit log, lớp chặn mạng là thêm một tầng.
+
