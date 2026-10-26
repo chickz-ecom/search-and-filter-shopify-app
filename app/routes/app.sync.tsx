@@ -9,6 +9,7 @@ import { enqueueSync } from "../lib/queue/queue.server";
 import { SyncView } from "../components/SyncView";
 import { syncErrorHint } from "../lib/sync/errors";
 import { getSyncStatus } from "../lib/sync/status.server";
+import { useRefreshWhile } from "../lib/use-refresh-while";
 
 // Trang Sync (task 1.11, mục 5.5): trạng thái, lịch sử, Sync now.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -55,6 +56,8 @@ export default function SyncPage() {
   const data = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const t = translator(data.locale);
+  // Sync đang chạy → tự cập nhật trạng thái/tiến độ, không cần reload trang.
+  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING");
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {

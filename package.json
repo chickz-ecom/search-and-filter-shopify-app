@@ -4,6 +4,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "npm run build:storefront && shopify app dev",
+    "dev:tiep": "npm run build:storefront && shopify app dev --tunnel-url https://search.tiepdo.online:3460",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
     "deploy": "npm run build:storefront && shopify app deploy",

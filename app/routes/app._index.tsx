@@ -9,6 +9,7 @@ import { authenticate } from "../shopify.server";
 import { embedStatusFrom, themeEditorLinks, type EmbedStatus } from "../lib/admin/theme-links";
 import { getKpis } from "../lib/analytics/kpi.server";
 import { getSyncStatus } from "../lib/sync/status.server";
+import { useRefreshWhile } from "../lib/use-refresh-while";
 
 // Home (task 3.1): checklist + trạng thái embed (shopify.app.extensions()) + card sync + KPI 7 ngày.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -57,6 +58,8 @@ export default function Index() {
   const data = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [embed, setEmbed] = useState<EmbedStatus | null>(null);
+  // Sync đang chạy → tự cập nhật trạng thái/tiến độ, không cần reload trang.
+  useRefreshWhile(data.status.state === "QUEUED" || data.status.state === "RUNNING");
 
   useEffect(() => {
     // Chỉ phản ánh theme đang publish; không cần scope (docs/shopify-api/storefront-apphome.md mục 7).
