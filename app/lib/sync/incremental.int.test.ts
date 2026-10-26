@@ -3,7 +3,7 @@ import { testDb } from "../../../test/db";
 import { FakeCatalog } from "../../../test/fakes/fake-catalog";
 import { instantClock } from "../../../test/fakes/fake-shopify";
 import { nestedJsonl } from "../../../test/fakes/fake-nested-bulk";
-import { flushTestPrefix, testRedis } from "../../../test/redis";
+import { testRedis } from "../../../test/redis";
 import { postgresUp, redisUp, typesenseUp } from "../../../test/services";
 import { enqueueIncremental } from "../queue/queue.server";
 import { buildProductSchema } from "../search/index-schema";
@@ -38,7 +38,6 @@ describe.skipIf(!up)("incremental sync (1.7) + delta (1.9)", () => {
   const get = (id: string) => engine.getDocument<ProductDoc>(alias(), id);
 
   beforeEach(async () => {
-    await flushTestPrefix();
     shopId = (
       await ensureShop(
         testDb(),
@@ -75,7 +74,6 @@ describe.skipIf(!up)("incremental sync (1.7) + delta (1.9)", () => {
         .shop.delete({ where: { id } })
         .catch(() => undefined);
     }
-    await flushTestPrefix();
   });
 
   it("refreshes changed products, deletes unpublished/removed ones", async () => {

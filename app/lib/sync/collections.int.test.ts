@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { testDb } from "../../../test/db";
 import { FakeCatalog } from "../../../test/fakes/fake-catalog";
 import { instantClock } from "../../../test/fakes/fake-shopify";
-import { flushTestPrefix, testRedis } from "../../../test/redis";
+import { testRedis } from "../../../test/redis";
 import { postgresUp, redisUp, typesenseUp } from "../../../test/services";
 import { buildContentSchema, buildProductSchema } from "../search/index-schema";
 import { contentAlias, contentCollection, productAlias, productCollection } from "../search/names";
@@ -30,7 +30,6 @@ describe.skipIf(!up)("collection changes (1.8)", () => {
   const gid = (n: number) => `gid://shopify/Product/${n}`;
 
   beforeEach(async () => {
-    await flushTestPrefix();
     shopId = (
       await ensureShop(
         testDb(),
