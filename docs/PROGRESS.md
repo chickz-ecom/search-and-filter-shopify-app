@@ -4,8 +4,8 @@
 > Tiếp tục: `cat docs/PROGRESS.md && git log --oneline -20 && grep -n "\[ \]\|\[~\]" docs/02-PLAN.md | head`
 
 ## Hiện tại
-- Phase: 2 — Search API, Currency, SDK, Storefront
-- Task: 2.9 (packages/storefront-ui)
+- Phase: 3 — Admin App Home
+- Task: 3.1 (layout, s-app-nav, Home)
 
 ## Đã xong
 - Phase 0: 0.1–0.5 (template RR7 + shopify-app-react-router v4 + polaris-types v2, React 19, Postgres/Prisma, Typesense docker, Vitest/Playwright/CI, shopify.app.toml, ADR D1–D16).
@@ -45,5 +45,18 @@
 - BFS liên quan: chỉ GraphQL 2026-10; 3 compliance webhook, HMAC sai → 401; shop/redact xoá sạch (engine + DB + Redis).
 - Việc cần store thật: HUMAN_TODO D1–D7 (fixture thật, benchmark bulk, Events smart collection, CSV 30k, best-selling).
 
+## Tổng kết Phase 2 (2026-10-26)
+- search-api (Hono) + app proxy: pipeline 8 bước dùng chung; scoped key/shop; rate limit; CORS; cache; 503 khi engine lỗi. Load test 30k sp: 204 RPS, p99 78 ms.
+- SDK `window.SearchApp` v1 (5,97 KB gzip) + UI (instant 2,23 KB, results 3,44 KB). Giá theo market: 1 request Storefront/trang (E2E đếm), node null ẩn, lỗi → "Xem giá".
+- Theme extension: app embed nạp lười + 2 block in sẵn kết quả native & khung layout; Theme Check PASS; fallback khi engine/Storefront lỗi đã E2E.
+- Merch: synonym 1/2 chiều, stop word, redirect, ghim/ẩn/boost/bury, rule theo collection (curation_tags), lịch hiệu lực.
+- Phương án B (flag fixedMarketPrices): price_min_{cc} qua contextualPricing. Bản dịch: alias translations(locale:) trong bulk/incremental.
+- Web pixel ẩn danh + rollup AnalyticsDaily. Lighthouse (fixture có trọng lượng theme): giảm có trọng số 0,4 điểm.
+- Phát hiện quan trọng: Typesense 30 dùng `curation_tags` (override_tags bị bỏ qua); facet/filter/sort trên field động chưa tồn tại → lỗi; client typesense rò bộ nhớ khi import lớn; text_match_type max_score làm trọng số gần như vô hiệu.
+- BFS: storefront chỉ qua theme app extension, không ScriptTag/Asset API; Lighthouse ≤ 5 (fixture; Horizon thật → G3).
+- Cần store thật: HUMAN_TODO F1–F4 (giá market), G1–G3 (theme), H1–H2 (bản dịch, pixel).
+
 ## Bước tiếp theo
-- Phase 2: 2.1 search-api (Hono) dùng query/sort/filter builder đã có (2.2–2.4), rồi 2.5 merch, 2.6 SDK, 2.7 pricing...
+- Phase 3: 3.1 Home (checklist qua shopify.app.extensions(), deep link, card sync, KPI) → 3.2 Search → 3.3 Sorting → 3.4 Filters → 3.5 Merch → 3.6 Appearance → 3.7 Analytics → 3.8 Developers → 3.9 Plans → 3.10 kiểm tra mobile/Web Vitals.
+- Mẫu UI admin: component thuần trong app/components/*View.tsx (validate MCP polaris-app-home v2.0 + test SSR), route chỉ loader/action.
+
