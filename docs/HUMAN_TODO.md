@@ -121,3 +121,8 @@
 - [ ] K2. Shop đa ngôn ngữ: cân nhắc `TYPESENSE_EMBED_MODEL=ts/paraphrase-multilingual-mpnet-base-v2` (chậm hơn, nặng hơn).
 - [ ] K3. Trên dev store gói Pro: bật "Match by meaning" → full sync; tìm từ không có trong catalog (vd. "sneakers" khi
       catalog ghi "running shoes") → có kết quả; chỉnh độ chặt nếu ra sản phẩm lạc đề.
+
+## L. Vận hành (Phase 6)
+- [ ] L1. (6.1) Dựng Prometheus + Alertmanager (hoặc Grafana Cloud) với `deploy/observability/{prometheus.yml,alerts.yml}`;
+      đặt cùng `METRICS_TOKEN` cho search-api, worker và file `/etc/prometheus/metrics_token`; nối alert `severity: page`
+      tới kênh trực (PagerDuty/Slack).

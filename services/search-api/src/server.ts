@@ -18,6 +18,7 @@ const app = createSearchApi({
   internalSecret: e.INTERNAL_API_SECRET,
   redisPrefix: e.REDIS_PREFIX,
   ipRpm: Number(process.env.SEARCH_API_IP_RPM ?? 600),
+  metricsToken: e.METRICS_TOKEN,
 });
 
 serve({ fetch: app.fetch, port: e.SEARCH_API_PORT }, (info) =>

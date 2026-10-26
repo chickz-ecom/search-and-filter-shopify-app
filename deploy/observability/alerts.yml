@@ -1,0 +1,59 @@
+# Alert rules (task 6.1). Thresholds follow docs/02-PLAN.md: search p95 < 80 ms at the server,
+# product change searchable < 60 s, no data loss in the queue, prices never shown in the wrong currency.
+groups:
+  - name: searchapp
+    rules:
+      - alert: SearchLatencyP95High
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(searchapp_http_request_duration_seconds_bucket{route=~"/v1/(search|collection|suggest)"}[5m]))) > 0.15
+        for: 10m
+        labels: { severity: page }
+        annotations:
+          summary: "search-api p95 above 150 ms for 10 minutes (target 80 ms)"
+          runbook: docs/ops/observability.md#search-latency
+      - alert: SearchErrorsHigh
+        expr: |
+          sum(rate(searchapp_http_request_duration_seconds_count{status=~"5.."}[5m]))
+            / sum(rate(searchapp_http_request_duration_seconds_count[5m])) > 0.01
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: "More than 1% of search-api requests fail (503 = engine down; storefront falls back to native)"
+          runbook: docs/ops/observability.md#engine-down
+      - alert: QueueBacklog
+        expr: sum by (queue) (searchapp_queue_jobs{state=~"waiting|delayed"}) > 1000
+        for: 15m
+        labels: { severity: warn }
+        annotations:
+          summary: "{{ $labels.queue }} queue backlog above 1000 jobs for 15 minutes"
+          runbook: docs/ops/observability.md#queue-backlog
+      - alert: QueueFailures
+        expr: increase(searchapp_job_failures_total[30m]) > 20
+        labels: { severity: warn }
+        annotations:
+          summary: "More than 20 failed job attempts in 30 minutes ({{ $labels.type }})"
+          runbook: docs/ops/observability.md#job-failures
+      - alert: EventToIndexSlow
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(searchapp_event_to_index_seconds_bucket[10m]))) > 60
+        for: 15m
+        labels: { severity: warn }
+        annotations:
+          summary: "p95 time from Shopify event to searchable above 60 s"
+          runbook: docs/ops/observability.md#sync-latency
+      - alert: DeltaSyncLagging
+        expr: searchapp_delta_lag_seconds > 1800
+        for: 15m
+        labels: { severity: warn }
+        annotations:
+          summary: "A shop's delta-sync watermark is more than 30 minutes behind"
+          runbook: docs/ops/observability.md#sync-latency
+      - alert: StorefrontPricingErrors
+        expr: |
+          sum(rate(searchapp_storefront_pricing_total{result="error"}[15m]))
+            / sum(rate(searchapp_storefront_pricing_total[15m])) > 0.02
+        for: 15m
+        labels: { severity: warn }
+        annotations:
+          summary: "More than 2% of Storefront API price lookups fail (shoppers see 'View price')"
+          runbook: docs/ops/observability.md#pricing-errors

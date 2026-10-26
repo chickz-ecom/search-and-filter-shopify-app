@@ -226,6 +226,7 @@ describe.skipIf(!up)("search-api (2.1)", () => {
       defaultEngine: engine,
       internalSecret: "s3cret",
       redisPrefix: process.env.REDIS_PREFIX,
+      metricsToken: "m3trics",
     });
   });
 
@@ -383,6 +384,30 @@ describe.skipIf(!up)("search-api (2.1)", () => {
     expect(counters["s|spoofed-term"]).toBeUndefined();
     expect(Number(counters["c|tee"])).toBeGreaterThanOrEqual(1);
     expect(Number(counters["s|tee"])).toBeGreaterThanOrEqual(1);
+  });
+
+  it("exposes Prometheus metrics: latency per route pattern and sampled pricing errors (6.1)", async () => {
+    await get(`/v1/search?${qs({ q: "tee" })}`);
+    await api.request(`/v1/events?${qs({})}`, {
+      method: "POST",
+      headers: { ...origin, "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        events: [
+          { type: "pricing", ok: true, sample: 0.1 },
+          { type: "pricing", ok: false, sample: 1 },
+        ],
+      }),
+    });
+    expect((await api.request("/metrics")).status).toBe(401);
+    const res = await api.request("/metrics", { headers: { Authorization: "Bearer m3trics" } });
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toMatch(
+      /searchapp_http_request_duration_seconds_count\{route="\/v1\/search",status="200"\} \d+/,
+    );
+    expect(text).not.toContain("q=tee");
+    expect(text).toContain('searchapp_storefront_pricing_total{result="ok"} 10');
+    expect(text).toContain('searchapp_storefront_pricing_total{result="error"} 1');
   });
 
   it("purges cached config with the internal secret", async () => {

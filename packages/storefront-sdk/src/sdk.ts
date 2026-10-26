@@ -94,6 +94,11 @@ export function createSDK(ctx: SearchAppContext, deps: SdkDeps = {}): SearchAppS
     const loc = useLocal
       ? await pricer.localize(raw.products)
       : { prices: new Map(), currency: base, rate: 1, ok: true };
+    // Observability (6.1): tỷ lệ lỗi lấy giá Storefront — lỗi gửi hết, thành công lấy mẫu 10% (đỡ beacon).
+    if (useLocal && raw.products.length && (!loc.ok || Math.random() < 0.1)) {
+      queue.push({ type: "pricing", ok: loc.ok, sample: loc.ok ? 0.1 : 1 });
+      flushTimer ??= setTimeout(flush, 2000);
+    }
     const currency = useLocal ? loc.currency || ctx.currency : base;
     const products: Product[] = [];
     for (const p of raw.products) {

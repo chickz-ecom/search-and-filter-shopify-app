@@ -14,6 +14,8 @@ const EnvSchema = z.object({
   SEARCH_API_PORT: z.coerce.number().int().positive().default(8787),
   SEARCH_API_PUBLIC_URL: z.string().default("http://localhost:8787"),
   INTERNAL_API_SECRET: z.string().default(""),
+  // Bearer token cho GET /metrics của search-api và worker (Prometheus scrape). Trống → tắt.
+  METRICS_TOKEN: z.string().default(""),
   SEARCH_DEFAULT_LOCALE: z.string().default("en"),
   // Model embedding của Typesense cho AI search (task 5.1). Mặc định model built-in tiếng Anh; đa ngôn ngữ:
   // ts/paraphrase-multilingual-mpnet-base-v2. Máy không ra được internet → tải sẵn vào <data-dir>/models (HUMAN_TODO).

@@ -3,14 +3,17 @@ import {
   bullPrefix,
   closeQueues,
   getMaintQueue,
+  getSyncQueue,
   MAINT_QUEUE,
   queueConnection,
   SYNC_QUEUE,
   type MaintJobData,
   type SyncJobData,
 } from "../app/lib/queue/queue.server";
+import { env } from "../app/lib/env.server";
+import { createWorkerMetrics, serveMetrics } from "../app/lib/observability/worker-metrics";
 import { closeRedis } from "../app/lib/redis.server";
-import { notifier } from "./context";
+import { notifier, prisma } from "./context";
 import { handleMaintJob, handleSyncJob } from "./handlers";
 
 // Process worker (D4): `npm run worker`. Chạy tách khỏi admin và search-api.
@@ -31,10 +34,19 @@ const maintWorker = new Worker<MaintJobData>(MAINT_QUEUE, (job) => handleMaintJo
   concurrency: 2,
 });
 
+// Observability (6.1): /metrics (Bearer METRICS_TOKEN) + /health trên WORKER_METRICS_PORT.
+const metrics = createWorkerMetrics({ db: prisma, queues: [getSyncQueue(), getMaintQueue()] });
+const metricsServer = serveMetrics(metrics.registry, {
+  port: Number(process.env.WORKER_METRICS_PORT ?? 9464),
+  token: env().METRICS_TOKEN,
+});
+
 for (const w of [syncWorker, maintWorker]) {
-  w.on("failed", (job, err) =>
-    console.error(`[worker] ${job?.name} ${job?.id} failed:`, err.message),
-  );
+  w.on("completed", (job) => metrics.onCompleted(job));
+  w.on("failed", (job, err) => {
+    metrics.onFailed(job);
+    console.error(`[worker] ${job?.name} ${job?.id} failed:`, err.message);
+  });
 }
 
 // Lịch định kỳ (mục 5.3): delta mỗi 5 phút (tick mỗi phút chọn shop đến hạn), checksum + best-selling đêm.
@@ -63,6 +75,7 @@ await maint.upsertJobScheduler(
 console.log(`[worker] started (sync concurrency ${concurrency})`);
 
 async function shutdown() {
+  metricsServer.close();
   await Promise.allSettled([syncWorker.close(), maintWorker.close()]);
   await notifier.close();
   await closeQueues();

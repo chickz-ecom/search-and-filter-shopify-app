@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import type { Redis } from "ioredis";
 import { headlessDecision, planById } from "../../../app/lib/billing/plans";
+import { LATENCY_BUCKETS, Registry } from "../../../app/lib/observability/metrics";
 import { EngineUnavailableError, type SearchEngine } from "../../../app/lib/search/engine";
 import type { ContentDoc } from "../../../app/lib/search/product-doc";
 import { parseFilterParams, type AppliedFilters } from "../../../app/lib/search/query/filters";
@@ -24,7 +25,14 @@ import { executeSearch, filtersForScope } from "../../../app/lib/search-service/
 import { executeSuggest } from "../../../app/lib/search-service/suggest.server";
 import type { Db } from "../../../app/lib/shop/shop.server";
 
-const CLIENT_EVENTS = new Set<string>(["click", "add_to_cart", "purchase", "filter", "sort"]);
+const CLIENT_EVENTS = new Set<string>([
+  "click",
+  "add_to_cart",
+  "purchase",
+  "filter",
+  "sort",
+  "pricing",
+]);
 
 const HEADLESS_ERRORS = {
   not_in_plan: "Headless API requires the Pro plan or higher",
@@ -48,6 +56,9 @@ export type SearchApiDeps = {
   ipRpm?: number;
   /** Bỏ qua kiểm tra publicKey (route app proxy đã xác thực chữ ký Shopify). */
   trustedShopHeader?: string;
+  /** GET /metrics (Prometheus) yêu cầu `Authorization: Bearer <token>`; trống → tắt endpoint. */
+  metricsToken?: string;
+  metrics?: Registry;
 };
 
 type Vars = {
@@ -93,6 +104,23 @@ function clientIp(c: Context): string {
 
 export function createSearchApi(deps: SearchApiDeps) {
   const app = new Hono<{ Variables: Vars }>();
+  // Observability (6.1): độ trễ theo route (p95 qua histogram_quantile), lỗi engine, tỷ lệ lỗi giá Storefront.
+  const metrics = deps.metrics ?? new Registry();
+  const latency = metrics.histogram(
+    "searchapp_http_request_duration_seconds",
+    "search-api request latency",
+    ["route", "status"],
+    LATENCY_BUCKETS,
+  );
+  const engineErrors = metrics.counter(
+    "searchapp_engine_unavailable_total",
+    "Requests answered 503 (engine down)",
+  );
+  const pricing = metrics.counter(
+    "searchapp_storefront_pricing_total",
+    "Storefront API price lookups reported by the SDK (errors always, successes sampled)",
+    ["result"],
+  );
   const limiter = new RateLimiter(deps.redis, deps.redisPrefix ?? "sa");
   const cache = new MicroCache<{ body: unknown; status: number }>(5000, 10_000);
   const collectionCache = new MicroCache<{
@@ -101,8 +129,27 @@ export function createSearchApi(deps: SearchApiDeps) {
     sortOrder: string | null;
   } | null>(5000, 60_000);
 
+  app.use("*", async (c, next) => {
+    const t0 = performance.now();
+    await next();
+    // routePath = mẫu route (vd. /v1/search), không phải URL thô → cardinality thấp.
+    latency.observe(
+      { route: c.req.routePath || "unmatched", status: String(c.res.status) },
+      (performance.now() - t0) / 1000,
+    );
+  });
+
+  app.get("/metrics", async (c) => {
+    if (!deps.metricsToken) return c.notFound();
+    if (!safeEqual(c.req.header("authorization") ?? "", `Bearer ${deps.metricsToken}`))
+      return c.json({ error: "unauthorized" }, 401);
+    c.header("Content-Type", "text/plain; version=0.0.4");
+    return c.body(await metrics.render());
+  });
+
   app.onError((err, c) => {
     if (err instanceof EngineUnavailableError) {
+      engineErrors.inc();
       c.header("Cache-Control", "no-store");
       c.header("Retry-After", "5");
       return c.json({ error: "engine_unavailable" }, 503);
@@ -301,6 +348,11 @@ export function createSearchApi(deps: SearchApiDeps) {
         .filter((e) => e && typeof e === "object" && CLIENT_EVENTS.has(e.type));
     } catch {
       return c.json({ error: "invalid_body" }, 400);
+    }
+    for (const e of events as { type: string; ok?: unknown; sample?: unknown }[]) {
+      if (e.type !== "pricing") continue;
+      const sample = Number(e.sample);
+      pricing.inc({ result: e.ok ? "ok" : "error" }, sample > 0 && sample <= 1 ? 1 / sample : 1);
     }
     if (deps.redis)
       await recordEvents(deps.redis, c.get("ctx").shop.id, events).catch(() => undefined);
