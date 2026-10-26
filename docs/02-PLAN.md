@@ -474,7 +474,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
   - DoD: `shopify app dev` cài được vào dev store (`--feature-preview new_admin_design`).
 - [x] 0.2 Prisma chuyển sang PostgreSQL; `docker-compose` (postgres, redis, typesense).
 - [x] 0.3 Lint, Prettier, Vitest, Playwright; CI chạy typecheck, test và `shopify app config validate`.
-- [ ] 0.4 `shopify.app.toml`:
+- [x] 0.4 `shopify.app.toml`:
   - Scopes: `read_products, read_inventory, read_product_listings, read_publications, read_translations, read_locales, read_markets, unauthenticated_read_product_listings, write_app_proxy, write_pixels, read_customer_events`
   - Khai webhook (gồm compliance), `[events]`, `api_version = "2026-10"`.
 - [x] 0.5 `docs/adr/` cho D1–D16.
@@ -627,3 +627,5 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 2.2 xong: buildTextQuery (query_by/weights 1–10→0–127/num_typos/prefix theo trường, bản dịch đứng trước, bỏ field chưa index). ĐO THỰC TẾ: text_match_type=max_score chỉ dùng trọng số để tie-break (exact match field ngắn lấn át) → đổi mặc định matchMode sang max_weight (migration). Live test: đổi trọng số → thứ hạng đảo ngay, không re-index.
 - 2026-10-26: 2.3 xong: buildSortBy ≤ 3 trường (_eval đẩy hết hàng, sort chính, tie-break), missing_values: last cho pos_/best_selling/price_min_{cc}/mf; resolveSortKey theo SortDefault + sortOrder của collection; test từng key bảng 4.4.
 - 2026-10-26: 2.4 xong: filter translator dùng đúng tham số native filter.p.*/filter.v.* (URL dùng chung cho fallback), filter_by có escape, giá đổi minor units theo exponent currency, facet disjunctive + min/max giá.
+- 2026-10-26: 0.4 xong: shopify.app.toml theo cú pháp đã đối chiếu (docs/shopify-api/config-extensions.md): 11 scope, webhook gom theo route + include_fields, compliance_topics, [[events.subscription]] collection.products + collection.sortOrder, app proxy /apps/search. Bỏ product_listings/* và collection_listings/* (chỉ áp dụng cho kênh riêng của app, không phải Online Store). Contract test smol-toml; validate thật → HUMAN_TODO C1–C2.
+- 2026-10-26: Nâng React 18 → 19.3 (theo docs App Home: controlled field của Polaris web components cần React 19); thêm app/types/app-bridge-jsx.d.ts nối JSX global của app-bridge-types vào React.JSX. Ghi chú tra cứu API ở docs/shopify-api/ (Admin 34 op đã validate 2026-10, Storefront 5 op, config/extension, App Home).
