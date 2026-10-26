@@ -22,6 +22,11 @@ export class Client {
     private readonly timeoutMs = 3000,
   ) {}
 
+  /** App proxy cùng origin: gửi cookie (store có mật khẩu sẽ 302 về /password nếu thiếu). API trực tiếp: không. */
+  private get credentials(): RequestCredentials {
+    return this.ctx.proxy ? "same-origin" : "omit";
+  }
+
   url(path: string, params: Record<string, string | number | undefined | null> = {}): string {
     const base = this.ctx.apiBase.replace(/\/$/, "");
     const u = new URL(
@@ -51,7 +56,7 @@ export class Client {
     if (pending) return pending as Promise<T>;
     const ctrl = typeof AbortController !== "undefined" ? new AbortController() : undefined;
     const timer = setTimeout(() => ctrl?.abort(), this.timeoutMs);
-    const p = this.fetchImpl(url, { signal: ctrl?.signal, credentials: "omit" })
+    const p = this.fetchImpl(url, { signal: ctrl?.signal, credentials: this.credentials })
       .then(async (r) => {
         if (!r.ok) throw new SearchAppError(`HTTP ${r.status}`, r.status);
         const v = (await r.json()) as T;
@@ -77,8 +82,11 @@ export class Client {
     const body = JSON.stringify({ events });
     if (typeof navigator !== "undefined" && navigator.sendBeacon && navigator.sendBeacon(url, body))
       return;
-    void this.fetchImpl(url, { method: "POST", body, keepalive: true, credentials: "omit" }).catch(
-      () => undefined,
-    );
+    void this.fetchImpl(url, {
+      method: "POST",
+      body,
+      keepalive: true,
+      credentials: this.credentials,
+    }).catch(() => undefined);
   }
 }
