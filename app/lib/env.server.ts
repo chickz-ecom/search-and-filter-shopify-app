@@ -19,6 +19,11 @@ const EnvSchema = z.object({
   DEVELOPER_DOCS_URL: z.string().default(""),
   SHOPIFY_API_KEY: z.string().default(""),
   SHOPIFY_API_SECRET: z.string().default(""),
+  // Shopify App Pricing (task 3.9): handle trong shopify.app.toml + Partner API (HUMAN_TODO J).
+  SHOPIFY_APP_HANDLE: z.string().default("search-filter"),
+  SHOPIFY_APP_GID: z.string().default(""),
+  SHOPIFY_PARTNER_ORG_ID: z.string().default(""),
+  SHOPIFY_PARTNER_API_TOKEN: z.string().default(""),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

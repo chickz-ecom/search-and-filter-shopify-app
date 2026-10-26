@@ -97,3 +97,14 @@
       "Thêm synonym" mở sẵn modal ở Merchandising; filter/sort usage có số liệu sau rollup (≤ 10 phút).
 - [ ] I5. (3.8) Publish `docs/developers` (GitHub Pages/Docs site) rồi đặt `DEVELOPER_DOCS_URL`. Kiểm tra trên shop gói Pro:
       bật "Allow headless requests" → gọi `/v1/search` từ origin khác trả 200; tắt → 403 `headless_disabled`.
+
+## J. Shopify App Pricing (task 3.9)
+- [ ] J1. Partner Dashboard → listing → Pricing → Settings → chọn **Shopify App Pricing**. Tạo 6 gói với **handle trùng PlanId**:
+      `free` (0, < 100 sp), `starter` ($9, 1k), `growth` ($19, 5k), `pro` ($49, 30k, headless), `scale` ($99, 100k),
+      `enterprise` ($199, 300k). Welcome link mọi gói: `/app/plans` (Shopify nối `?plan_handle=`).
+- [ ] J2. Tạo Partner API client quyền **Manage apps** → `SHOPIFY_PARTNER_ORG_ID`, `SHOPIFY_PARTNER_API_TOKEN`; lấy GID app
+      (`gid://shopify/App/…`) → `SHOPIFY_APP_GID`. VERIFY endpoint `https://partners.shopify.com/{org}/api/2026-10/graphql.json`
+      (app/lib/billing/subscription.server.ts) bằng một lệnh curl `activeSubscription`.
+- [ ] J3. Trên dev store: bấm "Change plan" ở trang Plans → phải mở trang chọn gói do Shopify host (VERIFY URL
+      `https://admin.shopify.com/store/{store}/charges/{app_handle}/pricing_plans`). Chọn gói test → quay về /app/plans
+      hiển thị đúng gói; search-api áp rpm/headless theo gói mới (cache ngữ cảnh đã purge).

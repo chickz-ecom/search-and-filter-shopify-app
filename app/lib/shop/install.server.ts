@@ -6,7 +6,12 @@ import { ensureShop, type Db } from "./shop.server";
 // Không đăng ký webhook ở đây — webhook khai trong shopify.app.toml (README template).
 
 type ShopInfo = {
-  shop: { currencyCode: string; myshopifyDomain: string; primaryDomain?: { host: string } | null };
+  shop: {
+    id: string;
+    currencyCode: string;
+    myshopifyDomain: string;
+    primaryDomain?: { host: string } | null;
+  };
   shopLocales: { locale: string; primary: boolean; published: boolean }[];
 };
 
@@ -17,6 +22,7 @@ export async function fetchShopInfo(ex: GraphqlExecutor) {
     domains: [d.shop.myshopifyDomain, d.shop.primaryDomain?.host].filter((h): h is string =>
       Boolean(h),
     ),
+    gid: d.shop.id,
     currency: d.shop.currencyCode,
     primaryLocale: published.find((l) => l.primary)?.locale ?? "en",
     locales: published.map((l) => l.locale),

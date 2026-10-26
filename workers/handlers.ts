@@ -1,12 +1,14 @@
 import type { Job } from "bullmq";
 import {
   enqueueIncremental,
+  getMaintQueue,
   getSyncQueue,
   INCREMENTAL_DEBOUNCE_MS,
   scheduledKey,
   type MaintJobData,
   type SyncJobData,
 } from "../app/lib/queue/queue.server";
+import { refreshAllPlans } from "../app/lib/billing/subscription.server";
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { getEngine } from "../app/lib/search";
 import { cleanup, redactShop, uninstallShop } from "../app/lib/shop/lifecycle.server";
@@ -231,10 +233,17 @@ export async function handleMaintJob(job: Job<MaintJobData>): Promise<unknown> {
           },
         ]),
       );
+      await getMaintQueue().add(
+        "refresh-plans",
+        { type: "refresh-plans" },
+        { jobId: `refresh-plans-${day}` },
+      );
       return { shops: shops.length };
     }
     case "rollup-analytics":
       return rollupAnalytics(redis(), prisma);
+    case "refresh-plans":
+      return refreshAllPlans(prisma);
     case "tick-cleanup":
       return cleanup({ db: prisma, engine: getEngine(), redis: redis() });
     default: {

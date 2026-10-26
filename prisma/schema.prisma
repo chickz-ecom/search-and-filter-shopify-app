@@ -42,6 +42,10 @@ model Shop {
   id                  String    @id @default(cuid())
   domain              String    @unique
   plan                String    @default("free")
+  // gid://shopify/Shop/… — Partner API activeSubscription (Shopify App Pricing) cần shopId
+  shopifyGid          String?
+  // Lần cuối đối chiếu gói với Partner API
+  planCheckedAt       DateTime?
   installedAt         DateTime  @default(now())
   uninstalledAt       DateTime?
   publicKey           String    @unique

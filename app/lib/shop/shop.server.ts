@@ -47,7 +47,13 @@ export async function getShopByPublicKey(db: Db, publicKey: string) {
 export async function ensureShop(
   db: Db,
   domain: string,
-  info: { currency?: string; primaryLocale?: string; locales?: string[]; domains?: string[] } = {},
+  info: {
+    gid?: string;
+    currency?: string;
+    primaryLocale?: string;
+    locales?: string[];
+    domains?: string[];
+  } = {},
 ): Promise<{ shop: Shop; created: boolean; reinstalled: boolean }> {
   const existing = await db.shop.findUnique({ where: { domain } });
   if (existing) {
@@ -57,6 +63,7 @@ export async function ensureShop(
       data: {
         uninstalledAt: null,
         ...(reinstalled ? { installedAt: new Date() } : {}),
+        ...(info.gid ? { shopifyGid: info.gid } : {}),
         ...(info.currency ? { currency: info.currency } : {}),
         ...(info.primaryLocale ? { primaryLocale: info.primaryLocale } : {}),
         ...(info.locales ? { locales: info.locales } : {}),
@@ -73,6 +80,7 @@ export async function ensureShop(
       domain,
       publicKey: newPublicKey(),
       indexAlias: productAlias(id),
+      shopifyGid: info.gid ?? null,
       currency: info.currency ?? "USD",
       primaryLocale: info.primaryLocale ?? "en",
       locales: info.locales ?? [],

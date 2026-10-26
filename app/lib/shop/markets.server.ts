@@ -167,6 +167,7 @@ export async function refreshShop(
   };
   if (what.includes("locales") || what.includes("shop")) {
     const info = await fetchShopInfo(deps.ex);
+    if (info.gid && info.gid !== shop.shopifyGid) data.shopifyGid = info.gid;
     if (info.currency !== shop.currency) {
       data.currency = info.currency;
       result.currencyChanged = true;
