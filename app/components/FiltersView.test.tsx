@@ -28,14 +28,27 @@ describe("FiltersView (3.4)", () => {
     expect(html).toContain("Default (all pages)");
     expect(html).toContain("Collection: Summer");
     expect(html.match(/<s-switch/g)?.length).toBe(DEFAULT_FILTERS.length);
-    expect(html).toContain('value="Thương hiệu"');
+  });
+
+  it("shows a compact list (name + summary + actions) and keeps details for the edit modal", () => {
+    const html = renderToStaticMarkup(<FiltersView {...base} />);
+    expect(html).toContain("Brand");
+    expect(html).toContain("Vendor · Checkboxes · up to 20 values");
+    expect(html).toContain(">Edit<");
+    expect(html).toContain('id="filter-modal"');
+    // Không còn trải các ô nhãn theo ngôn ngữ / chọn nguồn trên trang.
+    expect(html).not.toContain("Label (vi)");
+    expect(html).not.toMatch(/<s-select[^>]*label="Filter by"/);
   });
 
   it("lists every error inline in a critical banner", () => {
     const html = renderToStaticMarkup(
       <FiltersView {...base} errors={{ "default.2.optionName": "Option name is required" }} />,
     );
-    expect(html).toContain("default.2.optionName: Option name is required");
+    // Lỗi gọi theo tên filter, không phải đường dẫn kỹ thuật; dòng filter được đánh dấu.
+    expect(html).toContain("Brand: Option name is required");
+    expect(html).not.toContain("default.2.optionName");
+    expect(html).toContain("Needs attention");
   });
 
   it("offers only valid displays per source", () => {

@@ -3,6 +3,7 @@
 type = "web_pixel_extension"
 name = "search-pixel"
 runtime_context = "strict"
+uid = "f2564ba0-cb37-9040-cf90-919e245dda9837b2833f"
 
 [customer_privacy]
 analytics = true

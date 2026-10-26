@@ -1,3 +1,4 @@
 # Theme app extension (D10): 1 app embed + 2 app block. Không dùng ScriptTag, không ghi Asset API.
 name = "search-theme"
 type = "theme"
+uid = "11a71e2e-16e2-031e-3ea4-9c43ac2699f657fddd42"

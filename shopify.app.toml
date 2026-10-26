@@ -4,7 +4,7 @@ name = "Search & Filter"
 client_id = "4a4355de2edba5dd96bbe75e840deb55"
 application_url = "https://example.com"
 embedded = true
-handle = "smart-search-filter"
+handle = "smart-search-filter-123"
 
 [build]
 automatically_update_urls_on_dev = true

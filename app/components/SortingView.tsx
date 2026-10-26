@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { translator, type Locale, type MessageKey } from "../i18n";
 import {
   COLLECTION_ONLY_SORTS,
@@ -42,6 +42,14 @@ export type BestSellingInfo = {
   orders: number;
 };
 
+type ModalEl = HTMLElementTagNameMap["s-modal"];
+/** So sánh tên bỏ qua khác biệt chỉ ở dấu gạch / hoa thường / khoảng trắng ("A-Z" = "A–Z"). */
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[‐-―−-]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
 const SORTABLE_MF = new Set(["number_integer", "number_decimal", "rating", "date", "date_time"]);
 const value = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 const checked = (e: Event) => (e.currentTarget as HTMLInputElement).checked;
@@ -59,8 +67,13 @@ export function SortingView(p: SortingViewProps) {
   const [mf, setMf] = useState("");
   const [dir, setDir] = useState<"asc" | "desc">("desc");
   const dirty = useMemo(() => JSON.stringify(f) !== JSON.stringify(p.initial), [f, p.initial]);
-  const locales = [...new Set(["en", ...p.locales])].slice(0, 4);
+  // "en" là tên mặc định; ngôn ngữ khác của shop là bản dịch tuỳ chọn (trong modal Đổi tên).
+  const translations = [...new Set(p.locales)].filter((l) => l !== "en").slice(0, 3);
   const err = (path: string) => p.errors[path];
+  const renameModal = useRef<ModalEl>(null);
+  const [renaming, setRenaming] = useState<{ i: number; label: Record<string, string> } | null>(
+    null,
+  );
 
   const name = (o: SortOptionConfig) => {
     if (isMetafieldSortKey(o.key)) {
@@ -80,6 +93,8 @@ export function SortingView(p: SortingViewProps) {
   const setOpt = (i: number, patch: Partial<SortOptionConfig>) =>
     setF({ ...f, options: f.options.map((o, k) => (k === i ? { ...o, ...patch } : o)) });
   const enabled = f.options.filter((o) => o.enabled);
+  /** Tên khách thấy (theo ngôn ngữ admin nếu có bản dịch, không thì tên mặc định). */
+  const shown = (o: SortOptionConfig) => o.label[p.locale] || o.label.en || name(o);
   const sortableDefs = p.metafieldDefs.filter((d) => SORTABLE_MF.has(d.type));
 
   return (
@@ -130,7 +145,7 @@ export function SortingView(p: SortingViewProps) {
                       <s-stack direction="inline" gap="small-200" alignItems="center">
                         <s-icon type="drag-handle" />
                         <s-switch
-                          label={name(o)}
+                          label={shown(o)}
                           checked={o.enabled && !unavailable}
                           disabled={unavailable}
                           onChange={(e) => setOpt(i, { enabled: checked(e) })}
@@ -156,6 +171,15 @@ export function SortingView(p: SortingViewProps) {
                           disabled={i === f.options.length - 1}
                           onClick={() => move(i, i + 1)}
                         />
+                        <s-button
+                          slot="secondary-actions"
+                          onClick={() => {
+                            setRenaming({ i, label: { ...o.label } });
+                            renameModal.current?.showOverlay();
+                          }}
+                        >
+                          {t("sorting.rename")}
+                        </s-button>
                         {isMetafieldSortKey(o.key) && (
                           <s-button
                             slot="secondary-actions"
@@ -170,20 +194,12 @@ export function SortingView(p: SortingViewProps) {
                       </s-button-group>
                     </s-stack>
                     {unavailable && <s-text color="subdued">{t("sorting.needsData.desc")}</s-text>}
-                    <s-grid
-                      gridTemplateColumns={`repeat(${locales.length}, minmax(0, 1fr))`}
-                      gap="small-200"
-                    >
-                      {locales.map((l) => (
-                        <s-text-field
-                          key={l}
-                          label={t("sorting.label", { locale: l })}
-                          value={o.label[l] ?? ""}
-                          error={l === "en" ? err(`options.${i}.label`) : undefined}
-                          onChange={(e) => setOpt(i, { label: { ...o.label, [l]: value(e) } })}
-                        />
-                      ))}
-                    </s-grid>
+                    {!unavailable && norm(shown(o)) !== norm(name(o)) && (
+                      <s-text color="subdued">{t("sorting.sortsBy", { name: name(o) })}</s-text>
+                    )}
+                    {err(`options.${i}.label`) && (
+                      <s-text tone="critical">{err(`options.${i}.label`)}</s-text>
+                    )}
                   </s-stack>
                 </s-box>
               </div>
@@ -426,6 +442,55 @@ export function SortingView(p: SortingViewProps) {
           ))}
         </s-stack>
       </s-section>
+      <s-modal ref={renameModal} id="sort-rename" heading={t("sorting.renameTitle")} size="base">
+        {renaming && (
+          <s-stack direction="block" gap="base">
+            <s-text-field
+              label={t("sorting.name")}
+              details={translations.length ? t("filters.name.details") : undefined}
+              placeholder={name(f.options[renaming.i])}
+              value={renaming.label.en ?? ""}
+              onChange={(e) =>
+                setRenaming({ ...renaming, label: { ...renaming.label, en: value(e) } })
+              }
+            />
+            {translations.length > 0 && (
+              <s-stack direction="block" gap="small-200">
+                <s-heading>{t("filters.translations")}</s-heading>
+                <s-paragraph color="subdued">{t("filters.translations.desc")}</s-paragraph>
+                {translations.map((l) => (
+                  <s-text-field
+                    key={l}
+                    label={t("sorting.label", { locale: l })}
+                    placeholder={renaming.label.en ?? ""}
+                    value={renaming.label[l] ?? ""}
+                    onChange={(e) =>
+                      setRenaming({ ...renaming, label: { ...renaming.label, [l]: value(e) } })
+                    }
+                  />
+                ))}
+              </s-stack>
+            )}
+          </s-stack>
+        )}
+        <s-button
+          slot="primary-action"
+          variant="primary"
+          onClick={() => {
+            if (renaming) {
+              // Tên trống → về tên gốc của kiểu sắp xếp.
+              const en = renaming.label.en?.trim() || name(f.options[renaming.i]);
+              setOpt(renaming.i, { label: { ...renaming.label, en } });
+            }
+            renameModal.current?.hideOverlay();
+          }}
+        >
+          {t("filters.done")}
+        </s-button>
+        <s-button slot="secondary-actions" onClick={() => renameModal.current?.hideOverlay()}>
+          {t("common.cancel")}
+        </s-button>
+      </s-modal>
     </s-page>
   );
 }

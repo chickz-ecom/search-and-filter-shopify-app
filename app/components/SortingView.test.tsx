@@ -25,13 +25,17 @@ const base: SortingViewProps = {
 };
 
 describe("SortingView (3.3)", () => {
-  it("lists options with per-locale labels, reorder controls and the save bar", () => {
+  it("lists options compactly with reorder controls, rename and the save bar", () => {
     const html = renderToStaticMarkup(<SortingView {...base} />);
     expect(html).toContain("<ui-save-bar");
     expect(html.match(/draggable="true"/g)?.length).toBe(DEFAULT_SORT_OPTIONS.length);
-    expect(html).toContain("Label (vi)");
-    expect(html).toContain('value="Giá tăng dần"');
     expect(html).toContain("Move up: Relevance");
+    expect(html.match(/>Rename</g)?.length).toBe(DEFAULT_SORT_OPTIONS.length);
+    // Bản dịch nằm trong modal Đổi tên, không trải trên trang.
+    expect(html).not.toContain("Label (vi)");
+    expect(html).toContain('id="sort-rename"');
+    // Nhãn ngắn khác tên mô tả → hiện "Sorts by" để biết kiểu sắp xếp.
+    expect(html).toContain("Sorts by: Featured (collection order)");
   });
 
   it("disables best selling until there is sales data, with an explanation", () => {
