@@ -115,7 +115,23 @@ export async function runFullSync(
   await updateProgress(db, shopId, { syncState: "RUNNING", indexedCount: 0 });
 
   const alias = productAlias(shopId);
-  const current = await engine.getAlias(alias);
+  let current: string | null;
+  try {
+    current = await engine.getAlias(alias);
+  } catch (err) {
+    // Engine không phản hồi ngay từ đầu (vd. Typesense tắt): ghi FAILED để trang Sync không kẹt "đang chạy" mãi,
+    // rồi ném lại để BullMQ thử lại theo backoff.
+    await db.syncJob.update({
+      where: { id: job.id },
+      data: {
+        status: "FAILED",
+        finishedAt: new Date(clock.now()),
+        error: err instanceof Error ? err.message : String(err),
+      },
+    });
+    await updateProgress(db, shopId, { syncState: "ERROR" });
+    throw err;
+  }
   const version = nextVersion(current);
   const name = productCollection(shopId, version);
   const firstSync = !current;
