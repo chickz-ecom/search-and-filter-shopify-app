@@ -15,11 +15,26 @@ export const DEFAULT_TEMPLATES: Record<string, string> = {
   empty: '<div class="sa-empty"><p class="sa-empty__title">{{title}}</p><p>{{hint}}</p></div>',
 };
 
-export function templateFor(name: string, root: ParentNode = document): string {
+/** Thứ tự: <template> trong theme (dev) → template ghi đè ở Appearance (merchant) → mặc định. */
+export function templateFor(
+  name: string,
+  root: ParentNode = document,
+  configured?: Record<string, string>,
+): string {
   const el =
     root.querySelector<HTMLTemplateElement>(`template[data-searchapp="${name}"]`) ??
     document.querySelector<HTMLTemplateElement>(`template[data-searchapp="${name}"]`);
-  return el ? el.innerHTML : (DEFAULT_TEMPLATES[name] ?? "");
+  return el ? el.innerHTML : configured?.[name] || (DEFAULT_TEMPLATES[name] ?? "");
+}
+
+/** Áp token Appearance: chỉ biến --sa-* với giá trị an toàn (màu hex, px, số). */
+export function applyCssVars(vars?: Record<string, string>) {
+  if (!vars) return;
+  const st = document.documentElement.style;
+  for (const [k, v] of Object.entries(vars)) {
+    if (/^--sa-[a-z-]+$/.test(k) && /^(#[0-9a-f]{3,8}|\d{1,3}(px)?)$/i.test(v))
+      st.setProperty(k, v);
+  }
 }
 
 export const esc = (v: unknown) =>

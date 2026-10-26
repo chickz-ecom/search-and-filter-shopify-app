@@ -176,7 +176,11 @@ export interface PublicConfig {
   filters: { default: PublicFilter[]; search: PublicFilter[] };
   texts: Record<string, string>;
   appearance: Record<string, unknown>;
+  /** CSS custom properties (--sa-*) chỉnh ở admin → Appearance. */
+  cssVars?: Record<string, string>;
+  showVendor?: boolean;
   templates: Record<string, string>;
+
   fixedPriceCountries: string[];
   adjustedCountries: string[];
 }

@@ -560,7 +560,7 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
   - DoD: storefront hiển thị đúng danh sách, thứ tự và nhãn sau khi lưu (≤ 1 phút, tính cả purge cache).
 - [x] 3.4 Filter tree builder.
 - [x] 3.5 Merchandising.
-- [ ] 3.6 Appearance có live preview.
+- [x] 3.6 Appearance có live preview.
 - [ ] 3.7 Analytics (thêm sort usage).
 - [ ] 3.8 **Trang Developers:** public key, endpoint, snippet mẫu, link docs.
 - [ ] 3.9 Plans (managed pricing).
@@ -676,3 +676,4 @@ Polaris web components 2.x và App Bridge. Dữ liệu qua `loader`, ghi qua `ac
 - 2026-10-26: 3.3 xong: trang Sorting — bật/tắt, nhãn theo locale (en + locale shop, tối đa 4), kéo thả thứ tự (HTML5 drag + nút lên/xuống cho bàn phím), sort theo metafield số/đánh giá/ngày (asc/desc, tự xếp re-index), mặc định cho search và collection (hoặc theo sortOrder Shopify), ghi đè theo collection qua shopify.resourcePicker, tie-break; best selling bị disable + giải thích khi index chưa có best_selling_rank. Lưu trong transaction + purge. Int test DoD: sau khi lưu, /v1/config của search-api trả đúng thứ tự/nhãn/mặc định ngay (đường purge Redis + /internal/purge). SortingView VALID Polaris v2.0.
 - 2026-10-26: 3.4 xong: trang Filters — chọn phạm vi (mặc định / trang search kế thừa hoặc tuỳ chỉnh / ghi đè từng collection qua resourcePicker), mỗi filter: nhãn theo locale, nguồn (vendor, loại, tag + tiền tố, collection, giá, tình trạng, giảm giá, option theo tên, metafield), kiểu hiển thị hợp lệ theo nguồn, thu gọn, hiện số đếm, số giá trị, sắp xếp giá trị, khớp tất cả; sắp thứ tự, thêm/xoá. Lưu một lần mọi FilterSet (transaction), filter metafield mới → re-index; lỗi zod inline (banner liệt kê path). FiltersView VALID Polaris v2.0; int + SSR test.
 - 2026-10-26: 3.5 xong: Merchandising — trang tổng quan (đếm + link) và trang theo loại (synonyms / redirects / stopwords / rules): s-table, s-empty-state, s-modal thêm/sửa, s-modal xác nhận xoá; rule: theo từ khoá (exact/contains) hoặc collection (resourcePicker), ghim sản phẩm có vị trí, ẩn sản phẩm (resourcePicker product), boost/bury theo vendor/loại/tag/collection (−10…10), lịch bắt đầu/kết thúc (s-date-field). Mỗi thay đổi → pushMerchToEngine + purge. Bảo mật: thao tác luôn kèm shopId (không sửa/xoá được của shop khác — test), redirect chỉ tới path hoặc domain của shop (chống open redirect). ?new=<query> mở sẵn modal (từ Analytics). MerchViews VALID Polaris v2.0.
+- 2026-10-26: 3.6 Appearance: token màu/bo góc/khoảng cách/số cột/vendor (whitelist, CSS var), text theo locale, template ghi đè (chặn script/on*/javascript:), live preview iframe sandbox dùng chính CSS + template engine widget, đặt cạnh editor; storefront áp cssVars + template merchant; validate polaris-app-home v2.0.

@@ -1,62 +1,13 @@
 import { labelFor } from "../config/sort-options";
 import type { FilterItem } from "../config/filters";
+import { normalizeTokens, tokensToCssVars } from "../config/appearance";
+import { DEFAULT_TEXTS } from "../config/default-texts";
 import { urlParamFor } from "../search/query/filters";
 import { localizedSortOptions, type ShopSearchContext } from "./context.server";
 
 // GET /v1/config (mục 6.1): những gì SDK cần, không lộ gì nội bộ. Cache 5 phút; purge khi merchant lưu.
 
-export const DEFAULT_TEXTS: Record<"en" | "vi", Record<string, string>> = {
-  en: {
-    placeholder: "Search products",
-    noResults: "No results for “{q}”",
-    noResultsHint: "Check the spelling or try a more general term.",
-    viewAll: "View all {n} results",
-    products: "Products",
-    collections: "Collections",
-    pages: "Pages",
-    suggestions: "Suggestions",
-    filters: "Filters",
-    clearAll: "Clear all",
-    apply: "Apply",
-    sortBy: "Sort by",
-    results: "{n} results",
-    loadMore: "Load more",
-    previous: "Previous",
-    next: "Next",
-    soldOut: "Sold out",
-    sale: "Sale",
-    from: "From {price}",
-    viewPrice: "View price",
-    min: "Min",
-    max: "Max",
-    inStock: "In stock",
-  },
-  vi: {
-    placeholder: "Tìm sản phẩm",
-    noResults: "Không có kết quả cho “{q}”",
-    noResultsHint: "Kiểm tra chính tả hoặc thử từ khoá chung hơn.",
-    viewAll: "Xem tất cả {n} kết quả",
-    products: "Sản phẩm",
-    collections: "Bộ sưu tập",
-    pages: "Trang",
-    suggestions: "Gợi ý",
-    filters: "Bộ lọc",
-    clearAll: "Xoá tất cả",
-    apply: "Áp dụng",
-    sortBy: "Sắp xếp",
-    results: "{n} kết quả",
-    loadMore: "Xem thêm",
-    previous: "Trước",
-    next: "Sau",
-    soldOut: "Hết hàng",
-    sale: "Giảm giá",
-    from: "Từ {price}",
-    viewPrice: "Xem giá",
-    min: "Thấp nhất",
-    max: "Cao nhất",
-    inStock: "Còn hàng",
-  },
-};
+export { DEFAULT_TEXTS } from "../config/default-texts";
 
 export type PublicFilter = {
   id: string;
@@ -78,6 +29,9 @@ export type PublicConfig = {
   filters: { default: PublicFilter[]; search: PublicFilter[] };
   texts: Record<string, string>;
   appearance: Record<string, unknown>;
+  /** CSS var đã chuẩn hoá từ token Appearance (widget áp lên :root). */
+  cssVars: Record<string, string>;
+  showVendor: boolean;
   templates: Record<string, string>;
   /** Country có giá cố định trong index (phương án B) → SDK biết filter giá dùng currency nào. */
   fixedPriceCountries: string[];
@@ -123,6 +77,9 @@ export function buildPublicConfig(ctx: ShopSearchContext, locale: string): Publi
     },
     texts: { ...DEFAULT_TEXTS[base], ...overrides },
     appearance: ctx.appearance.tokens,
+    cssVars: tokensToCssVars(normalizeTokens(ctx.appearance.tokens)),
+    showVendor: normalizeTokens(ctx.appearance.tokens).showVendor,
+
     templates: ctx.appearance.templates,
     fixedPriceCountries: ctx.features.fixedMarketPrices
       ? ctx.markets.filter((m) => m.hasFixedPrices).flatMap((m) => m.countries)

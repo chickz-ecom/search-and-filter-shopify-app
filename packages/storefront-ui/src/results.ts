@@ -7,7 +7,7 @@ import type {
   SearchAppSDK,
   SearchResponse,
 } from "../../storefront-sdk/src/index";
-import { esc, fill, templateFor } from "./templates";
+import { applyCssVars, esc, fill, templateFor } from "./templates";
 
 // Widget "search-page" cho app block search-results / collection-filter (mục 7.2) và data-searchapp-mount.
 // Liquid in sẵn grid native (SEO + fallback, D11); widget chỉ thay nội dung TRONG vùng của block khi có dữ liệu.
@@ -51,7 +51,10 @@ export class SearchPage {
   async load(): Promise<void> {
     const mine = ++this.loading;
     try {
-      this.cfg ??= await this.sdk.getConfig();
+      if (!this.cfg) {
+        this.cfg = await this.sdk.getConfig();
+        applyCssVars(this.cfg.cssVars);
+      }
       const st = this.sdk.state.get();
       const params = {
         ...st,
@@ -81,7 +84,9 @@ export class SearchPage {
   private card(p: Product, i: number, tpl: string) {
     return this.sdk.render(tpl, {
       ...p,
+      vendor: this.cfg?.showVendor === false ? "" : p.vendor,
       position: i + 1,
+
       view_price: this.t("viewPrice"),
       badge_labels: p.badges.map((b) =>
         b === "sale" ? this.t("sale") : b === "sold_out" ? this.t("soldOut") : b,
@@ -166,7 +171,7 @@ export class SearchPage {
   }
 
   render(res: SearchResponse) {
-    const tpl = templateFor("product-card", this.el);
+    const tpl = templateFor("product-card", this.el, this.cfg?.templates);
     const pos = this.o.filterPosition || "left";
     const sort =
       this.o.showSort === "false" || !res.sort_options.length
@@ -179,7 +184,7 @@ export class SearchPage {
             .join("")}</select></label>`;
     const grid = res.products.length
       ? `<ul class="sa-grid" style="--sa-cols:${Number(this.o.columns) || 4}">${res.products.map((p, i) => this.card(p, i, tpl)).join("")}</ul>`
-      : this.sdk.render(templateFor("empty", this.el), {
+      : this.sdk.render(templateFor("empty", this.el, this.cfg?.templates), {
           title: this.t("noResults", { q: res.query }),
           hint: this.t("noResultsHint"),
         });
