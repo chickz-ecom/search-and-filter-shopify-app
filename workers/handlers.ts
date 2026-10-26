@@ -1,7 +1,16 @@
 import type { Job } from "bullmq";
-import type { MaintJobData, SyncJobData } from "../app/lib/queue/queue.server";
+import {
+  enqueueIncremental,
+  getSyncQueue,
+  INCREMENTAL_DEBOUNCE_MS,
+  scheduledKey,
+  type MaintJobData,
+  type SyncJobData,
+} from "../app/lib/queue/queue.server";
 import { acquireLock, redis, rkey } from "../app/lib/redis.server";
 import { runFullSync } from "../app/lib/sync/full-sync.server";
+import { runIncrementalJob } from "../app/lib/sync/incremental-job.server";
+import { deleteProducts, inventoryItemsToProducts } from "../app/lib/sync/incremental.server";
 import { prisma, workerDeps } from "./context";
 
 async function shopDomain(shopId: string): Promise<string | null> {
@@ -30,8 +39,43 @@ export async function handleSyncJob(job: Job<SyncJobData>): Promise<unknown> {
         await release();
       }
     }
+    case "incremental": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      return runIncrementalJob(data.shopId, {
+        ...workerDeps(domain),
+        schedule: scheduleIncremental,
+      });
+    }
+    case "delete": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      return { deleted: await deleteProducts(data.shopId, data.productIds, workerDeps(domain)) };
+    }
+    case "inventory": {
+      const domain = await shopDomain(data.shopId);
+      if (!domain) return { skipped: "uninstalled" };
+      const productIds = await inventoryItemsToProducts(
+        workerDeps(domain).ex,
+        data.inventoryItemIds,
+      );
+      await enqueueIncremental(data.shopId, productIds);
+      return { productIds };
+    }
     default:
       return { skipped: `unhandled:${data.type}` };
+  }
+}
+
+/** Lượt incremental tiếp theo (còn ID chờ hoặc lượt trước đang giữ khoá). */
+async function scheduleIncremental(shopId: string, delayMs: number) {
+  const ok = await redis().set(scheduledKey(shopId), "1", "PX", INCREMENTAL_DEBOUNCE_MS * 10, "NX");
+  if (ok) {
+    await getSyncQueue().add(
+      "incremental",
+      { type: "incremental", shopId },
+      { delay: delayMs, jobId: `inc-${shopId}-${Date.now()}` },
+    );
   }
 }
 
