@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { translator, type Locale, type MessageKey } from "../i18n";
 import type { AnalyticsReport, Range, UsageRow } from "../lib/analytics/report.server";
+import type { SynonymSuggestion } from "../lib/merch/synonym-suggestions.server";
 
 // Trang Analytics (task 3.7, mục 8): KPI theo khoảng thời gian, top query, query không có kết quả kèm nút tạo
 // synonym/redirect nhanh (mở sẵn modal ở Merchandising qua ?new=), mức dùng filter và sort.
@@ -11,6 +12,10 @@ export type AnalyticsViewProps = {
   report: AnalyticsReport;
   loading: boolean;
   onRangeChange: (range: Range) => void;
+  /** Gợi ý synonym từ truy vấn 0 kết quả (5.3) — merchant duyệt. */
+  suggestions?: SynonymSuggestion[];
+  busy?: boolean;
+  onSuggestion?: (intent: "approve" | "dismiss", s: SynonymSuggestion) => void;
 };
 
 const RANGE_OPTIONS: Range[] = [7, 30, 90];
@@ -131,6 +136,50 @@ export function AnalyticsView(p: AnalyticsViewProps) {
         </s-section>
       ) : (
         <>
+          {(p.suggestions?.length ?? 0) > 0 && (
+            <s-section heading={t("analytics.suggest.heading")}>
+              <s-stack direction="block" gap="small-200">
+                <s-paragraph color="subdued">{t("analytics.suggest.desc")}</s-paragraph>
+                <Table
+                  loading={p.busy ?? false}
+                  headers={[
+                    t("analytics.query"),
+                    t("analytics.suggest.term"),
+                    t("analytics.suggest.why"),
+                    "",
+                  ]}
+                  rows={p.suggestions!.map((sg) => ({
+                    id: sg.query,
+                    cells: [
+                      sg.query,
+                      t("analytics.suggest.finds", { term: sg.term, n: nf.format(sg.products) }),
+                      <s-badge key="r">
+                        {t(`analytics.suggest.reason.${sg.reason}` as MessageKey)}
+                      </s-badge>,
+                      <s-button-group key="a">
+                        <s-button
+                          slot="primary-action"
+                          variant="primary"
+                          disabled={p.busy}
+                          onClick={() => p.onSuggestion?.("approve", sg)}
+                        >
+                          {t("analytics.suggest.approve")}
+                        </s-button>
+                        <s-button
+                          slot="secondary-actions"
+                          disabled={p.busy}
+                          onClick={() => p.onSuggestion?.("dismiss", sg)}
+                        >
+                          {t("analytics.suggest.dismiss")}
+                        </s-button>
+                      </s-button-group>,
+                    ],
+                  }))}
+                />
+              </s-stack>
+            </s-section>
+          )}
+
           <s-section heading={t("analytics.zero.heading")}>
             <s-stack direction="block" gap="small-200">
               <s-paragraph color="subdued">{t("analytics.zero.desc")}</s-paragraph>

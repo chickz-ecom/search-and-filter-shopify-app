@@ -56,4 +56,21 @@ describe("AnalyticsView (3.7)", () => {
     expect(html).toContain('heading="Phân tích"');
     expect(html).not.toContain("<s-table");
   });
+
+  it("lists synonym suggestions with the reason, product count and approve/dismiss actions (5.3)", () => {
+    const html = renderToStaticMarkup(
+      <AnalyticsView
+        {...base}
+        suggestions={[
+          { query: "tshirt", searches: 5, term: "T-Shirt", reason: "spacing", products: 12 },
+        ]}
+      />,
+    );
+    expect(html).toContain("Suggested synonyms");
+    expect(html).toContain("“T-Shirt” (12 products)");
+    expect(html).toContain("Spacing or hyphen");
+    expect(html).toContain(">Add synonym<");
+    expect(html).toContain(">Dismiss<");
+    expect(renderToStaticMarkup(<AnalyticsView {...base} />)).not.toContain("Suggested synonyms");
+  });
 });

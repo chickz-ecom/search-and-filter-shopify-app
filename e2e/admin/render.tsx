@@ -190,6 +190,17 @@ function pages(locale: Locale): Record<string, ReactElement> {
         currency="USD"
         loading={false}
         onRangeChange={noop}
+        suggestions={[
+          { query: "tshirt", searches: 42, term: "T-Shirt", reason: "spacing", products: 128 },
+          {
+            query: "waterproof trainers for winter",
+            searches: 9,
+            term: "Running shoes",
+            reason: "meaning",
+            products: 31,
+          },
+        ]}
+        onSuggestion={noop}
         report={{
           range: 30,
           kpis,
