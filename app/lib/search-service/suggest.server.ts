@@ -1,8 +1,7 @@
 import type { Redis } from "ioredis";
 import type { SearchEngine, SearchParams } from "../search/engine";
 import type { ContentDoc, ProductDoc } from "../search/product-doc";
-import { normalizeQuery } from "../search/query/text-query";
-import { buildTextQuery } from "../search/query/text-query";
+import { buildTextQuery, normalizeQuery } from "../search/query/text-query";
 import { popularQueries } from "./analytics.server";
 import { fixedPriceMarket, stopwordsFor, type ShopSearchContext } from "./context.server";
 import { toProductResult, type ProductResult } from "./search.server";

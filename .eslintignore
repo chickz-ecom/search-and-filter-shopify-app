@@ -8,3 +8,5 @@ playwright-report
 test-results
 extensions/*/assets/*.js
 .react-router
+packages/*/dist
+build

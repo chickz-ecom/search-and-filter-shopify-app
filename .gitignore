@@ -35,3 +35,6 @@ pnpm-lock.yaml
 /coverage/
 !.env.example
 !.env.test
+
+# Bundle storefront build từ packages/* (npm run build:storefront; chạy trước dev/deploy)
+/extensions/search-theme/assets/searchapp-*.js

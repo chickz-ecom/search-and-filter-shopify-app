@@ -1,0 +1,8 @@
+{
+  "name": "@searchapp/storefront-sdk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "window.SearchApp — public storefront SDK (D16). Semver: breaking changes only in a new major.",
+  "types": "dist/index.d.ts"
+}

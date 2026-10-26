@@ -3,10 +3,10 @@
   "private": true,
   "scripts": {
     "build": "react-router build",
-    "dev": "shopify app dev",
+    "dev": "npm run build:storefront && shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
-    "deploy": "shopify app deploy",
+    "deploy": "npm run build:storefront && shopify app deploy",
     "config:use": "shopify app config use",
     "env": "shopify app env",
     "start": "react-router-serve ./build/server/index.js",
@@ -25,7 +25,8 @@
     "test:e2e": "playwright test",
     "worker": "node --env-file-if-exists=.env --import tsx workers/index.ts",
     "search-api": "node --env-file-if-exists=.env --import tsx services/search-api/src/server.ts",
-    "build:storefront": "node scripts/build-storefront.mjs",
+    "build:storefront": "node scripts/build-storefront.mjs && npm run build:sdk-types",
+    "build:sdk-types": "tsc -p packages/storefront-sdk/tsconfig.build.json",
     "build:search-api": "node scripts/build-search-api.mjs",
     "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss"
   },

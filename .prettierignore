@@ -14,3 +14,4 @@ extensions/search-theme/assets/*.js
 *.md
 package-lock.json
 docs/
+packages/*/dist
