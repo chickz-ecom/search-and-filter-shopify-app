@@ -284,6 +284,19 @@ export const en = {
   "plans.headless": "Headless API access",
   "plans.billingNote":
     "Shopify bills plans through your Shopify invoice. You can change or cancel at any time.",
+  "search.ai.heading": "AI search",
+  "search.ai.desc":
+    "Also match products by meaning, so “sneakers” finds running shoes even when the words differ. Exact keyword matches still rank first.",
+  "search.ai.planTitle": "AI search is included from the Pro plan",
+  "search.ai.planBody": "Keyword search, synonyms and typo tolerance work on every plan.",
+  "search.ai.toggle": "Match by meaning",
+  "search.ai.toggleDetails":
+    "Turning this on or off re-indexes your catalog. Search keeps working while it runs.",
+  "search.ai.strictness": "How closely results must match",
+  "search.ai.strict": "Strict: only very close meanings",
+  "search.ai.balanced": "Balanced (recommended)",
+  "search.ai.broad": "Broad: include loosely related products",
+  "search.try.byMeaning": "Matched by meaning",
   "sorting.title": "Sorting",
   "sorting.options.heading": "Sort options",
   "sorting.options.desc": "Choose which sort options shoppers see, rename them and set the order.",

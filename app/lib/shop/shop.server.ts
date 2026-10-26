@@ -234,6 +234,8 @@ export function requiredMetafields(config: ShopConfig): MetafieldRef[] {
 
 export type ShopFeatures = {
   fixedMarketPrices?: boolean;
+  /** Cấp AI search ngoài gói (hỗ trợ/đối tác). */
+  semantic?: boolean;
   /** Cấp quyền headless ngoài gói (hỗ trợ/đối tác). */
   headless?: boolean;
   /** Merchant tự bật ở trang Developers (mặc định tắt). */

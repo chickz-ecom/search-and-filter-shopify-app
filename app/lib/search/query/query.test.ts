@@ -16,6 +16,34 @@ import { buildTextQuery, normalizeQuery, queryKey } from "./text-query";
 
 const ctx = { locale: "en", primaryLocale: "en", indexedLocales: [], mode: "search" as const };
 
+describe("buildTextQuery AI search (5.1)", () => {
+  const semantic = { distance: 0.6, alpha: 0.3 };
+  it("appends the vector field last with per-field arrays of equal length", () => {
+    const q = buildTextQuery(defaultSearchSettings(), { ...ctx, semantic });
+    expect(q.queryBy.at(-1)).toBe("embedding");
+    expect(q.queryByWeights!.at(-1)).toBe(1);
+    expect(q.numTypos!.at(-1)).toBe(0);
+    expect(q.prefix!.at(-1)).toBe(false);
+    for (const arr of [q.queryByWeights, q.numTypos, q.prefix])
+      expect(arr).toHaveLength(q.queryBy.length);
+    expect(q.vectorQuery).toBe("embedding:([], alpha: 0.3, distance_threshold: 0.6)");
+  });
+
+  it("stays keyword-only for autocomplete, when the index has no vector field, or when off", () => {
+    expect(
+      buildTextQuery(defaultSearchSettings(), { ...ctx, mode: "suggest", semantic }).vectorQuery,
+    ).toBeUndefined();
+    const noVec = buildTextQuery(defaultSearchSettings(), {
+      ...ctx,
+      semantic,
+      indexedFields: new Set(["title"]),
+    });
+    expect(noVec.queryBy).toEqual(["title"]);
+    expect(noVec.vectorQuery).toBeUndefined();
+    expect(buildTextQuery(defaultSearchSettings(), ctx).queryBy).not.toContain("embedding");
+  });
+});
+
 describe("buildTextQuery (2.2)", () => {
   it("builds query_by/weights/typos/prefix from enabled fields", () => {
     const q = buildTextQuery(defaultSearchSettings(), ctx);

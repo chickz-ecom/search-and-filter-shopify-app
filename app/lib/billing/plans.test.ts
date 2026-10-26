@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { headlessDecision, planForProductCount } from "./plans";
+import { headlessDecision, planForProductCount, semanticAllowed } from "./plans";
 
 describe("plans", () => {
   it("picks the smallest plan that fits the catalog", () => {
@@ -7,6 +7,12 @@ describe("plans", () => {
     expect(planForProductCount(100).id).toBe("starter");
     expect(planForProductCount(30_000).id).toBe("pro");
     expect(planForProductCount(2_000_000).id).toBe("enterprise");
+  });
+
+  it("AI search is included from Pro, or granted per shop", () => {
+    expect(semanticAllowed("growth")).toBe(false);
+    expect(semanticAllowed("growth", { semantic: true })).toBe(true);
+    expect(semanticAllowed("pro")).toBe(true);
   });
 
   it("headless needs the plan, the merchant opt-in and an allowed origin", () => {

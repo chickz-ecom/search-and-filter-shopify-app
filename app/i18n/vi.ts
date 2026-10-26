@@ -283,6 +283,19 @@ export const vi: Record<MessageKey, string> = {
   "plans.headless": "Truy cập API headless",
   "plans.billingNote":
     "Shopify tính phí qua hoá đơn Shopify của bạn. Bạn có thể đổi hoặc huỷ bất cứ lúc nào.",
+  "search.ai.heading": "Tìm kiếm AI",
+  "search.ai.desc":
+    "Khớp thêm sản phẩm theo nghĩa, để “sneakers” tìm ra giày chạy bộ dù khác chữ. Sản phẩm khớp đúng từ khoá vẫn xếp trước.",
+  "search.ai.planTitle": "Tìm kiếm AI có từ gói Pro",
+  "search.ai.planBody": "Tìm theo từ khoá, từ đồng nghĩa và sửa lỗi chính tả có ở mọi gói.",
+  "search.ai.toggle": "Khớp theo nghĩa",
+  "search.ai.toggleDetails":
+    "Bật hoặc tắt sẽ index lại catalog. Tìm kiếm vẫn hoạt động trong lúc chạy.",
+  "search.ai.strictness": "Mức độ khớp",
+  "search.ai.strict": "Chặt: chỉ nghĩa rất gần",
+  "search.ai.balanced": "Cân bằng (khuyên dùng)",
+  "search.ai.broad": "Rộng: gồm cả sản phẩm liên quan lỏng",
+  "search.try.byMeaning": "Khớp theo nghĩa",
   "sorting.title": "Sắp xếp",
   "sorting.options.heading": "Kiểu sắp xếp",
   "sorting.options.desc": "Chọn kiểu sắp xếp khách được thấy, đổi tên và thứ tự hiển thị.",

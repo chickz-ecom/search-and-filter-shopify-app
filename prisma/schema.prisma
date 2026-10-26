@@ -153,6 +153,10 @@ model SearchSettings {
   searchTypes           Json
   // tie-break cho relevance: "best_selling" | "created_desc"
   relevanceTieBreak     String         @default("best_selling")
+  // AI search (task 5.1): hybrid keyword + embedding; cần gói cho phép (plans.ts). Bật/tắt → re-index.
+  semanticSearch        Boolean        @default(false)
+  // "strict" | "balanced" | "broad" → ngưỡng khoảng cách vector
+  semanticStrictness    String         @default("balanced")
   updatedAt             DateTime       @updatedAt
 
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)

@@ -22,7 +22,7 @@ describe("SearchView (3.2)", () => {
   it("renders the field table with toggles, weights, typo/prefix and the save bar", () => {
     const html = renderToStaticMarkup(<SearchView {...base} />);
     expect(html).toContain("<ui-save-bar");
-    expect(html.match(/<s-switch/g)?.length).toBe(10);
+    expect(html.match(/<s-switch/g)?.length).toBe(11); // 10 field + AI search
     expect(html).toContain("Weight (1–10)");
     expect(html).toContain("Restore defaults");
     expect(html).toContain("Material (custom.material)");
@@ -52,30 +52,19 @@ describe("SearchView (3.2)", () => {
   });
 
   it("renders preview hits with matched-field explanations", () => {
-    const html = renderToStaticMarkup(
-      <SearchView
-        {...base}
-        preview={{
-          total: 1,
-          tookMs: 2,
-          sort: "relevance",
-          hits: [
-            {
-              id: "1",
-              title: "Zorblax lamp",
-              price_min: 1999,
-              currency: "USD",
-              available: false,
-              rank: 1,
-              score: 9,
-              matched: [{ key: "title", field: "title", tokens: ["Zorblax"] }],
-              info: {},
-            },
-          ],
-        }}
-      />,
-    );
+    const html = renderToStaticMarkup(<SearchView {...base} />);
     // Preview chỉ hiện khi có từ khoá (state q) → SSR không có q nên không render hits.
     expect(html).not.toContain("Zorblax lamp");
+  });
+
+  it("AI search: explains the plan below Pro; on Pro shows strictness when on", () => {
+    const off = renderToStaticMarkup(<SearchView {...base} />);
+    expect(off).toContain("AI search is included from the Pro plan");
+    expect(off).toMatch(/<s-switch[^>]*label="Match by meaning"[^>]*disabled/);
+    const on = renderToStaticMarkup(
+      <SearchView {...base} semanticEntitled initial={{ ...base.initial, semanticSearch: true }} />,
+    );
+    expect(on).not.toContain("AI search is included from the Pro plan");
+    expect(on).toContain('label="How closely results must match"');
   });
 });

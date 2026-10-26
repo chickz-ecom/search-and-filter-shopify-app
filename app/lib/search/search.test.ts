@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildProductSchema, metafieldEngineType, schemaNeedsReindex } from "./index-schema";
+import {
+  buildProductSchema,
+  EMBED_FROM,
+  metafieldEngineType,
+  schemaNeedsReindex,
+} from "./index-schema";
+import { toEngineFieldForTest } from "./typesense-engine";
 import { isShopResource, nextVersion, productAlias, productCollection } from "./names";
 import { fromTypesenseResult, toTypesenseSearchParams } from "./typesense-engine";
 
@@ -91,5 +97,46 @@ describe("typesense param mapping", () => {
     expect(r.found).toBe(2);
     expect(r.hits[0].document.id).toBe("1");
     expect(r.facets[0].stats).toMatchObject({ min: 100, max: 900 });
+  });
+});
+
+describe("AI search schema and params (5.1)", () => {
+  it("adds an auto-embedding field only when semantic is on, and re-indexes on toggle", () => {
+    const off = buildProductSchema({ name: "p", metafields: [], locales: [] });
+    const on = buildProductSchema({
+      name: "p",
+      metafields: [],
+      locales: [],
+      semantic: { model: "ts/m" },
+    });
+    expect(off.fields.some((f) => f.name === "embedding")).toBe(false);
+    const emb = on.fields.find((f) => f.name === "embedding")!;
+    expect(emb).toEqual({
+      name: "embedding",
+      type: "float[]",
+      embed: { from: EMBED_FROM, model: "ts/m" },
+    });
+    expect(toEngineFieldForTest(emb)).toEqual({
+      name: "embedding",
+      type: "float[]",
+      embed: { from: EMBED_FROM, model_config: { model_name: "ts/m" } },
+    });
+    expect(schemaNeedsReindex(off.fields, on)).toBe(true);
+    expect(schemaNeedsReindex(on.fields, off)).toBe(true);
+    expect(schemaNeedsReindex(on.fields, on)).toBe(false);
+  });
+
+  it("maps vector_query and reads vector_distance", () => {
+    expect(
+      toTypesenseSearchParams({
+        q: "x",
+        queryBy: ["title"],
+        vectorQuery: "embedding:([], alpha: 0.3)",
+      }).vector_query,
+    ).toBe("embedding:([], alpha: 0.3)");
+    const r = fromTypesenseResult<{ id: string }>({
+      hits: [{ document: { id: "1" }, vector_distance: 0.4 }],
+    });
+    expect(r.hits[0].vectorDistance).toBe(0.4);
   });
 });

@@ -12,6 +12,16 @@ export const SearchTypesSchema = z.object({
 });
 export type SearchTypes = z.infer<typeof SearchTypesSchema>;
 
+/** AI search (task 5.1): mức chặt → ngưỡng khoảng cách cosine của model embedding (đo trên all-MiniLM-L12-v2). */
+export const SEMANTIC_STRICTNESS = ["strict", "balanced", "broad"] as const;
+export const SEMANTIC_DISTANCE: Record<(typeof SEMANTIC_STRICTNESS)[number], number> = {
+  strict: 0.5,
+  balanced: 0.6,
+  broad: 0.7,
+};
+/** Tỷ trọng vector trong rank fusion (0 = chỉ keyword, 1 = chỉ ngữ nghĩa). Keyword vẫn dẫn dắt thứ hạng. */
+export const SEMANTIC_ALPHA = 0.3;
+
 export const SearchSettingsSchema = z
   .object({
     fields: z.array(SearchFieldSchema).min(1).max(40),
@@ -25,6 +35,8 @@ export const SearchSettingsSchema = z
     variantAsProduct: z.boolean(),
     searchTypes: SearchTypesSchema,
     relevanceTieBreak: z.enum(TIE_BREAKS),
+    semanticSearch: z.boolean(),
+    semanticStrictness: z.enum(SEMANTIC_STRICTNESS),
   })
   .superRefine((s, ctx) => {
     if (s.minWordLengthFor2Typo < s.minWordLengthFor1Typo) {
@@ -72,5 +84,7 @@ export function defaultSearchSettings(): SearchSettingsConfig {
     variantAsProduct: false,
     searchTypes: structuredClone(DEFAULT_SEARCH_TYPES),
     relevanceTieBreak: "best_selling",
+    semanticSearch: false,
+    semanticStrictness: "balanced",
   };
 }

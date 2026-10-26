@@ -15,6 +15,9 @@ import { buildSortBy, resolveSortKey } from "../search/query/sort";
 import { facetFieldFor } from "../config/filters";
 import { sortKeyFromCollectionSortOrder } from "../config/sort-options";
 import { buildTextQuery, normalizeQuery, queryKey } from "../search/query/text-query";
+import { EMBEDDING_FIELD } from "../search/index-schema";
+import { semanticAllowed } from "../billing/plans";
+import { SEMANTIC_ALPHA, SEMANTIC_DISTANCE } from "../config/search-settings";
 import {
   fixedPriceMarket,
   localizedSortOptions,
@@ -190,12 +193,20 @@ export function planSearch(ctx: ShopSearchContext, req: SearchRequest) {
     const field = i.source === "price" ? priceField : facetFieldFor(i);
     return !has(field) && !(typeof v === "boolean" && i.source === "availability" && !v);
   });
+  const semantic =
+    q &&
+    ctx.settings.semanticSearch &&
+    semanticAllowed(ctx.shop.plan, ctx.features) &&
+    indexed?.has(EMBEDDING_FIELD)
+      ? { distance: SEMANTIC_DISTANCE[ctx.settings.semanticStrictness], alpha: SEMANTIC_ALPHA }
+      : undefined;
   const text = buildTextQuery(ctx.settings, {
     locale: req.locale,
     primaryLocale: ctx.shop.primaryLocale,
     indexedLocales: ctx.shop.locales.filter((l) => l !== ctx.shop.primaryLocale),
     indexedFields: indexed,
     mode: "search",
+    semantic,
   });
   const base = baseFilterClauses({
     collectionId: req.collection?.id,
@@ -234,6 +245,7 @@ export function planSearch(ctx: ShopSearchContext, req: SearchRequest) {
       "variant_titles",
       "barcodes",
       "skus",
+      ...(indexed?.has(EMBEDDING_FIELD) ? [EMBEDDING_FIELD] : []),
     ],
   };
   const groups = disjunctiveGroups(req.filters, items);

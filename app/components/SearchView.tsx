@@ -25,6 +25,8 @@ export type SearchViewProps = {
   previewing: boolean;
   onSave: (settings: SearchSettingsConfig) => void;
   onPreview: (settings: SearchSettingsConfig, q: string) => void;
+  /** AI search có trong gói (task 5.1). */
+  semanticEntitled?: boolean;
 };
 
 const TYPO = ["OFF", "LOW", "NORMAL"] as const;
@@ -280,6 +282,44 @@ export function SearchView(p: SearchViewProps) {
         </s-stack>
       </s-section>
 
+      <s-section heading={t("search.ai.heading")}>
+        <s-stack direction="block" gap="base">
+          <s-paragraph color="subdued">{t("search.ai.desc")}</s-paragraph>
+          {!p.semanticEntitled && (
+            <s-banner tone="info" heading={t("search.ai.planTitle")}>
+              <s-paragraph>{t("search.ai.planBody")}</s-paragraph>
+              <s-button slot="secondary-actions" href="/app/plans">
+                {t("dev.headless.viewPlans")}
+              </s-button>
+            </s-banner>
+          )}
+          <s-switch
+            label={t("search.ai.toggle")}
+            details={t("search.ai.toggleDetails")}
+            checked={s.semanticSearch}
+            disabled={!p.semanticEntitled && !s.semanticSearch}
+            error={p.errors.semanticSearch}
+            onChange={(e) => setS({ ...s, semanticSearch: checked(e) })}
+          />
+          {s.semanticSearch && (
+            <s-select
+              label={t("search.ai.strictness")}
+              value={s.semanticStrictness}
+              onChange={(e) =>
+                setS({
+                  ...s,
+                  semanticStrictness: value(e) as SearchSettingsConfig["semanticStrictness"],
+                })
+              }
+            >
+              <s-option value="strict">{t("search.ai.strict")}</s-option>
+              <s-option value="balanced">{t("search.ai.balanced")}</s-option>
+              <s-option value="broad">{t("search.ai.broad")}</s-option>
+            </s-select>
+          )}
+        </s-stack>
+      </s-section>
+
       <s-section heading={t("search.typo.heading")}>
         <s-stack direction="block" gap="base">
           <s-select
@@ -420,6 +460,9 @@ export function SearchView(p: SearchViewProps) {
                         {money.format(h.price_min / 100)}
                         {h.available ? "" : ` · ${t("search.try.soldOut")}`}
                       </s-text>
+                      {h.matched.length === 0 && h.info.vectorDistance !== undefined && (
+                        <s-badge tone="info">{t("search.try.byMeaning")}</s-badge>
+                      )}
                       {h.matched.length > 0 && (
                         <s-stack direction="inline" gap="small-300">
                           <s-text color="subdued">{t("search.try.matched")}</s-text>

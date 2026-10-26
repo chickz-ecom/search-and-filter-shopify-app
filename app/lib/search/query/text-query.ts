@@ -5,7 +5,7 @@ import {
   type SearchField,
 } from "../../config/search-fields";
 import type { SearchSettingsConfig } from "../../config/search-settings";
-import { localeSuffix } from "../index-schema";
+import { EMBEDDING_FIELD, localeSuffix } from "../index-schema";
 import type { SearchParams } from "../engine";
 
 // Query builder từ SearchSettings.fields (task 2.2). Trọng số/bật-tắt áp dụng lúc query → không re-index.
@@ -19,6 +19,8 @@ export type TextQueryContext = {
   /** Field có thật trong schema hiện tại; field chưa index (metafield mới thêm) bị bỏ qua. */
   indexedFields?: ReadonlySet<string>;
   mode: "search" | "suggest";
+  /** AI search (task 5.1): chỉ truyền khi có từ khoá, gói cho phép và index có field vector. */
+  semantic?: { distance: number; alpha: number };
 };
 
 export type TextQueryPart = Pick<
@@ -31,6 +33,7 @@ export type TextQueryPart = Pick<
   | "textMatchType"
   | "minLen1Typo"
   | "minLen2Typo"
+  | "vectorQuery"
 >;
 
 function maxTypos(settings: SearchSettingsConfig): number {
@@ -88,6 +91,21 @@ export function buildTextQuery(
     prefix.push(true);
   }
 
+  // Hybrid: thêm field vector vào cuối query_by (trọng số thấp nhất, không typo/prefix — các mảng per-field phải
+  // cùng độ dài, đã đo trên Typesense 30.1). Autocomplete giữ keyword thuần cho nhanh.
+  let vectorQuery: string | undefined;
+  if (
+    ctx.semantic &&
+    ctx.mode === "search" &&
+    (!ctx.indexedFields || ctx.indexedFields.has(EMBEDDING_FIELD))
+  ) {
+    queryBy.push(EMBEDDING_FIELD);
+    weights.push(1);
+    numTypos.push(0);
+    prefix.push(false);
+    vectorQuery = `${EMBEDDING_FIELD}:([], alpha: ${ctx.semantic.alpha}, distance_threshold: ${ctx.semantic.distance})`;
+  }
+
   return {
     queryBy,
     queryByWeights: weights,
@@ -97,6 +115,7 @@ export function buildTextQuery(
     textMatchType: settings.matchMode,
     minLen1Typo: settings.minWordLengthFor1Typo,
     minLen2Typo: settings.minWordLengthFor2Typo,
+    ...(vectorQuery ? { vectorQuery } : {}),
   };
 }
 

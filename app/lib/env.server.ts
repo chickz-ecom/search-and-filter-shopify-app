@@ -15,6 +15,9 @@ const EnvSchema = z.object({
   SEARCH_API_PUBLIC_URL: z.string().default("http://localhost:8787"),
   INTERNAL_API_SECRET: z.string().default(""),
   SEARCH_DEFAULT_LOCALE: z.string().default("en"),
+  // Model embedding của Typesense cho AI search (task 5.1). Mặc định model built-in tiếng Anh; đa ngôn ngữ:
+  // ts/paraphrase-multilingual-mpnet-base-v2. Máy không ra được internet → tải sẵn vào <data-dir>/models (HUMAN_TODO).
+  TYPESENSE_EMBED_MODEL: z.string().default("ts/all-MiniLM-L12-v2"),
   // Trang tài liệu developer đã publish (docs/developers) — HUMAN_TODO; trống thì ẩn link.
   DEVELOPER_DOCS_URL: z.string().default(""),
   SHOPIFY_API_KEY: z.string().default(""),

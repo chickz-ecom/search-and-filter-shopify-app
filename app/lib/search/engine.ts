@@ -24,6 +24,8 @@ export type FieldDef = {
   sort?: boolean;
   infix?: boolean;
   locale?: string;
+  /** Typesense auto-embedding (task 5.1): vector sinh từ các field `from` bằng model. */
+  embed?: { from: string[]; model: string };
 };
 
 export type CollectionSchema = {
@@ -80,6 +82,8 @@ export type SearchParams = {
   cacheTtl?: number;
   /** Bật trả `text_match_info` để giải thích thứ hạng (trang "Thử tìm"). */
   explain?: boolean;
+  /** Hybrid search: `embedding:([], alpha: …, distance_threshold: …)`. */
+  vectorQuery?: string;
 };
 
 export type FacetCount = {
@@ -94,6 +98,8 @@ export type SearchHit<T> = {
   textMatchInfo?: Record<string, unknown>;
   highlights?: { field: string; snippet?: string; matchedTokens?: string[] }[];
   curated?: boolean;
+  /** Khoảng cách vector (hybrid search) — càng nhỏ càng gần nghĩa. */
+  vectorDistance?: number;
 };
 
 export type SearchResult<T> = {

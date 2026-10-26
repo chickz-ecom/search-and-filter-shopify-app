@@ -61,8 +61,12 @@ function toEngineField(f: FieldDef): Json {
   if (f.sort !== undefined) out.sort = f.sort;
   if (f.infix !== undefined) out.infix = f.infix;
   if (f.locale) out.locale = f.locale;
+  if (f.embed) out.embed = { from: f.embed.from, model_config: { model_name: f.embed.model } };
   return out;
 }
+
+/** Chỉ để test ánh xạ field. */
+export const toEngineFieldForTest = (f: FieldDef) => toEngineField(f);
 
 export function toTypesenseSearchParams(p: SearchParams): Json {
   const out: Json = {
@@ -98,6 +102,7 @@ export function toTypesenseSearchParams(p: SearchParams): Json {
   if (p.highlightFields?.length) out.highlight_fields = p.highlightFields.join(",");
   else out.highlight_fields = "none";
   if (p.searchCutoffMs) out.search_cutoff_ms = p.searchCutoffMs;
+  if (p.vectorQuery) out.vector_query = p.vectorQuery;
   if (p.useCache) {
     out.use_cache = true;
     if (p.cacheTtl) out.cache_ttl = p.cacheTtl;
@@ -111,6 +116,7 @@ type RawHit = {
   text_match_info?: Json;
   highlights?: { field: string; snippet?: string; matched_tokens?: string[] }[];
   curated?: boolean;
+  vector_distance?: number;
 };
 
 type RawResult = {
@@ -153,6 +159,7 @@ export function fromTypesenseResult<T>(raw: RawResult): SearchResult<T> {
         matchedTokens: x.matched_tokens,
       })),
       curated: h.curated,
+      ...(h.vector_distance !== undefined ? { vectorDistance: h.vector_distance } : {}),
     })),
     facets,
     searchTimeMs: raw.search_time_ms ?? 0,

@@ -12,7 +12,8 @@ import { redis } from "../lib/redis.server";
 import { getEngine } from "../lib/search";
 import { buildShopContext } from "../lib/search-service/context.server";
 import { previewSearch, type PreviewResult } from "../lib/search-service/preview.server";
-import { loadShopConfig } from "../lib/shop/shop.server";
+import { loadShopConfig, shopFeatures } from "../lib/shop/shop.server";
+import { semanticAllowed } from "../lib/billing/plans";
 import { adminContextTransport, GraphqlExecutor } from "../lib/shopify/graphql";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -27,6 +28,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     initial: config.settings,
     metafieldDefs,
     hasContentScope: (session.scope ?? "").split(",").includes("read_online_store_pages"),
+    semanticEntitled: semanticAllowed(shop.plan, shopFeatures(shop)),
   };
 };
 

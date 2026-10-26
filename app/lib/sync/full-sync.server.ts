@@ -18,8 +18,11 @@ import {
   fixedPriceCountries,
   loadShopConfig,
   requiredMetafields,
+  shopFeatures,
   type Db,
 } from "../shop/shop.server";
+import { semanticAllowed } from "../billing/plans";
+import { env } from "../env.server";
 import { rkey } from "../redis.server";
 import { realClock, type Clock, type GraphqlExecutor } from "../shopify/graphql";
 import { currentRanks } from "./best-selling.server";
@@ -53,6 +56,8 @@ export type FullSyncDeps = {
   earlyMaxMs?: number;
   /** Cho test: ép kiểu staging. */
   staging?: "memory" | "pg";
+  /** Model embedding (mặc định env TYPESENSE_EMBED_MODEL). */
+  embedModel?: string;
 };
 
 export type FullSyncResult = {
@@ -159,6 +164,11 @@ export async function runFullSync(
         locales: secondaryLocales,
         synonymSets: [synonymSetName(shopId)],
         curationSets: [curationSetName(shopId)],
+        // AI search (5.1): chỉ khi merchant bật và gói cho phép — vector tốn CPU engine lúc import.
+        semantic:
+          config.settings.semanticSearch && semanticAllowed(shop.plan, shopFeatures(shop))
+            ? { model: deps.embedModel ?? env().TYPESENSE_EMBED_MODEL }
+            : undefined,
       }),
     );
     // Lần đầu: trỏ alias ngay để lượt sớm phục vụ search luôn. Re-index: ghi đôi qua marker.

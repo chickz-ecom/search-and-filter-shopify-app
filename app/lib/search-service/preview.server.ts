@@ -1,3 +1,4 @@
+import { EMBEDDING_FIELD } from "../search/index-schema";
 import type { SearchSettingsConfig } from "../config/search-settings";
 import { docFieldForSearchKey, type SearchFieldKey } from "../config/search-fields";
 import type { SearchEngine } from "../search/engine";
@@ -23,6 +24,8 @@ export type PreviewHit = {
     fieldsMatched?: number;
     tokensMatched?: number;
     typoPrefixScore?: number;
+    /** AI search: khoảng cách ngữ nghĩa (khớp theo nghĩa khi không có từ nào trùng). */
+    vectorDistance?: number;
   };
 };
 
@@ -51,7 +54,8 @@ export async function previewSearch(
   const r = await engine.search<ProductDoc>(ctx.productIndex, {
     ...plan.main,
     facetBy: undefined,
-    highlightFields: plan.main.queryBy,
+    // Field vector không highlight được.
+    highlightFields: plan.main.queryBy.filter((f) => f !== EMBEDDING_FIELD),
     perPage: 10,
   });
   return {
@@ -82,6 +86,7 @@ export async function previewSearch(
           fieldsMatched: Number(info.fields_matched ?? NaN) || undefined,
           tokensMatched: Number(info.tokens_matched ?? NaN) || undefined,
           typoPrefixScore: Number(info.typo_prefix_score ?? NaN) || undefined,
+          vectorDistance: h.vectorDistance,
         },
       };
     }),

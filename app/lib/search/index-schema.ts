@@ -19,7 +19,13 @@ export type ProductSchemaInput = {
   locales: string[];
   synonymSets?: string[];
   curationSets?: string[];
+  /** AI search (task 5.1): Typesense tự sinh vector từ EMBED_FROM bằng model này lúc import. */
+  semantic?: { model: string };
 };
+
+/** Field vector của hybrid search và các field nguồn (ngữ cảnh đủ để hiểu "giày chạy bộ" ≈ "sneakers"). */
+export const EMBEDDING_FIELD = "embedding";
+export const EMBED_FROM = ["title", "product_type", "vendor", "tags", "collection_titles"];
 
 export function metafieldEngineType(shopifyType: string): FieldType {
   switch (shopifyType) {
@@ -113,6 +119,12 @@ export function buildProductSchema(input: ProductSchemaInput): CollectionSchema 
     const numeric = type.startsWith("int") || type.startsWith("float");
     fields.push({ name, type, optional: true, facet: true, sort: numeric && !type.endsWith("[]") });
   }
+  if (input.semantic)
+    fields.push({
+      name: EMBEDDING_FIELD,
+      type: "float[]",
+      embed: { from: EMBED_FROM, model: input.semantic.model },
+    });
   return {
     name: input.name,
     fields,
@@ -144,5 +156,7 @@ export function buildContentSchema(name: string): CollectionSchema {
 /** Field metafield có trong schema hiện tại nhưng thiếu ở input mới (hoặc ngược lại) → cần re-index. */
 export function schemaNeedsReindex(currentFields: FieldDef[], next: CollectionSchema): boolean {
   const cur = new Map(currentFields.map((f) => [f.name, f.type]));
+  // Tắt AI search: bỏ field vector để engine thôi tính embedding mỗi lần ghi.
+  if (cur.has(EMBEDDING_FIELD) && !next.fields.some((f) => f.name === EMBEDDING_FIELD)) return true;
   return next.fields.some((f) => !f.name.includes("*") && cur.get(f.name) !== f.type);
 }

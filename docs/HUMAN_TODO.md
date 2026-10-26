@@ -111,3 +111,13 @@
 - [ ] G4. (4.2) Trên dev store theme Horizon: thêm 3 section mẫu `docs/developers/examples/*.liquid` vào template search
       (cùng block Search results đặt filter position "none", tắt Show sort) → filter ngang, sort riêng, grid tuỳ biến chạy
       đúng, đổi market hiển thị đúng giá; mobile không vỡ layout.
+
+## K. AI search (Phase 5)
+- [ ] K1. Typesense production phải có model embedding: Typesense tự tải từ Hugging Face khi tạo collection có field
+      `embed`. Máy không ra internet (hoặc timeout 4 s như máy dev) → tải sẵn:
+      `for f in config.json vocab.txt model.onnx; do curl -L -o $f https://huggingface.co/typesense/models/resolve/main/all-MiniLM-L12-v2/$f; done`
+      rồi chép vào `<data-dir>/models/all-MiniLM-L12-v2/` trên MỌI node. Typesense Cloud: VERIFY gói cluster hỗ trợ
+      built-in model (RAM/CPU) hoặc dùng model OpenAI qua `TYPESENSE_EMBED_MODEL` + api key (cần bổ sung model_config).
+- [ ] K2. Shop đa ngôn ngữ: cân nhắc `TYPESENSE_EMBED_MODEL=ts/paraphrase-multilingual-mpnet-base-v2` (chậm hơn, nặng hơn).
+- [ ] K3. Trên dev store gói Pro: bật "Match by meaning" → full sync; tìm từ không có trong catalog (vd. "sneakers" khi
+      catalog ghi "running shoes") → có kết quả; chỉnh độ chặt nếu ra sản phẩm lạc đề.
