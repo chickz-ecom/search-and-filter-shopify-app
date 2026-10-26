@@ -88,3 +88,6 @@
 ## I. Admin trên dev store
 - [ ] I1. Mở app trong admin (cả giao diện admin mới `--feature-preview new_admin_design` và cũ): kiểm tra s-app-nav, Home
       (checklist đổi trạng thái sau khi bật embed/thêm block — shopify.app.extensions()), Sync, các trang cấu hình; thử trên mobile (Shopify app).
+- [ ] I2. (DoD 3.2) Trang Search trên dev store: sửa trọng số → Save Bar hiện; "Thử tìm" đổi thứ hạng trước khi lưu; Discard
+      khôi phục; thêm metafield → banner cảnh báo + sau khi lưu trang Sync có job FULL "schema-change". Bật tìm trang/bài viết
+      → hộp thoại xin quyền read_online_store_pages.
