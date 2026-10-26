@@ -170,11 +170,18 @@ export function buildFilterBy(
   return clauses.join(" && ");
 }
 
-/** Nhóm cần một query riêng để đếm facet (OR trong nhóm, đã có lựa chọn). */
+/**
+ * Nhóm cần một query riêng để tính facet khi bỏ lựa chọn của chính nhóm đó: đếm OR trong nhóm (đã có lựa chọn),
+ * và khoảng giá/số đang lọc — để 2 đầu thanh trượt giữ nguyên biên, không co theo kết quả đã lọc.
+ */
 export function disjunctiveGroups(applied: AppliedFilters, items: FilterItem[]): FilterItem[] {
   return items.filter((i) => {
     const v = applied[i.id];
-    return Array.isArray(v) && v.length > 0 && !i.matchAll && i.display !== "range";
+    if (i.display === "range")
+      return (
+        typeof v === "object" && !Array.isArray(v) && (v.min !== undefined || v.max !== undefined)
+      );
+    return Array.isArray(v) && v.length > 0 && !i.matchAll;
   });
 }
 

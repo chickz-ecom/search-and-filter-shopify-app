@@ -294,6 +294,15 @@ describe("filter translator (2.4)", () => {
       "opt_size:=[`M`]",
     );
   });
+
+  it("keeps the price slider bounds stable: a range filter gets its own disjunctive query", () => {
+    const applied = { price: { max: 60 }, vendor: ["Nike"] };
+    expect(disjunctiveGroups(applied, items).map((i) => i.id)).toEqual(["price", "vendor"]);
+    expect(buildFilterBy(applied, items, { shopCurrency: "USD" }, [], "price")).not.toContain(
+      "price_min",
+    );
+    expect(disjunctiveGroups({ price: {} }, items)).toEqual([]);
+  });
 });
 
 describe("facets", () => {

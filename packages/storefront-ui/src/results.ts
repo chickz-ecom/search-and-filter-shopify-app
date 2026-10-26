@@ -28,6 +28,7 @@ export class SearchPage {
   private last: SearchResponse | null = null;
   private loading = 0;
   private adopted = false;
+  private rangeTimer: ReturnType<typeof setTimeout> | undefined;
 
   private readonly perPage: number;
 
@@ -113,19 +114,14 @@ export class SearchPage {
   private facet(f: Facet): string {
     const head = `<legend class="sa-facet__title">${esc(f.label)}</legend>`;
     if (f.type === "range") {
-      // Thanh trượt 2 đầu + 2 ô số; thả thanh trượt / đổi ô số / Enter → áp dụng (không cần nút Apply).
+      // Thanh trượt 2 đầu (không ô nhập tay); giá trị hiện dưới thanh, thả tay → áp dụng.
       const sel = f.selected ?? {};
-      const bounds = `min="${f.min}" max="${f.max}"`;
       const thumb = (n: "min" | "max") =>
-        `<input type="range" ${bounds} step="1" value="${sel[n] ?? f[n]}" aria-label="${esc(`${f.label} ${this.t(n)}`)}">`;
-      const input = (n: "min" | "max") =>
-        `<label>${esc(this.t(n))}<input type="number" name="${n}" inputmode="decimal" ${bounds} placeholder="${f[n]}" value="${sel[n] ?? ""}"></label>`;
+        `<input type="range" name="${n}" min="${f.min}" max="${f.max}" step="1" value="${sel[n] ?? f[n]}" aria-label="${esc(`${f.label} ${this.t(n)}`)}">`;
       return (
-        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}" data-min="${f.min}" data-max="${f.max}">` +
+        `<fieldset class="sa-facet" data-key="${esc(f.key)}">${head}<form class="sa-range" data-key="${esc(f.key)}" data-min="${f.min}" data-max="${f.max}" data-currency="${esc(f.currency ?? "")}" data-locale="${esc(this.sdk.context.locale)}">` +
         `<div class="sa-slider">${thumb("min")}${thumb("max")}</div>` +
-        input("min") +
-        input("max") +
-        `</form></fieldset>`
+        `<div class="sa-range__values"><output></output><output></output></div></form></fieldset>`
       );
     }
     const type = f.type === "radio" ? "radio" : "checkbox";
@@ -155,7 +151,10 @@ export class SearchPage {
       if (f.type === "range") {
         if (f.selected && (f.selected.min !== undefined || f.selected.max !== undefined))
           out.push(
-            chip(f.key, `${f.label}: ${f.selected.min ?? f.min}–${f.selected.max ?? f.max}`),
+            chip(
+              f.key,
+              `${f.label}: ${rangeText(f.selected.min ?? f.min, f.currency, this.sdk.context.locale)}–${rangeText(f.selected.max ?? f.max, f.currency, this.sdk.context.locale)}`,
+            ),
           );
       } else {
         for (const v of f.values)
@@ -242,6 +241,15 @@ export class SearchPage {
     this.adopted = true;
     // Giữ chiều cao cũ trong lúc thay nội dung → không giật layout (CLS).
     this.el.style.minHeight = `${this.el.offsetHeight}px`;
+    // Render thay DOM → nhớ phần tử đang focus (thanh trượt/checkbox) để trả focus lại cho người dùng bàn phím.
+    const a = document.activeElement as HTMLInputElement | null;
+    const scope = a?.closest<HTMLElement>(".sa-range");
+    const refocus =
+      a && a.name && this.el.contains(a)
+        ? (scope ? `.sa-range[data-key="${CSS.escape(scope.dataset.key!)}"] ` : "") +
+          `[name="${CSS.escape(a.name)}"]` +
+          (a.type === "checkbox" || a.type === "radio" ? `[value="${CSS.escape(a.value)}"]` : "")
+        : "";
     const toolbar = `<p class="sa-total" aria-live="polite">${esc(this.t("results", { n: res.total }))}</p>${drawerBtn}${sort}`;
     const layout = this.el.querySelector<HTMLElement>(".sa-layout");
     if (adopt && layout && native!.closest(".sa-main")) {
@@ -266,6 +274,7 @@ export class SearchPage {
     }
 
     this.el.querySelectorAll<HTMLFormElement>(".sa-range").forEach(paintRange);
+    if (refocus) this.el.querySelector<HTMLElement>(refocus)?.focus();
     this.el.classList.remove("sa-loading", "sa-pending");
     requestAnimationFrame(() => (this.el.style.minHeight = ""));
   }
@@ -303,7 +312,12 @@ export class SearchPage {
       return this.apply(this.readFilters(), { sort: t.value });
     }
     const range = t.closest<HTMLFormElement>(".sa-range");
-    if (range) return range.requestSubmit();
+    if (range) {
+      // Bàn phím bắn change mỗi lần nhấn mũi tên → gộp các lần nhấn liền nhau thành một lần tải.
+      clearTimeout(this.rangeTimer);
+      this.rangeTimer = setTimeout(() => range.requestSubmit(), 300);
+      return;
+    }
     if (t instanceof HTMLInputElement && (t.type === "checkbox" || t.type === "radio")) {
       if (t.checked) this.sdk.track("filter", { key: t.name, value: t.value });
       this.apply(this.readFilters());
@@ -376,27 +390,42 @@ export class SearchPage {
 /** Vị trí 2 đầu thanh trượt → biến CSS --lo/--hi (đoạn tô màu giữa 2 đầu). */
 function paintRange(form: HTMLFormElement) {
   const [lo, hi] = form.querySelectorAll<HTMLInputElement>("input[type=range]");
-  const min = Number(form.dataset.min);
-  const pct = (i: HTMLInputElement) =>
-    `${((Number(i.value) - min) / (Number(form.dataset.max) - min || 1)) * 100}%`;
-  form.style.setProperty("--lo", pct(lo));
-  form.style.setProperty("--hi", pct(hi));
+  const out = form.querySelectorAll("output");
+  const { min: lowest, max: highest, currency, locale } = form.dataset;
+  [lo, hi].forEach((i, k) => {
+    const pct =
+      ((Number(i.value) - Number(lowest)) / (Number(highest) - Number(lowest) || 1)) * 100;
+    form.style.setProperty(k ? "--hi" : "--lo", `${pct}%`);
+    const text = rangeText(Number(i.value), currency, locale);
+    out[k].textContent = text;
+    i.setAttribute("aria-valuetext", text);
+  });
   // 2 đầu chồng nhau ở mép phải: đưa đầu "min" lên trên, không thì không kéo ra được.
-  lo.style.zIndex = Number(lo.value) >= Number(form.dataset.max) ? "1" : "";
+  lo.style.zIndex = Number(lo.value) >= Number(highest) ? "1" : "";
 }
 
-/** Kéo thanh trượt ↔ ô số luôn khớp nhau; 2 đầu không vượt qua nhau. */
+/** Kéo: 2 đầu không vượt qua nhau, nhãn giá trị đi theo. */
 function syncRange(t: HTMLInputElement) {
   const form = t.closest<HTMLFormElement>(".sa-range");
   if (!form) return;
-  const [lo, hi, nMin, nMax] = form.querySelectorAll<HTMLInputElement>("input");
-  if (t.type === "range") {
-    if (Number(lo.value) > Number(hi.value)) t.value = (t === lo ? hi : lo).value;
-    nMin.value = lo.value;
-    nMax.value = hi.value;
-  } else
-    (t === nMin ? lo : hi).value = t.value || (t === nMin ? form.dataset.min : form.dataset.max)!;
+  const [lo, hi] = form.querySelectorAll<HTMLInputElement>("input[type=range]");
+  if (Number(lo.value) > Number(hi.value)) t.value = (t === lo ? hi : lo).value;
   paintRange(form);
+}
+
+/** Nhãn khoảng giá ("$19"): tiền tệ của facet, không phần lẻ; range không phải tiền → số trơn. */
+function rangeText(v: number, currency?: string, locale?: string): string {
+  if (!currency) return String(v);
+  try {
+    return new Intl.NumberFormat(locale || undefined, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(v);
+  } catch {
+    return `${v} ${currency}`;
+  }
 }
 
 if (typeof window !== "undefined") {

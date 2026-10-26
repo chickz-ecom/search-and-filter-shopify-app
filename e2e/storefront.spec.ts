@@ -107,9 +107,17 @@ test.describe("results page", () => {
     await expect(page).toHaveURL(/page=2/);
     await expect(block.locator(".sa-pagination [aria-current]")).toHaveText("2");
 
-    await block.locator('form.sa-range input[name="min"]').fill("20");
-    await block.locator('form.sa-range input[name="min"]').press("Enter");
+    // Price: thanh trượt 2 đầu, không ô nhập tay; nhãn giá trị theo tiền tệ.
+    await expect(block.locator("form.sa-range input:not([type=range])")).toHaveCount(0);
+    await expect(block.locator("form.sa-range output").first()).toHaveText("$19");
+    const minThumb = block.locator('form.sa-range input[type="range"]').first();
+    await minThumb.focus();
+    await minThumb.press("ArrowRight");
     await expect(page).toHaveURL(/filter\.v\.price\.gte=20/);
+    await expect(block.locator("form.sa-range output").first()).toHaveText("$20");
+    // Sau khi tải lại, focus vẫn ở đầu "min" → bấm tiếp được (bàn phím); khoảng giá không co lại.
+    await expect(minThumb).toBeFocused();
+    await expect(block.locator("form.sa-range output").nth(1)).toHaveText("$90");
 
     await page.goBack();
     await expect(page).not.toHaveURL(/filter\.v\.price\.gte/);
@@ -119,7 +127,6 @@ test.describe("results page", () => {
     await maxThumb.focus();
     await maxThumb.press("ArrowLeft");
     await expect(page).toHaveURL(/filter\.v\.price\.lte=/);
-    await expect(block.locator('form.sa-range input[name="max"]')).not.toHaveValue("");
     await page.goBack();
 
     expect(await seriousViolations(page, ".sa-block")).toEqual([]);

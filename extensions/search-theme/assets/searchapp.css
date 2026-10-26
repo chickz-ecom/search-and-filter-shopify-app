@@ -264,27 +264,14 @@
   background: var(--sa-swatch);
   border: 1px solid var(--sa-border);
 }
-/* Khoảng giá: thanh trượt 2 đầu (2 input range chồng nhau) + 2 ô số. --lo/--hi do widget cập nhật. */
-.sa-range {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.sa-range label {
+/* Khoảng giá: thanh trượt 2 đầu (2 input range chồng nhau), giá trị hiện dưới thanh. --lo/--hi do widget cập nhật. */
+.sa-range__values {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
   font-size: 0.875rem;
   color: var(--sa-muted);
 }
-.sa-range input[type="number"] {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid var(--sa-border);
-  border-radius: 4px;
-}
 .sa-slider {
-  grid-column: 1 / -1;
   position: relative;
   height: 24px;
   margin-bottom: 4px;
