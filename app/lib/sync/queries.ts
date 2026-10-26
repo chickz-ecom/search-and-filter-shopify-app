@@ -159,6 +159,19 @@ export function productsCoreByIdsQuery(metafields: MetafieldRef[]): string {
 }`;
 }
 
+/** Lượt "có kết quả sớm" (mục 5.1 bước 5): vài trang product mới cập nhật, chưa có variant (dùng priceRangeV2). */
+export function earlyProductsQuery(metafields: MetafieldRef[]): string {
+  return `query EarlyProducts($first: Int!, $cursor: String, $query: String!) {
+  products(first: $first, after: $cursor, query: $query, sortKey: UPDATED_AT, reverse: true) {
+    nodes {
+        ${PRODUCT_CORE_FIELDS}
+        ${metafieldAliases(metafields)}
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}`;
+}
+
 export const VARIANTS_BY_PRODUCT_IDS_QUERY = `query VariantsByProductIds($query: String!, $cursor: String) {
   productVariants(first: 250, after: $cursor, query: $query) {
     nodes {

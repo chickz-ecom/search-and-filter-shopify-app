@@ -23,8 +23,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "worker": "tsx workers/index.ts",
-    "search-api": "tsx services/search-api/src/server.ts",
+    "worker": "node --env-file-if-exists=.env --import tsx workers/index.ts",
+    "search-api": "node --env-file-if-exists=.env --import tsx services/search-api/src/server.ts",
     "build:storefront": "node scripts/build-storefront.mjs",
     "build:search-api": "node scripts/build-search-api.mjs",
     "db:test:push": "dotenv -e .env.test -- prisma db push --skip-generate --accept-data-loss"

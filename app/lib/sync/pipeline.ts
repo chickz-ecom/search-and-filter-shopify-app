@@ -18,11 +18,22 @@ type CollectionRow = {
   handle?: string;
   title?: string;
   sortOrder?: string;
+  updatedAt?: string;
   __parentId?: string;
+};
+
+export type CollectionInfo = {
+  id: string;
+  handle: string;
+  title: string;
+  sortOrder: string;
+  updatedAt?: string;
 };
 
 export type FullSyncSpecInput = {
   staging: Staging;
+  /** Nhận từng collection (cho index c_{shopId} và thứ tự sortOrder). */
+  onCollection?: (c: CollectionInfo) => void;
   metafields: MetafieldSpec[];
   /** Filter shard theo created_at; [undefined] = không shard. */
   shards: (string | undefined)[];
@@ -46,11 +57,14 @@ export function buildFullSyncSpecs(input: FullSyncSpecInput): BulkSpec<never>[] 
       onRow: ((row: VariantNode) => staging.addVariant(row)) as never,
     });
   });
-  specs.push(collectionsSpec(staging));
+  specs.push(collectionsSpec(staging, input.onCollection));
   return specs;
 }
 
-export function collectionsSpec(staging: Staging): BulkSpec<never> {
+export function collectionsSpec(
+  staging: Staging,
+  onCollection?: (c: CollectionInfo) => void,
+): BulkSpec<never> {
   const collections = new Map<
     string,
     { id: string; handle: string; title: string; manual: boolean; next: number }
@@ -81,6 +95,13 @@ export function collectionsSpec(staging: Staging): BulkSpec<never> {
           title: row.title ?? "",
           manual: row.sortOrder === "MANUAL",
           next: 0,
+        });
+        onCollection?.({
+          id: gidToId(row.id),
+          handle: row.handle ?? "",
+          title: row.title ?? "",
+          sortOrder: row.sortOrder ?? "MANUAL",
+          updatedAt: row.updatedAt,
         });
         // Dòng con đến trước cha (không nên xảy ra ở dạng grouped) → gắn lại.
         for (let i = orphans.length - 1; i >= 0; i--) {

@@ -29,3 +29,5 @@
       `npx tsx scripts/bench-sync.ts --live --shop ... --token ...` (phẳng song song)
       `npx tsx scripts/bench-sync.ts --live --shop ... --token ... --shards 2 --staging pg` (phẳng + shard)
       Ghi `bulks[].waitMs`, `totalMs`, `peakRss` vào Nhật ký của 02-PLAN.md.
+- [ ] D3. Cài app lên dev store mới (≥ 2k sản phẩm), đo thời gian tới khi search có kết quả (lượt sớm: tối đa 1.000 sản phẩm hoặc 45 s;
+      DoD 1.5: < 60 s) và xem Home hiện "Indexing: x/y". Chạy `npm run worker` song song với `shopify app dev`.

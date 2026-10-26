@@ -2,6 +2,9 @@ import "@shopify/shopify-app-react-router/adapters/node";
 import { ApiVersion, AppDistribution, shopifyApp } from "@shopify/shopify-app-react-router/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
+import { enqueueSync } from "./lib/queue/queue.server";
+import { onShopAuthenticated } from "./lib/shop/install.server";
+import { adminContextTransport, GraphqlExecutor } from "./lib/shopify/graphql";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -14,6 +17,17 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   future: {
     expiringOfflineAccessTokens: true,
+  },
+  hooks: {
+    // Chạy sau OAuth/token exchange: tạo Shop + seed cấu hình + xếp full sync lần đầu.
+    afterAuth: async ({ session, admin }) => {
+      await onShopAuthenticated(session.shop, {
+        db: prisma,
+        ex: new GraphqlExecutor(adminContextTransport(admin)),
+        enqueueFullSync: (shopId, reason) =>
+          enqueueSync({ type: "full", shopId, reason }, { jobId: `full-${shopId}-${Date.now()}` }),
+      });
+    },
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
